@@ -1,86 +1,112 @@
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import 'solidity-docgen';
+import 'hardhat-contract-sizer';
 import dotenv from 'dotenv';
+import { getNetworkConfig, AccountTypes } from './utils/get-network-account';
 dotenv.config();
 
-// Ensure that we have all the environment variables we need.
-let mnemonic: string;
-if (!process.env.MNEMONIC) {
-  throw new Error('Please set your MNEMONIC in a .env file');
-} else {
-  mnemonic = process.env.MNEMONIC;
-}
+const etherscanKey = process.env.ETHSCAN_KEY ?? '';
+const polyscanKey = process.env.POLYSCAN_KEY ?? '';
+const basescanKey = process.env.BASESCAN_KEY ?? '';
+const opscanKey = process.env.OPSCAN_KEY ?? '';
+const arbitrumscanKey = process.env.ARBSCAN_KEY ?? '';
 
-let privateKey: string;
-if (!process.env.PK) {
-  throw new Error('Please set your PK in a .env file');
-} else {
-  privateKey = process.env.PK;
-}
-
-let alchemyApiKey: string;
-if (!process.env.ALCHEMY_API_KEY) {
-  throw new Error('Please set your ALCHEMY_API_KEY in a .env file');
-} else {
-  alchemyApiKey = process.env.ALCHEMY_API_KEY;
-}
+export const ethApiKey = process.env.ALCHEMY_KEY_ETH;
 
 const config: HardhatUserConfig = {
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.24',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      }
+    ],
+  },
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
-      blockGasLimit: 20000000,
       throwOnCallFailures: false,
       chainId: 31337,
-      gasPrice: 44000000,
-      gas: 12000000,
-      allowUnlimitedContractSize: true,
       initialBaseFeePerGas: 0,
       accounts: {
-        mnemonic,
-        accountsBalance: '1000000000000000000000',
+        accountsBalance: '10000000000000000000000000',
       },
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyApiKey}`,
+        url: getNetworkConfig('mainnet', AccountTypes.PK).url!,
         enabled: false,
+        //blockNumber: 16383055,
       },
     },
-
-    // mainnet: {
-    //   url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyApiKey}`,
-    //   //url: 'http://localhost:8545',
-    //   //gasPrice: 22000000000,
-    //   chainId: 1,
-    //   accounts: {
-    //     mnemonic,
-    //   },
-    // },
-
-    mumbai: {
-      url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemyApiKey}`,
-      accounts: [privateKey],
-      chainId: 80001,
-      // gas: 2100000,
-      // gasPrice: 8000000000,
-      gas: 'auto',
+    mainnet: getNetworkConfig('mainnet', AccountTypes.PK),
+    polygon: getNetworkConfig('polygon', AccountTypes.PK),
+    optimism: getNetworkConfig('optimism', AccountTypes.PK),
+    base: getNetworkConfig('base', AccountTypes.PK),
+    arbitrum: getNetworkConfig('arbitrum', AccountTypes.PK),
+    arbitrum_sepolia: getNetworkConfig('arbitrum_sepolia', AccountTypes.TestnetPk),
+    sepolia: getNetworkConfig('sepolia', AccountTypes.TestnetPk),
+    mumbai: getNetworkConfig('mumbai', AccountTypes.TestnetPk),
+    base_sepolia: getNetworkConfig('base_sepolia', AccountTypes.TestnetPk),
+  },
+  gasReporter: {
+    coinmarketcap: process.env.COIN_MARKET_CAP_KEY,
+    currency: 'USD',
+    enabled: process.env.REPORT_GAS ? true : false,
+    excludeContracts: ['mocks/', 'test/'],
+  },
+  contractSizer: {
+    alphaSort: true,
+    runOnCompile: false,
+    disambiguatePaths: false,
+  },
+  etherscan: {
+    apiKey: {
+      mainnet: etherscanKey,
+      polygon: polyscanKey,
+      optimisticEthereum: opscanKey,
+      base: basescanKey,
+      arbitrumOne: arbitrumscanKey,
+      base_sepolia: basescanKey,
+      sepolia: etherscanKey,
+      arbitrum_sepolia: arbitrumscanKey,
     },
-
-    // polygon: {
-    //   // url: 'https://matic-mumbai.chainstacklabs.com',
-    //   url: `https://polygon-mainnet.g.alchemy.com/v2/${alchemyApiKey}`,
-    //   accounts: {
-    //     count: 10,
-    //     initialIndex: 0,
-    //     mnemonic,
-    //     path: "m/44'/60'/0'/0",
-    //   },
-    //   chainId: 137,
-    //   // // gas: 'auto',
-    //   // gas: 7000000,
-    //   gasPrice: 1000000000000,
-    // },
-
+    customChains: [
+      {
+        network: 'base',
+        chainId: 8453,
+        urls: {
+          apiURL: 'https://api.basescan.org/api',
+          browserURL: 'https://basescan.org/',
+        },
+      },
+      {
+        network: 'base_sepolia',
+        chainId: 84532,
+        urls: {
+          apiURL: 'https://api-sepolia.basescan.org/api',
+          browserURL: 'https://sepolia.basescan.org',
+        },
+      },
+      {
+        network: 'arbitrum_sepolia',
+        chainId: 421614,
+        urls: {
+          apiURL: 'https://api-sepolia.arbiscan.io/api',
+          browserURL: 'https://sepolia.arbiscan.io',
+        },
+      },
+    ],
+  },
+  docgen: {
+    // path: './docs',
+    // clear: true,
+    // runOnCompile: true,
+    pages: 'files',
   },
   paths: {
     artifacts: './artifacts',
@@ -88,39 +114,9 @@ const config: HardhatUserConfig = {
     sources: './contracts',
     tests: './test',
   },
-
-  solidity: {
-    compilers: [
-      {
-        version: '0.8.19',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-    ],
-  },
   typechain: {
     outDir: 'typechain',
     target: 'ethers-v5',
-  },
-  gasReporter: {
-    coinmarketcap: process.env.COIN_MARKET_CAP_KEY,
-    currency: 'USD',
-    gasPrice: 21,
-    enabled: process.env.REPORT_GAS ? true : false,
-    excludeContracts: ['mocks/', 'test/'],
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_ID || process.env.MATIC_API_ID,
-  },
-  docgen: {
-    // path: './docs',
-    // clear: true,
-    // runOnCompile: true,
-    pages: "files"
   },
 };
 
