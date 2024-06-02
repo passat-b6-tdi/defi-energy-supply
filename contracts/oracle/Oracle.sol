@@ -100,8 +100,6 @@ contract EnergyOracle is Parent, Pausable {
             );
         }
 
-        manager.MCGR().mint(msg.sender, manager.rewardAmount() * 2);
-
         // Add the new consumption to the array
         consumptions.push(EnergyConsumption(timestamp, consumption));
 
@@ -117,6 +115,8 @@ contract EnergyOracle is Parent, Pausable {
         // Update the median value in the storage
         consumptions.push(EnergyConsumption(timestamp, median));
         _energyConsumptions[user][supplierId] = consumptions;
+
+        manager.MCGR().mint(msg.sender, manager.rewardAmount() * 2);
 
         emit EnergyConsumptionRecorded(msg.sender, user, supplierId, timestamp, consumption);
     }
