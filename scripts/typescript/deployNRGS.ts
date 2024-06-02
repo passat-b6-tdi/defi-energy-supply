@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { NRGS } from '../../../typechain';
+import { NRGS } from '../../typechain';
 import { ContractFactory } from 'ethers';
 
 export async function deployNRGS(): Promise<NRGS> {

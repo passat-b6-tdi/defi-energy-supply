@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { ELU } from '../../../typechain';
+import { ELU } from '../../typechain';
 import { ContractFactory } from 'ethers';
 
 export async function deployELU(): Promise<ELU> {

@@ -1,27 +1,27 @@
 import { BytesLike, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
-import { Escrow } from '../../../typechain';
+import { Main } from '../../typechain';
 
 const MANAGER_ADDRESS: BytesLike = '0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40';
 
-export async function deployEscrow(manager_address: BytesLike): Promise<Escrow> {
+export async function deployMain(manager_address: BytesLike): Promise<Main> {
   if (manager_address == undefined || manager_address == '') {
     throw Error('Manager address is not defined');
   }
 
-  console.log(`Escrow deployment`);
+  console.log(`Main deployment`);
 
-  const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
-  const escrow = await Escrow.deploy(manager_address) as Escrow;
-  await escrow.deployed();
+  const Main: ContractFactory = await ethers.getContractFactory('Main');
+  const main = await Main.deploy(manager_address) as Main;
+  await main.deployed();
 
-  console.log(`Escrow deployed to ${escrow.address}`);
+  console.log(`Main deployed to ${main.address}`);
 
-  return escrow;
+  return main;
 }
 
 async function main() {
-  await deployEscrow(MANAGER_ADDRESS);
+  await deployMain(MANAGER_ADDRESS);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

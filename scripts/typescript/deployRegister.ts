@@ -1,27 +1,27 @@
 import { ethers } from 'hardhat';
-import { EnergyOracle } from '../../../typechain';
+import { Register } from '../../typechain';
 import { BytesLike, ContractFactory } from 'ethers';
 
 const MANAGER_ADDRESS: BytesLike = '0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40';
 
-export async function deployOracle(manager_address: BytesLike): Promise<EnergyOracle> {
+export async function deployRegister(manager_address: BytesLike): Promise<Register> {
   if (manager_address == undefined || manager_address == '') {
     throw Error('Manager address is not defined');
   }
 
-  console.log(`Oracle deployment`);
+  console.log(`Register deployment`);
 
-  const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-  const oracle = await EnergyOracle.deploy(manager_address) as EnergyOracle;
-  await oracle.deployed();
+  const Register: ContractFactory = await ethers.getContractFactory('Register');
+  const register = await Register.deploy(manager_address) as Register;
+  await register.deployed();
 
-  console.log(`EnergyOracle deployed to ${oracle.address}`);
+  console.log(`Register deployed to ${register.address}`);
 
-  return oracle;
+  return register;
 }
 
 async function main() {
-  await deployOracle(MANAGER_ADDRESS);
+  await deployRegister(MANAGER_ADDRESS);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

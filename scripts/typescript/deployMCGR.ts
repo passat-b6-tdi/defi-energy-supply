@@ -1,6 +1,6 @@
 import { ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
-import { MCGR } from '../../../typechain';
+import { MCGR } from '../../typechain';
 
 export async function deployMCGR(): Promise<MCGR> {
   console.log(`MCGR deployment`);

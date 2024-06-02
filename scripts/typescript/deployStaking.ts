@@ -1,6 +1,6 @@
 import { BytesLike, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
-import { StakingReward } from '../../../typechain';
+import { StakingReward } from '../../typechain';
 
 const MANAGER_ADDRESS: BytesLike = '0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40';
 

@@ -1,14 +1,14 @@
-export { deployMCGR } from './MCGR/deployMCGR';
-export { deployELU } from './ELU/deployELU';
-export { deployNRGS } from './NRGS/deployNRGS';
+export { deployMCGR } from './deployMCGR';
+export { deployELU } from './deployELU';
+export { deployNRGS } from './deployNRGS';
 
-export { deployManager } from './Manager/deployManager';
+export { deployManager } from './deployManager';
 
-export { deployEscrow } from './Escrow/deployEscrow';
-export { deployRegister } from './Register/deployRegister';
-export { deployStaking } from './Staking/deployStaking';
-export { deployOracle } from './Oracle/deployOracle';
+export { deployEscrow } from './deployEscrow';
+export { deployRegister } from './deployRegister';
+export { deployStaking } from './deployStaking';
+export { deployOracle } from './deployOracle';
 
-export { deployMain } from './Main/deployMain';
+export { deployMain } from './deployMain';
 
 

@@ -1,6 +1,6 @@
 import { BytesLike, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
-import { Manager } from '../../../typechain';
+import { Manager } from '../../typechain';
 
 const ELU_ADDRESS: BytesLike = '0xd31f9437602E985c19a3Ee11B35d76F5d1DA4235';
 const MCGR_ADDRESS: BytesLike = '0x2F176C9145DF9943f7ad31E4DEFC1290bDe54D32';
