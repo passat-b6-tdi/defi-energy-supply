@@ -22,13 +22,14 @@ async function main() {
   console.log("Deployment process - end");
 
 
-  console.log("Manager set up");
+  console.log("Manager set up - start");
   await manager.changeOracle(oracle.address);
   await manager.changeRegister(register.address);
   await manager.changeEscrow(escrow.address);
   await manager.changeStakingContract(stakingReward.address);
-  console.log("Done");
+  console.log("Manager set up - end");
 
+  // Roles definition
   admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
   minter_role = await mcgr.MINTER_BURNER_ROLE();
 
@@ -48,7 +49,7 @@ async function main() {
   supplier_role = await main.SUPPLIER_ROLE();
   user_role = await main.USER_ROLE();
 
-  console.log("Granting roles")
+  console.log("Granting roles - start")
   await register.grantRole(register_manger_role, main.address);
   await escrow.grantRole(escrow_manager, main.address);
   await stakingReward.grantRole(staking_manager_role, main.address);
@@ -60,7 +61,7 @@ async function main() {
   await nrgs.grantRole(register_role, register.address);
   await mcgr.grantRole(minter_role, stakingReward.address);
   await mcgr.grantRole(minter_role, oracle.address);
-  console.log("Done");
+  console.log("Granting roles - end")
 }
 
 main()
