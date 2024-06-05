@@ -4,26 +4,23 @@ The Energy Billing Automation System is a comprehensive solution designed to aut
 
 ## Addresses
 
-- Energy Supply token (NRGS token) [0xCd144d7bfE80D0300F1Ec64CbFc97109777F15Bc](https://mumbai.polygonscan.com/address/0xCd144d7bfE80D0300F1Ec64CbFc97109777F15Bc#code)
+- Electricity user token (ELU token) [0xa1d1519FB659b280d584C68E2582ec5020Fa25b1](https://sepolia.arbiscan.io/address/0xa1d1519FB659b280d584C68E2582ec5020Fa25b1#code)
 
-- Electricity user token (ELU token) [0xd31f9437602E985c19a3Ee11B35d76F5d1DA4235](https://mumbai.polygonscan.com/address/0xd31f9437602E985c19a3Ee11B35d76F5d1DA4235#code)
+- Microgrid token (MCGR token) [0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53](https://sepolia.arbiscan.io/address/0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53#code)
 
-- Microgrid token (MCGR token) [0x2F176C9145DF9943f7ad31E4DEFC1290bDe54D32](https://mumbai.polygonscan.com/address/0x2F176C9145DF9943f7ad31E4DEFC1290bDe54D32#code)
+- Energy Supply token (NRGS token) [0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76](https://sepolia.arbiscan.io/address/0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76#code)
 
-- Manager [0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40](https://mumbai.polygonscan.com/address/0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40#code)
+- Manager [0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf](https://sepolia.arbiscan.io/address/0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf#code)
 
-- Oracle [0xB99B7a11B0e6BF8F0220f7C4E9Bd5BA37d195da5](https://mumbai.polygonscan.com/address/0xB99B7a11B0e6BF8F0220f7C4E9Bd5BA37d195da5#code)
+- Oracle [0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4](https://sepolia.arbiscan.io/address/0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4#code)
 
-- Escrow [0x26367A9c65d9627EFd0c5eb62B984A13941aaBb6](https://mumbai.polygonscan.com/address/0x26367A9c65d9627EFd0c5eb62B984A13941aaBb6#code)
+- Escrow [0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C](https://sepolia.arbiscan.io/address/0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C#code)
 
-- Register [0xE59474b146d750022c5E3C9376d74D0Ca31D7008](https://mumbai.polygonscan.com/address/0xE59474b146d750022c5E3C9376d74D0Ca31D7008#code)
+- Register [0x92aC6a4d4D3ddFb7eA2B32847D6Cf89FAF4F948b](https://sepolia.arbiscan.io/address/0x92aC6a4d4D3ddFb7eA2B32847D6Cf89FAF4F948b#code)
 
-- Staking
+- Staking [0x5fC19FFcf9fA10B16A4892306862413f7E34EB09](https://sepolia.arbiscan.io/address/0x5fC19FFcf9fA10B16A4892306862413f7E34EB09#code)
 
-  - FixedPoint [0x19D1BDD343C3Ecdeb168D09573e5248B5F824e0E](https://mumbai.polygonscan.com/address/0x19D1BDD343C3Ecdeb168D09573e5248B5F824e0E#code)
-  - Staking [0xeCC73646565e17C253f230215a125E175476566b](https://mumbai.polygonscan.com/address/0xeCC73646565e17C253f230215a125E175476566b#code)
-
-- Main [0xcF81B08cbCa47fcbB4669c002774c7C405AD67dD](https://mumbai.polygonscan.com/address/0xcF81B08cbCa47fcbB4669c002774c7C405AD67dD#code)
+- Main [0x8759fe749f3feDf0A7319C83551bd475Cd6c2201](https://sepolia.arbiscan.io/address/0x8759fe749f3feDf0A7319C83551bd475Cd6c2201#code)
 
 ## Features
 
