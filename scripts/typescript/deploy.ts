@@ -1,24 +1,74 @@
 import hre, { ethers } from 'hardhat';
 import { ELU, EnergyOracle, Escrow, MCGR, Main, Manager, NRGS, Register, StakingReward } from '../../typechain';
 import { deployMCGR, deployELU, deployNRGS, deployManager, deployEscrow, deployRegister, deployStaking, deployMain, deployOracle } from './index';
+import { ContractFactory } from 'ethers';
 
 let admin_role: string, minter_role: string, escrow_manager: string, register_role: string, energy_oracle_manager_role: string, oracle_provider_role: string, _escrow_: string, register_manger_role: string, staking_manager_role: string, main_manager_role: string, supplier_role: string, user_role: string;
 
 async function main() {
+  const [deployer] = await ethers.getSigners();
+
   console.log("Deployment process - start");
 
-  const mcgr: MCGR = await deployMCGR();
-  const nrgs: NRGS = await deployNRGS();
-  const elu: ELU = await deployELU();
+  console.log(`ELU deployment`);
+  const ELU: ContractFactory = await ethers.getContractFactory('ELU');
+  const elu = await ELU.deploy() as ELU;
+  await elu.deployed();
+  console.log(`ELU deployed to ${elu.address}`);
 
-  const manager: Manager = await deployManager(elu.address, mcgr.address, nrgs.address);
+  console.log(`MCGR deployment`);
+  const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
+  const mcgr = await MCGR.deploy() as MCGR;
+  await mcgr.deployed();
+  console.log(`MCGR deployed to ${mcgr.address}`);
 
-  const escrow: Escrow = await deployEscrow(manager.address);
-  const register: Register = await deployRegister(manager.address);
-  const stakingReward: StakingReward = await deployStaking(manager.address);
+  console.log(`NRGS deployment`);
+  const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
+  const nrgs = await NRGS.deploy() as NRGS;
+  await nrgs.deployed();
+  console.log(`NRGS deployed to ${nrgs.address}`);
 
-  const oracle: EnergyOracle = await deployOracle(manager.address);
-  const main: Main = await deployMain(manager.address);
+  console.log(`Manager deployment`);
+  const feeReceiver = deployer.address;
+  const reward = 10;
+  const tolerance = 5;
+  const fees = 10;
+
+  const Manager: ContractFactory = await ethers.getContractFactory('Manager');
+  const manager = await Manager.deploy(mcgr.address, elu.address, nrgs.address, feeReceiver, reward, tolerance, fees) as Manager;
+  await manager.deployed();
+  console.log(`Manager deployed to ${manager.address}`);
+
+  console.log(`Escrow deployment`);
+  const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
+  const escrow = await Escrow.deploy(manager.address) as Escrow;
+  await escrow.deployed();
+  console.log(`Escrow deployed to ${escrow.address}`);
+
+  console.log(`Oracle deployment`);
+  const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
+  const oracle = await EnergyOracle.deploy(manager.address) as EnergyOracle;
+  await oracle.deployed();
+  console.log(`EnergyOracle deployed to ${oracle.address}`);
+
+  console.log(`Register deployment`);
+  const Register: ContractFactory = await ethers.getContractFactory('Register');
+  const register = await Register.deploy(manager.address) as Register;
+  await register.deployed();
+  console.log(`Register deployed to ${register.address}`);
+
+  console.log(`StakingReward deployment`);
+  const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward');
+  const stakingReward = await StakingReward.deploy(manager.address) as StakingReward;
+  await stakingReward.deployed();
+  console.log(`StakingReward deployed to ${stakingReward.address}`);
+
+  console.log(`Main deployment`);
+  const Main: ContractFactory = await ethers.getContractFactory('Main');
+  const main = await Main.deploy(manager.address) as Main;
+  await main.deployed();
+  console.log(`Main deployed to ${main.address}`);
+
   console.log("Deployment process - end");
 
 
@@ -30,14 +80,14 @@ async function main() {
   console.log("Manager set up - end");
 
   // Roles definition
-  admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
+  // admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
+  // energy_oracle_manager_role = await oracle.ENERGY_ORACLE_MANAGER_ROLE();
   minter_role = await mcgr.MINTER_BURNER_ROLE();
 
   register_role = await nrgs.REGISTER_ROLE();
 
   escrow_manager = await escrow.ESCROW_MANAGER_ROLE();
 
-  energy_oracle_manager_role = await oracle.ENERGY_ORACLE_MANAGER_ROLE();
   oracle_provider_role = await oracle.ORACLE_PROVIDER_ROLE();
   _escrow_ = await oracle.ESCROW();
 
