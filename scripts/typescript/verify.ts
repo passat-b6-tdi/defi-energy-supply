@@ -15,7 +15,6 @@ const Escrow = '0x26367A9c65d9627EFd0c5eb62B984A13941aaBb6';
 const Main = '0xcF81B08cbCa47fcbB4669c002774c7C405AD67dD';
 const Oracle = '0xB99B7a11B0e6BF8F0220f7C4E9Bd5BA37d195da5';
 const Register = '0xE59474b146d750022c5E3C9376d74D0Ca31D7008';
-const FixedPointMath = '0x19D1BDD343C3Ecdeb168D09573e5248B5F824e0E'
 const StakingReward = '0xeCC73646565e17C253f230215a125E175476566b'
 
 
@@ -86,10 +85,6 @@ async function verifyRegister(manager_address: BytesLike): Promise<void> {
 }
 
 async function verifyStaking(manager_address: BytesLike): Promise<void> {
-	if (FixedPointMath != undefined && FixedPointMath != '') {
-		await verifyContract(FixedPointMath);
-	}
-
 	if (StakingReward != undefined && StakingReward != '') {
 		await verifyContract(StakingReward, [manager_address]);
 	}

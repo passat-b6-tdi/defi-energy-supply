@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { Escrow, MCGR, Manager, EnergyOracle, StakingReward, FixedPointMath, Register, Main } from '../typechain';
+import { Escrow, MCGR, Manager, EnergyOracle, StakingReward, Register, Main } from '../typechain';
 import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 

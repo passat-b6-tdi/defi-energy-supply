@@ -5,19 +5,9 @@ import { StakingReward } from '../../typechain';
 const MANAGER_ADDRESS: BytesLike = '0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40';
 
 export async function deployStaking(manager_address: BytesLike): Promise<StakingReward> {
-  console.log(`FixedPointMath deployment`);
-
-  const FixedPointMath: ContractFactory = await ethers.getContractFactory('FixedPointMath');
-  const fixedPoint = await FixedPointMath.deploy();
-  await fixedPoint.deployed();
-
-  console.log(`FixedPointMath deployed to ${fixedPoint.address}`);
-
   console.log(`StakingReward deployment`);
 
-  const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward', {
-    libraries: { FixedPointMath: fixedPoint.address },
-  });
+  const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward');
   const stakingReward = await StakingReward.deploy(manager_address) as StakingReward;
   await stakingReward.deployed();
 
