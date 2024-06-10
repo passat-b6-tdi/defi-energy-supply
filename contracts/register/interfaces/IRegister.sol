@@ -34,13 +34,11 @@ interface IRegister {
      * @notice Unregisters an Energy supplier.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
-     * - `supplier` must not be address 0.
      * - `supplier` must have NRGS token.
      *
-     * @param supplier The address of the supplier.
      * @param supplierId The ID of the supplier.
      */
-    function unRegisterSupplier(address supplier, uint256 supplierId) external;
+    function unRegisterSupplier(uint256 supplierId) external;
 
     /**
      * @notice Unregisters an Electricity user.

@@ -97,17 +97,12 @@ contract Register is Parent, ERC1155Holder {
      * @notice Unregisters an Energy supplier.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
-     * - `supplier` must not be address 0.
      * - `supplier` must have NRGS token.
      *
-     * @param supplier The address of the supplier.
      * @param supplierId The ID of the supplier.
      */
-    function unRegisterSupplier(
-        address supplier,
-        uint256 supplierId
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(supplier) {
-        require(manager.NRGS().ownerOf(supplierId) == supplier, "Register: supplier is not correct");
+    function unRegisterSupplier(uint256 supplierId) external onlyRole(REGISTER_MANAGER_ROLE) {
+        address supplier = manager.NRGS().ownerOf(supplierId);
 
         manager.NRGS().burn(supplierId);
 

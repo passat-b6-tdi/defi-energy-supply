@@ -85,9 +85,9 @@ describe('Register', function () {
     expect(stakingReward.address).to.be.properAddress;
     expect(register.address).to.be.properAddress;
 
-    expect(await mcgr.name()).to.be.eq('Mictrogrid Reward token');
+    expect(await mcgr.name()).to.be.eq('Mictrogrid Reward Token');
     expect(await mcgr.symbol()).to.be.eq('MCGR');
-    expect(await nrgs.name()).to.be.eq('Energy Supply token');
+    expect(await nrgs.name()).to.be.eq('Energy Supplier Token');
     expect(await nrgs.symbol()).to.be.eq('NRGS');
 
     expect(await mcgr.hasRole(admin_role, deployer.address)).to.be.true;
@@ -149,7 +149,7 @@ describe('Register', function () {
       expect(sup.pendingReward).to.be.eq(0);
       expect(suppliers).to.eq(10);
 
-      const unRegistration = await register.unRegisterSupplier(deployer.address, 5);
+      const unRegistration = await register.unRegisterSupplier(5);
 
       now = await time.latest();
 
@@ -201,20 +201,20 @@ describe('Register', function () {
       await expect(register.connect(otherAcc).registerElectricityUser(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,
       );
-      await expect(register.connect(otherAcc).unRegisterSupplier(otherAcc.address, 10)).to.be.revertedWith(errorMsg);
+      await expect(register.connect(otherAcc).unRegisterSupplier(10)).to.be.revertedWith(errorMsg);
       await expect(register.connect(otherAcc).unRegisterElectricityUser(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,
       );
     });
 
     it('Zero Address Check', async () => {
-      const { register, deployer } = await loadFixture(deployFixture);
+      const { register } = await loadFixture(deployFixture);
       const addressZero = ethers.constants.AddressZero;
       const errorMsg = 'Parent: account is address 0';
 
       await expect(register.registerSupplier(addressZero, 10, 5)).to.be.revertedWith(errorMsg);
       await expect(register.registerElectricityUser(addressZero, 10)).to.be.revertedWith(errorMsg);
-      await expect(register.unRegisterSupplier(addressZero, 10)).to.be.revertedWith(errorMsg);
+      await expect(register.unRegisterSupplier(10)).to.be.revertedWith('ERC721: invalid token ID');
       await expect(register.unRegisterElectricityUser(addressZero, 10)).to.be.revertedWith(errorMsg);
     });
 
@@ -223,7 +223,7 @@ describe('Register', function () {
       const errorMsgForSupplier = 'ERC721: invalid token ID';
       const errorMsgForUser = 'Register: supplier is not correct';
 
-      await expect(register.unRegisterSupplier(deployer.address, 10)).to.be.revertedWith(errorMsgForSupplier);
+      await expect(register.unRegisterSupplier(10)).to.be.revertedWith(errorMsgForSupplier);
       await expect(register.unRegisterElectricityUser(deployer.address, 10)).to.be.revertedWith(errorMsgForUser);
     });
   });

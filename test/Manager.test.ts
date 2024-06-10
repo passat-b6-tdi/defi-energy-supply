@@ -108,9 +108,9 @@ describe('Manager', function () {
     expect(register.address).to.be.properAddress;
     expect(escrow.address).to.be.properAddress;
 
-    expect(await mcgr.name()).to.be.eq('Mictrogrid Reward token');
+    expect(await mcgr.name()).to.be.eq('Mictrogrid Reward Token');
     expect(await mcgr.symbol()).to.be.eq('MCGR');
-    expect(await nrgs.name()).to.be.eq('Energy Supply token');
+    expect(await nrgs.name()).to.be.eq('Energy Supplier Token');
     expect(await nrgs.symbol()).to.be.eq('NRGS');
 
     expect(await mcgr.hasRole(admin_role, deployer.address)).to.be.true;

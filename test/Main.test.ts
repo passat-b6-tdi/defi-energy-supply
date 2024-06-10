@@ -17,9 +17,7 @@ describe('Main', function () {
     _escrow_: string,
     register_manger_role: string,
     staking_manager_role: string,
-    main_manager_role: string,
-    supplier_role: string,
-    user_role: string;
+    main_manager_role: string;
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
@@ -93,8 +91,6 @@ describe('Main', function () {
     staking_manager_role = await stakingReward.STAKING_MANAGER_ROLE();
 
     main_manager_role = await main.MAIN_MANAGER_ROLE();
-    supplier_role = await main.SUPPLIER_ROLE();
-    user_role = await main.USER_ROLE();
 
     await register.grantRole(register_manger_role, main.address);
     await escrow.grantRole(escrow_manager, main.address);
@@ -333,10 +329,10 @@ describe('Main', function () {
     await expect(main.connect(otherAcc).unRegisterSupplier(0)).to.revertedWith(errorMsg);
   });
 
-  it('OnlyRole SUPPLIER_ROLE modifier', async () => {
+  it('OnlyRole Energy Supplier modifier', async () => {
     const { main, otherAcc } = await loadFixture(deployFixture);
 
-    const errorMsg = `AccessControl: account ${otherAccAddress} is missing role ${supplier_role}`;
+    const errorMsg = `ERC721: invalid token ID`;
 
     await expect(main.connect(otherAcc).registerElectricityUser(otherAccAddress, 10)).to.revertedWith(errorMsg);
     await expect(main.connect(otherAcc).unRegisterElectricityUser(otherAccAddress, 0)).to.revertedWith(errorMsg);
@@ -346,8 +342,8 @@ describe('Main', function () {
   it('OnlyRole USER_ROLE modifier', async () => {
     const { main, otherAcc } = await loadFixture(deployFixture);
 
-    const errorMsg = `AccessControl: account ${otherAccAddress} is missing role ${user_role}`;
+    const errorMsg = `Main: only Electricity Users to Supplier`;
 
-    await expect(main.connect(otherAcc).payForElectricity(10, 0)).to.revertedWith(errorMsg);
+    await expect(main.connect(otherAcc).payForElectricity(10, 10)).to.revertedWith(errorMsg);
   });
 });
