@@ -116,7 +116,7 @@ contract EnergyOracle is Parent, Pausable {
 
         manager.MCGR().mint(msg.sender, manager.rewardAmount() * 2);
 
-        emit EnergyConsumptionRecorded(msg.sender, user, supplierId, timestamp, consumption);
+        emit EnergyConsumptionRecorded(msg.sender, user, supplierId, consumption, timestamp);
     }
 
     /// @notice Gets the energy consumption for a user, token
@@ -146,7 +146,7 @@ contract EnergyOracle is Parent, Pausable {
         // Clear the energy consumption array
         delete _energyConsumptions[user][supplierId];
 
-        emit EnergyConsumptionSent(msg.sender, user, supplierId, block.timestamp, consumption);
+        emit EnergyConsumptionSent(msg.sender, user, supplierId, consumption, block.timestamp);
 
         return consumption;
     }
