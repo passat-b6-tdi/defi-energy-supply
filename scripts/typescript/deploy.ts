@@ -13,18 +13,14 @@ import {
 } from './index';
 import { ContractFactory } from 'ethers';
 
-let admin_role: string,
+let
   minter_role: string,
   escrow_manager: string,
   register_role: string,
-  energy_oracle_manager_role: string,
   energy_oracle_provider_role: string,
   _escrow_: string,
   register_manger_role: string,
-  staking_manager_role: string,
-  main_manager_role: string,
-  supplier_role: string,
-  user_role: string;
+  staking_manager_role: string;
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -108,8 +104,6 @@ async function main() {
   console.log('Manager set up - end');
 
   // Roles definition
-  // admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
-  // energy_oracle_manager_role = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
   minter_role = await mcgr.MINTER_BURNER_ROLE();
 
   register_role = await nrgs.REGISTER_ROLE();
@@ -122,10 +116,6 @@ async function main() {
   register_manger_role = await register.REGISTER_MANAGER_ROLE();
 
   staking_manager_role = await stakingReward.STAKING_MANAGER_ROLE();
-
-  main_manager_role = await main.MAIN_MANAGER_ROLE();
-  supplier_role = await main.SUPPLIER_ROLE();
-  user_role = await main.USER_ROLE();
 
   console.log('Granting roles - start');
   await register.grantRole(register_manger_role, main.address);

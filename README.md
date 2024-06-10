@@ -4,23 +4,23 @@ The Energy Billing Automation System is a comprehensive solution designed to aut
 
 ## Addresses
 
-- Electricity Users Token (ELU token) [0xa1d1519FB659b280d584C68E2582ec5020Fa25b1](https://sepolia.arbiscan.io/address/0xa1d1519FB659b280d584C68E2582ec5020Fa25b1#code)
+- Electricity Users Token (ELU token) [0x56FC2b9666fE0721dCbD1F972541507e15e59b16](https://sepolia.arbiscan.io/address/0x56FC2b9666fE0721dCbD1F972541507e15e59b16#code)
 
-- Microgrid Token (MCGR token) [0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53](https://sepolia.arbiscan.io/address/0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53#code)
+- Microgrid Token (MCGR token) [0x887938BaC3bC46Af0930F8afac88C2f15BaEcdb1](https://sepolia.arbiscan.io/address/0x887938BaC3bC46Af0930F8afac88C2f15BaEcdb1#code)
 
-- Energy Supplier Token (NRGS token) [0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76](https://sepolia.arbiscan.io/address/0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76#code)
+- Energy Supplier Token (NRGS token) [0x1a947BdFb306cEc7afE1D324f0A8397Fa1f88887](https://sepolia.arbiscan.io/address/0x1a947BdFb306cEc7afE1D324f0A8397Fa1f88887#code)
 
-- Manager [0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf](https://sepolia.arbiscan.io/address/0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf#code)
+- Manager [0xCa9B2772c9ce9746234c9b0eFdAc7A79E7b96144](https://sepolia.arbiscan.io/address/0xCa9B2772c9ce9746234c9b0eFdAc7A79E7b96144#code)
 
-- EnergyOracle [0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4](https://sepolia.arbiscan.io/address/0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4#code)
+- Escrow [0x33589584E70881f268257Add96867B2E2eaB793A](https://sepolia.arbiscan.io/address/0x33589584E70881f268257Add96867B2E2eaB793A#code)
 
-- Escrow [0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C](https://sepolia.arbiscan.io/address/0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C#code)
+- EnergyOracle [0xb3b2e4820BCC39abd12e2689b4c9F3c27D352DC9](https://sepolia.arbiscan.io/address/0xb3b2e4820BCC39abd12e2689b4c9F3c27D352DC9#code)
 
-- Register [0x92aC6a4d4D3ddFb7eA2B32847D6Cf89FAF4F948b](https://sepolia.arbiscan.io/address/0x92aC6a4d4D3ddFb7eA2B32847D6Cf89FAF4F948b#code)
+- Register [0xAbB1CeFB5f90Ce1114af146606101a795D43d5a1](https://sepolia.arbiscan.io/address/0xAbB1CeFB5f90Ce1114af146606101a795D43d5a1#code)
 
-- Staking [0x5fC19FFcf9fA10B16A4892306862413f7E34EB09](https://sepolia.arbiscan.io/address/0x5fC19FFcf9fA10B16A4892306862413f7E34EB09#code)
+- Staking [0x6788754C34aed23F54B0cd78A63574d314F380A5](https://sepolia.arbiscan.io/address/0x6788754C34aed23F54B0cd78A63574d314F380A5#code)
 
-- Main [0x8759fe749f3feDf0A7319C83551bd475Cd6c2201](https://sepolia.arbiscan.io/address/0x8759fe749f3feDf0A7319C83551bd475Cd6c2201#code)
+- Main [0x68a9905ECe4DD58DdEeCCc660B87816CCF6AB9B7](https://sepolia.arbiscan.io/address/0x68a9905ECe4DD58DdEeCCc660B87816CCF6AB9B7#code)
 
 ## Features
 
