@@ -39,10 +39,10 @@ _Emitted when a manager has changed the `staking` link to another contract_
 ### OracleChanged
 
 ```solidity
-event OracleChanged(address sender, contract IEnergyOracle oracle)
+event OracleChanged(address sender, contract IEnergyOracle energyOracle)
 ```
 
-_Emitted when a manager has changed the `oracle` link to another contract_
+_Emitted when a manager has changed the `energyOracle` link to another contract_
 
 ### RegisterChanged
 
@@ -132,13 +132,13 @@ contract IStakingReward staking
 
 _Staking contract_
 
-### oracle
+### energyOracle
 
 ```solidity
-contract IEnergyOracle oracle
+contract IEnergyOracle energyOracle
 ```
 
-_Oracle contract_
+_EnergyOracle contract_
 
 ### register
 
@@ -285,22 +285,22 @@ Requirements:
 | ---- | ---- | ----------- |
 | _staking | contract IStakingReward | IStakingReward |
 
-### changeOracle
+### changeEnergyOracle
 
 ```solidity
-function changeOracle(contract IEnergyOracle _oracle) external
+function changeEnergyOracle(contract IEnergyOracle _energyOracle) external
 ```
 
-Changes `oracle` link to another contract.
+Changes `energyOracle` link to another contract.
 Requirements:
 - `msg.sender` must have `MANAGER_ROLE`
-- `_oracle` must be not address 0
+- `_energyOracle` must be not address 0
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _oracle | contract IEnergyOracle | IEnergyOracle |
+| _energyOracle | contract IEnergyOracle | IEnergyOracle |
 
 ### changeRegister
 

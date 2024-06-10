@@ -34,13 +34,13 @@ function staking() external view returns (contract IStakingReward)
 
 _Staking contract_
 
-### oracle
+### energyOracle
 
 ```solidity
-function oracle() external view returns (contract IEnergyOracle)
+function energyOracle() external view returns (contract IEnergyOracle)
 ```
 
-_Staking contract_
+_Energy Oracle contract_
 
 ### escrow
 

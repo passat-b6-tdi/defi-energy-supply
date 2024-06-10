@@ -2,10 +2,10 @@
 
 ## EscrowMock
 
-### oracle
+### energyOracle
 
 ```solidity
-contract IEnergyOracle oracle
+contract IEnergyOracle energyOracle
 ```
 
 ### consumption
@@ -17,7 +17,7 @@ uint256 consumption
 ### constructor
 
 ```solidity
-constructor(contract IEnergyOracle _oracle) public
+constructor(contract IEnergyOracle _energyOracle) public
 ```
 
 ### read

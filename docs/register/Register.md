@@ -5,7 +5,7 @@
 ### SupplierRegistered
 
 ```solidity
-event SupplierRegistered(address sender, address supplier, uint256 timestamp)
+event SupplierRegistered(address sender, address supplier, uint256 supplierId, uint256 amountOfUsers, uint256 timestamp)
 ```
 
 _Emmited when a user registers as an Energy supplier_
@@ -13,7 +13,7 @@ _Emmited when a user registers as an Energy supplier_
 ### SupplierUnregistered
 
 ```solidity
-event SupplierUnregistered(address sender, address supplier, uint256 timestamp)
+event SupplierUnregistered(address sender, address supplier, uint256 supplierId, uint256 timestamp)
 ```
 
 _Emmited when a user unregisters as an Energy supplier_
@@ -21,7 +21,7 @@ _Emmited when a user unregisters as an Energy supplier_
 ### UserRegistered
 
 ```solidity
-event UserRegistered(address sender, address user, uint256 timestamp)
+event UserRegistered(address sender, address user, uint256 usersSupplierId, uint256 timestamp)
 ```
 
 _Emmited when a user registers as an Electricity user_
@@ -29,7 +29,7 @@ _Emmited when a user registers as an Electricity user_
 ### UserUnregistered
 
 ```solidity
-event UserUnregistered(address sender, address user, uint256 timestamp)
+event UserUnregistered(address sender, address user, uint256 usersSupplierId, uint256 timestamp)
 ```
 
 _Emmited when a user unregisters as an Electricity user_
@@ -75,7 +75,7 @@ Requirements:
 ### registerElectricityUser
 
 ```solidity
-function registerElectricityUser(address user, uint256 supplierId) external
+function registerElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
 Registers an Electricity user.
@@ -88,7 +88,7 @@ Requirements:
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | user | address | The address of the user. |
-| supplierId | uint256 | The ID of the supplier. |
+| usersSupplierId | uint256 | The ID of the supplier for the user. |
 
 ### unRegisterSupplier
 
@@ -112,7 +112,7 @@ Requirements:
 ### unRegisterElectricityUser
 
 ```solidity
-function unRegisterElectricityUser(address user, uint256 supplierId) external
+function unRegisterElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
 Unregisters an Electricity user.
@@ -126,7 +126,7 @@ Requirements:
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | user | address | The address of the user. |
-| supplierId | uint256 | The ID of the supplier. |
+| usersSupplierId | uint256 | The ID of the supplier for the user. |
 
 ### supportsInterface
 

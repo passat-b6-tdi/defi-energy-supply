@@ -1,23 +1,23 @@
 # Summary
 
 - contracts
-  - [Parent](docs/contracts/parent.md)
+  - [Parent](docs/parent.md)
   - escrow
-    - [Escrow](docs/contracts/escrow/escrow.md)
+    - [Escrow](docs/escrow/escrow.md)
   - main
-    - [Main](docs/contracts/main/main.md)
+    - [Main](docs/main/main.md)
   - manager
-    - [Manager](docs/contracts/manager/manager.md)
-  - oracle
-    - [Oracle](docs/contracts/oracle/oracle.md)
+    - [Manager](docs/manager/manager.md)
+  - energy-oracle
+    - [Oracle](docs/energy-oracle/energyoracle.md)
   - register
-    - [Register](docs/contracts/register/register.md)
+    - [Register](docs/register/register.md)
   - staking
-    - [StakingReward](docs/contracts/staking/stakingreward.md)
+    - [StakingReward](docs/staking/stakingreward.md)
   - tokens
     - ERC1155
-      - [ELU](docs/contracts/tokens/erc1155/elu.md)
+      - [ELU](docs/tokens/erc1155/elu.md)
     - ERC20
-      - [MCGR](docs/contracts/tokens/erc20/mcgr.md)
+      - [MCGR](docs/tokens/erc20/mcgr.md)
     - ERC721
-      - [NRGS](docs/contracts/tokens/erc721/nrgs.md)
+      - [NRGS](docs/tokens/erc721/nrgs.md)

@@ -47,7 +47,7 @@ _Grants `DEFAULT_ADMIN_ROLE`, `MAIN_MANAGER_ROLE`,`SUPPLIER_ROLE` and `USER_ROLE
 ### registerSupplier
 
 ```solidity
-function registerSupplier(address supplier, uint256 supplierId, uint256 buildingsNumber) external
+function registerSupplier(address supplier, uint256 supplierId, uint256 amountOfUsers) external
 ```
 
 Registers an Energy supplier.
@@ -62,12 +62,12 @@ Requirements:
 | ---- | ---- | ----------- |
 | supplier | address |  |
 | supplierId | uint256 | The ID of the supplier. |
-| buildingsNumber | uint256 | The number of buildings for the supplier. |
+| amountOfUsers | uint256 | The number of users to whom the supplier can provide electricity. |
 
 ### registerElectricityUser
 
 ```solidity
-function registerElectricityUser(address user, uint256 supplierId) external
+function registerElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
 Registers an Electricity user.
@@ -80,7 +80,7 @@ Requirements:
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | user | address |  |
-| supplierId | uint256 | The ID of the supplier. |
+| usersSupplierId | uint256 | The ID of the supplier for the user. |
 
 ### unRegisterSupplier
 
@@ -102,7 +102,7 @@ Requirements:
 ### unRegisterElectricityUser
 
 ```solidity
-function unRegisterElectricityUser(address user, uint256 supplierId) external
+function unRegisterElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
 Unregisters an Electricity user.
@@ -115,12 +115,12 @@ Requirements:
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | user | address |  |
-| supplierId | uint256 | The ID of the supplier. |
+| usersSupplierId | uint256 | The ID of the supplier for the user. |
 
 ### payForElectricity
 
 ```solidity
-function payForElectricity(uint256 supplierId, uint256 amountToPay) external
+function payForElectricity(uint256 usersSupplierId, uint256 amountToPay) external
 ```
 
 Pays for electricity.
@@ -133,7 +133,7 @@ Requirements:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplierId | uint256 | The ID of the supplier. |
+| usersSupplierId | uint256 | The ID of the supplier for the user. |
 | amountToPay | uint256 | The amount to pay for electricity. |
 
 ### getRewards

@@ -18,7 +18,7 @@ who can retrieve the consumption data._
 ### EnergyConsumptionRecorded
 
 ```solidity
-event EnergyConsumptionRecorded(address sender, address user, uint256 supplierId, uint256 timestamp, uint256 consumption)
+event EnergyConsumptionRecorded(address sender, address whoseConsumption, uint256 supplierId, uint256 consumption, uint256 timestamp)
 ```
 
 _Emmited when an Oracle provider_
@@ -26,18 +26,10 @@ _Emmited when an Oracle provider_
 ### EnergyConsumptionSent
 
 ```solidity
-event EnergyConsumptionSent(address sender, address user, uint256 supplierId, uint256 timestamp, uint256 consumption)
+event EnergyConsumptionSent(address sender, address whoseConsumption, uint256 supplierId, uint256 consumption, uint256 timestamp)
 ```
 
 _Emmited when called updateEnergyConsumptionsAndGetResult()_
-
-### OutlierDetected
-
-```solidity
-event OutlierDetected(address sender, address user, uint256 supplierId, uint256 timestamp, uint256 consumption)
-```
-
-_Emmited when an Outlier values provided_
 
 ### ENERGY_ORACLE_MANAGER_ROLE
 
