@@ -30,8 +30,8 @@ describe('Escrow', function () {
     await elu.deployed();
 
     const OracleMock: ContractFactory = await ethers.getContractFactory('OracleMock');
-    const oracle: OracleMock = (await OracleMock.deploy()) as OracleMock;
-    await oracle.deployed();
+    const energyOracle: OracleMock = (await OracleMock.deploy()) as OracleMock;
+    await energyOracle.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
@@ -45,7 +45,7 @@ describe('Escrow', function () {
     )) as Manager;
     await manager.deployed();
 
-    await manager.changeOracle(oracle.address);
+    await manager.changeEnergyOracle(energyOracle.address);
 
     const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
     const escrow: Escrow = (await Escrow.deploy(manager.address)) as Escrow;
@@ -62,7 +62,7 @@ describe('Escrow', function () {
 
     await escrow.grantRole(escrow_manager, main.address);
 
-    return { mcgr, elu, ELU, nrgs, NRGS, manager, escrow, main, oracle, deployer, otherAcc };
+    return { mcgr, elu, ELU, nrgs, NRGS, manager, escrow, main, energyOracle, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {

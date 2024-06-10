@@ -76,9 +76,9 @@ async function main() {
 
   console.log(`Oracle deployment`);
   const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-  const oracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
-  await oracle.deployed();
-  console.log(`EnergyOracle deployed to ${oracle.address}`);
+  const energyOracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
+  await energyOracle.deployed();
+  console.log(`EnergyOracle deployed to ${energyOracle.address}`);
 
   console.log(`Register deployment`);
   const Register: ContractFactory = await ethers.getContractFactory('Register');
@@ -101,7 +101,7 @@ async function main() {
   console.log('Deployment process - end');
 
   console.log('Manager set up - start');
-  await manager.changeOracle(oracle.address);
+  await manager.changeEnergyOracle(energyOracle.address);
   await manager.changeRegister(register.address);
   await manager.changeEscrow(escrow.address);
   await manager.changeStakingContract(stakingReward.address);
@@ -109,15 +109,15 @@ async function main() {
 
   // Roles definition
   // admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
-  // energy_oracle_manager_role = await oracle.ENERGY_ORACLE_MANAGER_ROLE();
+  // energy_oracle_manager_role = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
   minter_role = await mcgr.MINTER_BURNER_ROLE();
 
   register_role = await nrgs.REGISTER_ROLE();
 
   escrow_manager = await escrow.ESCROW_MANAGER_ROLE();
 
-  oracle_provider_role = await oracle.ORACLE_PROVIDER_ROLE();
-  _escrow_ = await oracle.ESCROW();
+  oracle_provider_role = await energyOracle.ORACLE_PROVIDER_ROLE();
+  _escrow_ = await energyOracle.ESCROW();
 
   register_manger_role = await register.REGISTER_MANAGER_ROLE();
 
@@ -132,13 +132,13 @@ async function main() {
   await escrow.grantRole(escrow_manager, main.address);
   await stakingReward.grantRole(staking_manager_role, main.address);
   await stakingReward.grantRole(staking_manager_role, register.address);
-  await oracle.grantRole(oracle_provider_role, main.address);
-  await oracle.grantRole(_escrow_, escrow.address);
+  await energyOracle.grantRole(oracle_provider_role, main.address);
+  await energyOracle.grantRole(_escrow_, escrow.address);
 
   await elu.grantRole(register_role, register.address);
   await nrgs.grantRole(register_role, register.address);
   await mcgr.grantRole(minter_role, stakingReward.address);
-  await mcgr.grantRole(minter_role, oracle.address);
+  await mcgr.grantRole(minter_role, energyOracle.address);
   console.log('Granting roles - end');
 }
 

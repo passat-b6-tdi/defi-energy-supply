@@ -55,8 +55,8 @@ describe('Manager', function () {
     await register.deployed();
 
     const Oracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-    const oracle: EnergyOracle = (await Oracle.deploy(manager.address)) as EnergyOracle;
-    await oracle.deployed();
+    const energyOracle: EnergyOracle = (await Oracle.deploy(manager.address)) as EnergyOracle;
+    await energyOracle.deployed();
 
     const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
     const escrow: Escrow = (await Escrow.deploy(manager.address)) as Escrow;
@@ -90,7 +90,7 @@ describe('Manager', function () {
       NRGS,
       stakingReward,
       StakingReward,
-      oracle,
+      energyOracle,
       register,
       escrow,
       deployer,
@@ -214,11 +214,11 @@ describe('Manager', function () {
     });
 
     it('Manager can change Oracle', async () => {
-      const { manager, oracle } = await loadFixture(deployFixture);
+      const { manager, energyOracle } = await loadFixture(deployFixture);
 
-      const changes = await manager.changeOracle(oracle.address);
+      const changes = await manager.changeEnergyOracle(energyOracle.address);
 
-      expect(await manager.oracle()).to.be.eq(oracle.address);
+      expect(await manager.energyOracle()).to.be.eq(energyOracle.address);
       expect(changes).to.emit(manager, 'OracleChanged');
     });
 
@@ -299,7 +299,7 @@ describe('Manager', function () {
       await expect(manager.connect(otherAcc).changeELU(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeStakingContract(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeRegister(otherAcc.address)).to.be.revertedWith(errorMsg);
-      await expect(manager.connect(otherAcc).changeOracle(otherAcc.address)).to.be.revertedWith(errorMsg);
+      await expect(manager.connect(otherAcc).changeEnergyOracle(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeEscrow(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeRewardAmount(20)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeTolerance(20)).to.be.revertedWith(errorMsg);
@@ -317,7 +317,7 @@ describe('Manager', function () {
       await expect(manager.changeELU(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeStakingContract(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeRegister(addressZero)).to.be.revertedWith(errorMsg);
-      await expect(manager.changeOracle(addressZero)).to.be.revertedWith(errorMsg);
+      await expect(manager.changeEnergyOracle(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeEscrow(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeFeeReceiver(addressZero)).to.be.revertedWith(errorMsg);
     });

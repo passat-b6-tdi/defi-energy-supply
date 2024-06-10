@@ -21,8 +21,8 @@ contract Manager is AccessControl, IManager {
     event NRGSchanged(address indexed sender, INRGS newNRGS);
     /// @dev Emitted when a manager has changed the `staking` link to another contract
     event StakingChanged(address indexed sender, IStakingReward staking);
-    /// @dev Emitted when a manager has changed the `oracle` link to another contract
-    event OracleChanged(address indexed sender, IEnergyOracle oracle);
+    /// @dev Emitted when a manager has changed the `energyOracle` link to another contract
+    event OracleChanged(address indexed sender, IEnergyOracle energyOracle);
     /// @dev Emitted when a manager has changed the `register` link to another contract
     event RegisterChanged(address indexed sender, IRegister register);
     /// @dev Emitted when a manager has changed the `escrow` link to another contract
@@ -53,8 +53,8 @@ contract Manager is AccessControl, IManager {
 
     /// @dev Staking contract
     IStakingReward public staking;
-    /// @dev Oracle contract
-    IEnergyOracle public oracle;
+    /// @dev EnergyOracle contract
+    IEnergyOracle public energyOracle;
     /// @dev Register contract
     IRegister public register;
     /// @dev Escrow contract
@@ -174,17 +174,19 @@ contract Manager is AccessControl, IManager {
     }
 
     /**
-     * @notice Changes `oracle` link to another contract.
+     * @notice Changes `energyOracle` link to another contract.
      * Requirements:
      * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_oracle` must be not address 0
+     * - `_energyOracle` must be not address 0
      *
-     * @param _oracle IEnergyOracle
+     * @param _energyOracle IEnergyOracle
      */
-    function changeOracle(IEnergyOracle _oracle) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_oracle)) {
-        emit OracleChanged(msg.sender, _oracle);
+    function changeEnergyOracle(
+        IEnergyOracle _energyOracle
+    ) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_energyOracle)) {
+        emit OracleChanged(msg.sender, _energyOracle);
 
-        oracle = _oracle;
+        energyOracle = _energyOracle;
     }
 
     /**

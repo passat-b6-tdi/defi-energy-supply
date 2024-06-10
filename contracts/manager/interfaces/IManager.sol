@@ -22,8 +22,8 @@ interface IManager {
     ///@dev Staking contract
     function staking() external view returns (IStakingReward);
 
-    ///@dev Staking contract
-    function oracle() external view returns (IEnergyOracle);
+    ///@dev Energy Oracle contract
+    function energyOracle() external view returns (IEnergyOracle);
 
     ///@dev Escrow contract
     function escrow() external view returns (IEscrow);

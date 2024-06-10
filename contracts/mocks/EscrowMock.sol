@@ -4,14 +4,14 @@ pragma solidity ^0.8.19;
 import "../energy-oracle/interfaces/IEnergyOracle.sol";
 
 contract EscrowMock {
-    IEnergyOracle public oracle;
+    IEnergyOracle public energyOracle;
 
     uint public consumption;
 
-    constructor(IEnergyOracle _oracle) {
-        oracle = _oracle;
+    constructor(IEnergyOracle _energyOracle) {
+        energyOracle = _energyOracle;
     }
     function read(address user, uint tokenId) public {
-        consumption = oracle.updateEnergyConsumptionsAndGetResult(user, tokenId);
+        consumption = energyOracle.updateEnergyConsumptionsAndGetResult(user, tokenId);
     }
 }

@@ -53,8 +53,8 @@ describe('Main', function () {
     await manager.deployed();
 
     const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-    const oracle: EnergyOracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
-    await oracle.deployed();
+    const energyOracle: EnergyOracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
+    await energyOracle.deployed();
 
     const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward');
     const stakingReward: StakingReward = (await StakingReward.deploy(manager.address)) as StakingReward;
@@ -72,7 +72,7 @@ describe('Main', function () {
     const main: Main = (await Main.deploy(manager.address)) as Main;
     await main.deployed();
 
-    await manager.changeOracle(oracle.address);
+    await manager.changeEnergyOracle(energyOracle.address);
     await manager.changeRegister(register.address);
     await manager.changeEscrow(escrow.address);
     await manager.changeStakingContract(stakingReward.address);
@@ -84,9 +84,9 @@ describe('Main', function () {
 
     escrow_manager = await escrow.ESCROW_MANAGER_ROLE();
 
-    energy_oracle_manager_role = await oracle.ENERGY_ORACLE_MANAGER_ROLE();
-    oracle_provider_role = await oracle.ORACLE_PROVIDER_ROLE();
-    _escrow_ = await oracle.ESCROW();
+    energy_oracle_manager_role = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
+    oracle_provider_role = await energyOracle.ORACLE_PROVIDER_ROLE();
+    _escrow_ = await energyOracle.ESCROW();
 
     register_manger_role = await register.REGISTER_MANAGER_ROLE();
 
@@ -100,22 +100,22 @@ describe('Main', function () {
     await escrow.grantRole(escrow_manager, main.address);
     await stakingReward.grantRole(staking_manager_role, main.address);
     await stakingReward.grantRole(staking_manager_role, register.address);
-    await oracle.grantRole(oracle_provider_role, main.address);
-    await oracle.grantRole(_escrow_, escrow.address);
+    await energyOracle.grantRole(oracle_provider_role, main.address);
+    await energyOracle.grantRole(_escrow_, escrow.address);
 
     await elu.grantRole(register_role, register.address);
     await nrgs.grantRole(register_role, register.address);
     await mcgr.grantRole(minter_role, stakingReward.address);
-    await mcgr.grantRole(minter_role, oracle.address);
+    await mcgr.grantRole(minter_role, energyOracle.address);
 
     await mcgr.connect(otherAcc).approve(main.address, ethers.constants.MaxUint256);
     await elu.connect(otherAcc).setApprovalForAll(register.address, true);
 
-    return { mcgr, elu, nrgs, register, stakingReward, manager, escrow, main, oracle, deployer, otherAcc, anotherAcc };
+    return { mcgr, elu, nrgs, register, stakingReward, manager, escrow, main, energyOracle, deployer, otherAcc, anotherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mcgr, elu, nrgs, register, stakingReward, manager, escrow, main, oracle, deployer } = await loadFixture(
+    const { mcgr, elu, nrgs, register, stakingReward, manager, escrow, main, energyOracle, deployer } = await loadFixture(
       deployFixture,
     );
 
@@ -125,19 +125,19 @@ describe('Main', function () {
     expect(register.address).to.be.properAddress;
     expect(stakingReward.address).to.be.properAddress;
     expect(manager.address).to.be.properAddress;
-    expect(oracle.address).to.be.properAddress;
+    expect(energyOracle.address).to.be.properAddress;
 
     expect(await register.hasRole(register_manger_role, main.address)).to.be.true;
     expect(await escrow.hasRole(escrow_manager, main.address)).to.be.true;
     expect(await stakingReward.hasRole(staking_manager_role, main.address)).to.be.true;
     expect(await stakingReward.hasRole(staking_manager_role, register.address)).to.be.true;
-    expect(await oracle.hasRole(oracle_provider_role, main.address)).to.be.true;
-    expect(await oracle.hasRole(_escrow_, escrow.address)).to.be.true;
+    expect(await energyOracle.hasRole(oracle_provider_role, main.address)).to.be.true;
+    expect(await energyOracle.hasRole(_escrow_, escrow.address)).to.be.true;
 
     expect(await elu.hasRole(register_role, register.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, register.address)).to.be.true;
     expect(await mcgr.hasRole(minter_role, stakingReward.address)).to.be.true;
-    expect(await mcgr.hasRole(minter_role, oracle.address)).to.be.true;
+    expect(await mcgr.hasRole(minter_role, energyOracle.address)).to.be.true;
   });
 
   describe('Register', function () {
@@ -234,7 +234,7 @@ describe('Main', function () {
   });
 
   it('Can pay for electricity from electricity user', async () => {
-    const { main, register, stakingReward, oracle, escrow, nrgs, elu, mcgr, anotherAcc, otherAcc, deployer } =
+    const { main, register, stakingReward, energyOracle, escrow, nrgs, elu, mcgr, anotherAcc, otherAcc, deployer } =
       await loadFixture(deployFixture);
 
     await mcgr.mint(otherAcc.address, 10000);
@@ -259,10 +259,10 @@ describe('Main', function () {
     const now = await time.latest();
     const consumption = 20;
 
-    const recordConsumption = await oracle.recordEnergyConsumption(otherAcc.address, supplierId, now, consumption);
-    const recordedConsumption = await oracle.energyConsumptions(otherAcc.address, supplierId, 0);
+    const recordConsumption = await energyOracle.recordEnergyConsumption(otherAcc.address, supplierId, now, consumption);
+    const recordedConsumption = await energyOracle.energyConsumptions(otherAcc.address, supplierId, 0);
 
-    expect(recordConsumption).to.emit(oracle, 'EnergyConsumptionRecorded');
+    expect(recordConsumption).to.emit(energyOracle, 'EnergyConsumptionRecorded');
     expect(recordConsumption).to.changeTokenBalance(mcgr, deployer, 20);
     expect(await mcgr.balanceOf(deployer.address)).to.eq(20);
     expect(recordedConsumption.consumption).to.be.eq(consumption);
