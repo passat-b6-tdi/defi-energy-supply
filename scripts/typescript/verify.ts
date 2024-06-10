@@ -2,20 +2,20 @@ import { BytesLike } from 'ethers';
 import { verifyContract } from './helpers/verify-contract';
 import { ethers } from 'hardhat';
 
-const ELU = '0xd31f9437602E985c19a3Ee11B35d76F5d1DA4235';
-const MCGR = '0x2F176C9145DF9943f7ad31E4DEFC1290bDe54D32';
-const NRGS = '0xCd144d7bfE80D0300F1Ec64CbFc97109777F15Bc';
+const ELU = '0xa1d1519FB659b280d584C68E2582ec5020Fa25b1';
+const MCGR = '0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53';
+const NRGS = '0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76';
 
 const reward = 10;
 const tolerance = 5;
 const fees = 10;
-const Manager = '0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40';
+const Manager = '0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf';
 
-const Escrow = '0x26367A9c65d9627EFd0c5eb62B984A13941aaBb6';
-const Main = '0xcF81B08cbCa47fcbB4669c002774c7C405AD67dD';
-const Oracle = '0xB99B7a11B0e6BF8F0220f7C4E9Bd5BA37d195da5';
-const Register = '0xE59474b146d750022c5E3C9376d74D0Ca31D7008';
-const StakingReward = '0xeCC73646565e17C253f230215a125E175476566b'
+const Escrow = '0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C';
+const Main = '0x8759fe749f3feDf0A7319C83551bd475Cd6c2201';
+const Oracle = '0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4';
+const Register = '0x92aC6a4d4D3ddFb7eA2B32847D6Cf89FAF4F948b';
+const StakingReward = '0x5fC19FFcf9fA10B16A4892306862413f7E34EB09'
 
 
 async function main(): Promise<void> {
