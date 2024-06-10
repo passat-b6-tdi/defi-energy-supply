@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
- * @title Energy Supply token contract (ERC721 standard)
+ * @title Energy Supplier Token contract (ERC721 standard)
  * @author Bohdan
  */
 contract NRGS is ERC721, AccessControl {
@@ -15,7 +15,7 @@ contract NRGS is ERC721, AccessControl {
     /// @notice Constructor to initialize NFT token contract
     /// @dev Grants each roles to `msg.sender`
     /// @dev Sets `name` and `symbol` of ERC721 token
-    constructor() ERC721("Energy Supply token", "NRGS") {
+    constructor() ERC721("Energy Supplier Token", "NRGS") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTER_ROLE, msg.sender);
     }

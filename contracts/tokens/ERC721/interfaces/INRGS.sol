@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 /**
- * @title Interface for Energy Supply token contract (ERC721 standard)
+ * @title Interface for Energy Supplier Token contract (ERC721 standard)
  * @author Bohdan
  */
 interface INRGS {

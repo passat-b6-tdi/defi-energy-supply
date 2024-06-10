@@ -46,7 +46,7 @@ contract Manager is AccessControl, IManager {
     // Contracts
     /// @dev Reward token
     IMCGR public MCGR;
-    /// @dev Electricity user NFT token
+    /// @dev Electricity Users SFT token
     IELU public ELU;
     /// @dev Energy Supplier NFT token
     INRGS public NRGS;

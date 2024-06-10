@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
- * @title Electricity user token contract (ERC1155 standard).
+ * @title Electricity Users Token contract (ERC1155 standard).
  * @author Bohdan
  */
 contract ELU is ERC1155, AccessControl {
@@ -26,7 +26,7 @@ contract ELU is ERC1155, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTER_ROLE, msg.sender);
 
-        name = "Electricity user token";
+        name = "Electricity Users Token";
         symbol = "ELU";
     }
 
