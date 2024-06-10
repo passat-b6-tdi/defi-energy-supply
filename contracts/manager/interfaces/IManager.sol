@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "../../oracle/interfaces/IOracle.sol";
+import "../../energy-oracle/interfaces/IEnergyOracle.sol";
 import "../../staking/interfaces/IStakingReward.sol";
 import "../../register/interfaces/IRegister.sol";
 import "../../tokens/ERC20/interfaces/IMCGR.sol";
