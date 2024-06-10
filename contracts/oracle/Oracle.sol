@@ -21,26 +21,18 @@ contract EnergyOracle is Parent, Pausable {
     ///@dev Emmited when an Oracle provider
     event EnergyConsumptionRecorded(
         address indexed sender,
-        address indexed user,
+        address indexed whoseConsumption,
         uint256 indexed supplierId,
-        uint256 timestamp,
-        uint256 consumption
+        uint256 consumption,
+        uint256 timestamp
     );
-    ///@dev Emmited when called getEnergyConsumption()
+    ///@dev Emmited when called updateEnergyConsumptionsAndGetResult()
     event EnergyConsumptionSent(
         address indexed sender,
-        address indexed user,
+        address indexed whoseConsumption,
         uint256 indexed supplierId,
-        uint256 timestamp,
-        uint256 consumption
-    );
-    ///@dev Emmited when an Outlier values provided
-    event OutlierDetected(
-        address indexed sender,
-        address indexed user,
-        uint256 indexed supplierId,
-        uint256 timestamp,
-        uint256 consumption
+        uint256 consumption,
+        uint256 timestamp
     );
 
     /// @dev Keccak256 hashed `ENERGY_ORACLE_MANAGER_ROLE` string
@@ -126,7 +118,7 @@ contract EnergyOracle is Parent, Pausable {
     /// @param user The user address
     /// @param supplierId The token ID
     /// @return consumption The energy consumption value
-    function getEnergyConsumption(
+    function updateEnergyConsumptionsAndGetResult(
         address user,
         uint256 supplierId
     )
