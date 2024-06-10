@@ -11,14 +11,35 @@ import "../Parent.sol";
  */
 contract Register is Parent, ERC1155Holder {
     ///@dev Emmited when a user registers as an Energy supplier
-    event SupplierRegistered(address indexed sender, address indexed supplier, uint256 timestamp);
+    event SupplierRegistered(
+        address indexed sender,
+        address indexed supplier,
+        uint256 indexed supplierId,
+        uint256 amountOfUsers,
+        uint256 timestamp
+    );
     ///@dev Emmited when a user unregisters as an Energy supplier
-    event SupplierUnregistered(address indexed sender, address indexed supplier, uint256 timestamp);
+    event SupplierUnregistered(
+        address indexed sender,
+        address indexed supplier,
+        uint256 indexed supplierId,
+        uint256 timestamp
+    );
 
     ///@dev Emmited when a user registers as an Electricity user
-    event UserRegistered(address indexed sender, address indexed user, uint256 timestamp);
+    event UserRegistered(
+        address indexed sender,
+        address indexed user,
+        uint256 indexed usersSupplierId,
+        uint256 timestamp
+    );
     ///@dev Emmited when a user unregisters as an Electricity user
-    event UserUnregistered(address indexed sender, address indexed user, uint256 timestamp);
+    event UserUnregistered(
+        address indexed sender,
+        address indexed user,
+        uint256 indexed usersSupplierId,
+        uint256 timestamp
+    );
 
     /// @dev Keccak256 hashed `REGISTER_MANAGER_ROLE` string
     bytes32 public constant REGISTER_MANAGER_ROLE = keccak256(bytes("REGISTER_MANAGER_ROLE"));
@@ -51,7 +72,7 @@ contract Register is Parent, ERC1155Holder {
 
         manager.staking().enterStaking(supplier, supplierId);
 
-        emit SupplierRegistered(msg.sender, supplier, block.timestamp);
+        emit SupplierRegistered(msg.sender, supplier, supplierId, amountOfUsers, block.timestamp);
     }
 
     /**
@@ -61,15 +82,15 @@ contract Register is Parent, ERC1155Holder {
      * - `user` must not be address 0.
      *
      * @param user The address of the user.
-     * @param supplierId The ID of the supplier.
+     * @param usersSupplierId The ID of the supplier for the user.
      */
     function registerElectricityUser(
         address user,
-        uint256 supplierId
+        uint256 usersSupplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
-        manager.ELU().safeTransferFrom(address(this), user, supplierId, 1, "");
+        manager.ELU().safeTransferFrom(address(this), user, usersSupplierId, 1, "");
 
-        emit UserRegistered(msg.sender, user, block.timestamp);
+        emit UserRegistered(msg.sender, user, usersSupplierId, block.timestamp);
     }
 
     /**
@@ -92,7 +113,7 @@ contract Register is Parent, ERC1155Holder {
 
         manager.staking().exitStaking(supplier, supplierId);
 
-        emit SupplierUnregistered(msg.sender, supplier, block.timestamp);
+        emit SupplierUnregistered(msg.sender, supplier, supplierId, block.timestamp);
     }
 
     /**
@@ -103,17 +124,17 @@ contract Register is Parent, ERC1155Holder {
      * - `user` must have ELU token.
      *
      * @param user The address of the user.
-     * @param supplierId The ID of the supplier.
+     * @param usersSupplierId The ID of the supplier for the user.
      */
     function unRegisterElectricityUser(
         address user,
-        uint256 supplierId
+        uint256 usersSupplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
-        require(manager.ELU().balanceOf(user, supplierId) > 0, "Register: supplier is not correct");
+        require(manager.ELU().balanceOf(user, usersSupplierId) > 0, "Register: supplier is not correct");
 
-        manager.ELU().safeTransferFrom(user, address(this), supplierId, 1, "");
+        manager.ELU().safeTransferFrom(user, address(this), usersSupplierId, 1, "");
 
-        emit UserUnregistered(msg.sender, user, block.timestamp);
+        emit UserUnregistered(msg.sender, user, usersSupplierId, block.timestamp);
     }
 
     /// @inheritdoc AccessControl

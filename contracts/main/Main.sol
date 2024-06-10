@@ -35,15 +35,15 @@ contract Main is Parent {
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
      *
      * @param supplierId The ID of the supplier.
-     * @param buildingsNumber The number of buildings for the supplier.
+     * @param amountOfUsers The number of users to whom the supplier can provide electricity.
      */
     function registerSupplier(
         address supplier,
         uint256 supplierId,
-        uint256 buildingsNumber
-    ) external onlyRole(MAIN_MANAGER_ROLE) gtZero(buildingsNumber) {
+        uint256 amountOfUsers
+    ) external onlyRole(MAIN_MANAGER_ROLE) gtZero(amountOfUsers) {
         _grantRole(SUPPLIER_ROLE, supplier);
-        manager.register().registerSupplier(supplier, supplierId, buildingsNumber);
+        manager.register().registerSupplier(supplier, supplierId, amountOfUsers);
     }
 
     /**
@@ -52,11 +52,11 @@ contract Main is Parent {
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must have `SUPPLIER_ROLE`.
      *
-     * @param supplierId The ID of the supplier.
+     * @param usersSupplierId The ID of the supplier for the user.
      */
-    function registerElectricityUser(address user, uint256 supplierId) external onlyRole(SUPPLIER_ROLE) {
+    function registerElectricityUser(address user, uint256 usersSupplierId) external onlyRole(SUPPLIER_ROLE) {
         _grantRole(USER_ROLE, user);
-        manager.register().registerElectricityUser(user, supplierId);
+        manager.register().registerElectricityUser(user, usersSupplierId);
     }
 
     /**
@@ -79,11 +79,11 @@ contract Main is Parent {
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must have `USER_ROLE`.
      *
-     * @param supplierId The ID of the supplier.
+     * @param usersSupplierId The ID of the supplier for the user.
      */
-    function unRegisterElectricityUser(address user, uint256 supplierId) external onlyRole(SUPPLIER_ROLE) {
+    function unRegisterElectricityUser(address user, uint256 usersSupplierId) external onlyRole(SUPPLIER_ROLE) {
         _revokeRole(USER_ROLE, user);
-        manager.register().unRegisterElectricityUser(user, supplierId);
+        manager.register().unRegisterElectricityUser(user, usersSupplierId);
     }
 
     /**
@@ -93,18 +93,18 @@ contract Main is Parent {
      * - `amountToPay` must be greater than 0.
      * - `msg.sender` must have `USER_ROLE`.
      *
-     * @param supplierId The ID of the supplier.
+     * @param usersSupplierId The ID of the supplier for the user.
      * @param amountToPay The amount to pay for electricity.
      */
     function payForElectricity(
-        uint256 supplierId,
+        uint256 usersSupplierId,
         uint256 amountToPay
     ) external onlyRole(USER_ROLE) gtZero(amountToPay) {
         require(
             manager.MCGR().transferFrom(msg.sender, address(manager.escrow()), amountToPay + manager.fees()),
             "Main: transfer to Escrow failed"
         );
-        manager.escrow().sendFundsToSupplier(msg.sender, supplierId, amountToPay);
+        manager.escrow().sendFundsToSupplier(msg.sender, usersSupplierId, amountToPay);
     }
 
     /**
