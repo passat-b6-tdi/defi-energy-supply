@@ -114,7 +114,7 @@ _Reward token_
 contract IELU ELU
 ```
 
-_Electricity user NFT token_
+_Electricity Users SFT token_
 
 ### NRGS
 

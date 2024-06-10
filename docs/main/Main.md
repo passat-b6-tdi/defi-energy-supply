@@ -12,21 +12,11 @@ bytes32 MAIN_MANAGER_ROLE
 
 _Keccak256 hashed `MAIN_MANAGER_ROLE` string_
 
-### SUPPLIER_ROLE
+### onlySupplier
 
 ```solidity
-bytes32 SUPPLIER_ROLE
+modifier onlySupplier(uint256 supplierId)
 ```
-
-_Keccak256 hashed `SUPPLIER_ROLE` string_
-
-### USER_ROLE
-
-```solidity
-bytes32 USER_ROLE
-```
-
-_Keccak256 hashed `USER_ROLE` string_
 
 ### constructor
 
@@ -73,7 +63,7 @@ function registerElectricityUser(address user, uint256 usersSupplierId) external
 Registers an Electricity user.
 Requirements:
 - `supplierId` must be greater than 0.
-- `msg.sender` must have `SUPPLIER_ROLE`.
+- `msg.sender` must be a supplier.
 
 #### Parameters
 
@@ -108,7 +98,7 @@ function unRegisterElectricityUser(address user, uint256 usersSupplierId) extern
 Unregisters an Electricity user.
 Requirements:
 - `supplierId` must be greater than 0.
-- `msg.sender` must have `USER_ROLE`.
+- `msg.sender` must be a supplier.
 
 #### Parameters
 
@@ -127,7 +117,7 @@ Pays for electricity.
 Requirements:
 - `supplierId` must be greater than 0.
 - `amountToPay` must be greater than 0.
-- `msg.sender` must have `USER_ROLE`.
+- `msg.sender` must be a user.
 
 #### Parameters
 
@@ -145,7 +135,7 @@ function getRewards(uint256 supplierId) external
 Gets the rewards for a supplier.
 Requirements:
 - `supplierId` must be greater than 0.
-- `msg.sender` must have `SUPPLIER_ROLE`.
+- `msg.sender` must be a supplier.
 
 #### Parameters
 

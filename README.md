@@ -4,11 +4,11 @@ The Energy Billing Automation System is a comprehensive solution designed to aut
 
 ## Addresses
 
-- Electricity user token (ELU token) [0xa1d1519FB659b280d584C68E2582ec5020Fa25b1](https://sepolia.arbiscan.io/address/0xa1d1519FB659b280d584C68E2582ec5020Fa25b1#code)
+- Electricity Users Token (ELU token) [0xa1d1519FB659b280d584C68E2582ec5020Fa25b1](https://sepolia.arbiscan.io/address/0xa1d1519FB659b280d584C68E2582ec5020Fa25b1#code)
 
-- Microgrid token (MCGR token) [0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53](https://sepolia.arbiscan.io/address/0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53#code)
+- Microgrid Token (MCGR token) [0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53](https://sepolia.arbiscan.io/address/0x5e756CE1Fc98FCf7b4C89957fcc2b41CA00FCc53#code)
 
-- Energy Supply token (NRGS token) [0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76](https://sepolia.arbiscan.io/address/0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76#code)
+- Energy Supplier Token (NRGS token) [0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76](https://sepolia.arbiscan.io/address/0x7D80AA4D9F4f9e53c5C04aC6F22F8b372855Fb76#code)
 
 - Manager [0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf](https://sepolia.arbiscan.io/address/0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf#code)
 

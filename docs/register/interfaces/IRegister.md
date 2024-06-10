@@ -43,20 +43,18 @@ Requirements:
 ### unRegisterSupplier
 
 ```solidity
-function unRegisterSupplier(address supplier, uint256 supplierId) external
+function unRegisterSupplier(uint256 supplierId) external
 ```
 
 Unregisters an Energy supplier.
 Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE.
-- `supplier` must not be address 0.
 - `supplier` must have NRGS token.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier. |
 | supplierId | uint256 | The ID of the supplier. |
 
 ### unRegisterElectricityUser
