@@ -7,6 +7,6 @@ export { deployManager } from './deployManager';
 export { deployEscrow } from './deployEscrow';
 export { deployRegister } from './deployRegister';
 export { deployStaking } from './deployStaking';
-export { deployOracle } from './deployOracle';
+export { deployEnergyOracle } from './deployEnergyOracle';
 
 export { deployMain } from './deployMain';

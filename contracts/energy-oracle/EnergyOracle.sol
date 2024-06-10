@@ -37,8 +37,8 @@ contract EnergyOracle is Parent, Pausable {
 
     /// @dev Keccak256 hashed `ENERGY_ORACLE_MANAGER_ROLE` string
     bytes32 public constant ENERGY_ORACLE_MANAGER_ROLE = keccak256(bytes("ENERGY_ORACLE_MANAGER_ROLE"));
-    /// @dev Keccak256 hashed `ORACLE_PROVIDER_ROLE` string
-    bytes32 public constant ORACLE_PROVIDER_ROLE = keccak256(bytes("ORACLE_PROVIDER_ROLE"));
+    /// @dev Keccak256 hashed `ENERGY_ORACLE_PROVIDER_ROLE` string
+    bytes32 public constant ENERGY_ORACLE_PROVIDER_ROLE = keccak256(bytes("ENERGY_ORACLE_PROVIDER_ROLE"));
     /// @dev Keccak256 hashed `ESCROW` string
     bytes32 public constant ESCROW = keccak256(bytes("ESCROW"));
 
@@ -53,10 +53,10 @@ contract EnergyOracle is Parent, Pausable {
     }
 
     /// @notice Constructor to initialize StakingManagement contract
-    /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ORACLE_PROVIDER_ROLE` roles to `msg.sender`
+    /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`
     constructor(IManager _manager) Parent(_manager) {
         _grantRole(ENERGY_ORACLE_MANAGER_ROLE, msg.sender);
-        _grantRole(ORACLE_PROVIDER_ROLE, msg.sender);
+        _grantRole(ENERGY_ORACLE_PROVIDER_ROLE, msg.sender);
         _grantRole(ESCROW, msg.sender);
     }
 
@@ -64,7 +64,7 @@ contract EnergyOracle is Parent, Pausable {
      * @notice Records the energy consumption for a user and token at a specific timestamp.
      * @dev
      * Requirements:
-     * - `msg.sender` must have ORACLE_PROVIDER_ROLE
+     * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
      * - `user` must have token with `supplierId`
      * - `timestamp` must be equal to 21:00
      *
@@ -78,7 +78,13 @@ contract EnergyOracle is Parent, Pausable {
         uint supplierId,
         uint256 timestamp,
         uint256 consumption
-    ) external onlyRole(ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(user) isCorrectUser(user, supplierId) {
+    )
+        external
+        onlyRole(ENERGY_ORACLE_PROVIDER_ROLE)
+        whenNotPaused
+        zeroAddressCheck(user)
+        isCorrectUser(user, supplierId)
+    {
         require(timestamp <= block.timestamp, "EnergyOracle: timestamp has not yet arrived");
 
         EnergyConsumption[] storage consumptions = _energyConsumptions[user][supplierId];
@@ -114,7 +120,7 @@ contract EnergyOracle is Parent, Pausable {
     }
 
     /// @notice Gets the energy consumption for a user, token
-    /// Requirements: `msg.sender` must have ORACLE_PROVIDER_ROLE
+    /// Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
     /// @param user The user address
     /// @param supplierId The token ID
     /// @return consumption The energy consumption value

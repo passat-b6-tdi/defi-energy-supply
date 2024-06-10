@@ -13,7 +13,7 @@ function updateEnergyConsumptionsAndGetResult(address user, uint256 supplierId) 
 ```
 
 Gets the energy consumption for a user, token
-Requirements: `msg.sender` must have ORACLE_PROVIDER_ROLE
+Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
 
 #### Parameters
 
@@ -37,7 +37,7 @@ function recordEnergyConsumption(address user, uint256 supplierId, uint256 times
 Records the energy consumption for a user and token at a specific timestamp.
 @dev
 Requirements:
-- `msg.sender` must have ORACLE_PROVIDER_ROLE
+- `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
 - `user` must have token with `supplierId`
 - `timestamp` must be equal to 21:00
 

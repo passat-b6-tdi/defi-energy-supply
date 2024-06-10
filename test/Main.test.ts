@@ -13,7 +13,7 @@ describe('Main', function () {
     escrow_manager: string,
     register_role: string,
     energy_oracle_manager_role: string,
-    oracle_provider_role: string,
+    energy_oracle_provider_role: string,
     _escrow_: string,
     register_manger_role: string,
     staking_manager_role: string,
@@ -85,7 +85,7 @@ describe('Main', function () {
     escrow_manager = await escrow.ESCROW_MANAGER_ROLE();
 
     energy_oracle_manager_role = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
-    oracle_provider_role = await energyOracle.ORACLE_PROVIDER_ROLE();
+    energy_oracle_provider_role = await energyOracle.ENERGY_ORACLE_PROVIDER_ROLE();
     _escrow_ = await energyOracle.ESCROW();
 
     register_manger_role = await register.REGISTER_MANAGER_ROLE();
@@ -100,7 +100,7 @@ describe('Main', function () {
     await escrow.grantRole(escrow_manager, main.address);
     await stakingReward.grantRole(staking_manager_role, main.address);
     await stakingReward.grantRole(staking_manager_role, register.address);
-    await energyOracle.grantRole(oracle_provider_role, main.address);
+    await energyOracle.grantRole(energy_oracle_provider_role, main.address);
     await energyOracle.grantRole(_escrow_, escrow.address);
 
     await elu.grantRole(register_role, register.address);
@@ -131,7 +131,7 @@ describe('Main', function () {
     expect(await escrow.hasRole(escrow_manager, main.address)).to.be.true;
     expect(await stakingReward.hasRole(staking_manager_role, main.address)).to.be.true;
     expect(await stakingReward.hasRole(staking_manager_role, register.address)).to.be.true;
-    expect(await energyOracle.hasRole(oracle_provider_role, main.address)).to.be.true;
+    expect(await energyOracle.hasRole(energy_oracle_provider_role, main.address)).to.be.true;
     expect(await energyOracle.hasRole(_escrow_, escrow.address)).to.be.true;
 
     expect(await elu.hasRole(register_role, register.address)).to.be.true;

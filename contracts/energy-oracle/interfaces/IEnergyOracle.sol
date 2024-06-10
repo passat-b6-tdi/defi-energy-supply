@@ -10,7 +10,7 @@ pragma solidity ^0.8.19;
  */
 interface IEnergyOracle {
     /// @notice Gets the energy consumption for a user, token
-    /// Requirements: `msg.sender` must have ORACLE_PROVIDER_ROLE
+    /// Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
     /// @param user The user address
     /// @param supplierId The token ID
     /// @return consumption The energy consumption value
@@ -23,7 +23,7 @@ interface IEnergyOracle {
      * @notice Records the energy consumption for a user and token at a specific timestamp.
      * @dev
      * Requirements:
-     * - `msg.sender` must have ORACLE_PROVIDER_ROLE
+     * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
      * - `user` must have token with `supplierId`
      * - `timestamp` must be equal to 21:00
      *

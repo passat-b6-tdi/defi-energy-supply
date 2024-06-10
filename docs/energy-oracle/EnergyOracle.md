@@ -39,13 +39,13 @@ bytes32 ENERGY_ORACLE_MANAGER_ROLE
 
 _Keccak256 hashed `ENERGY_ORACLE_MANAGER_ROLE` string_
 
-### ORACLE_PROVIDER_ROLE
+### ENERGY_ORACLE_PROVIDER_ROLE
 
 ```solidity
-bytes32 ORACLE_PROVIDER_ROLE
+bytes32 ENERGY_ORACLE_PROVIDER_ROLE
 ```
 
-_Keccak256 hashed `ORACLE_PROVIDER_ROLE` string_
+_Keccak256 hashed `ENERGY_ORACLE_PROVIDER_ROLE` string_
 
 ### ESCROW
 
@@ -71,7 +71,7 @@ constructor(contract IManager _manager) public
 
 Constructor to initialize StakingManagement contract
 
-_Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ORACLE_PROVIDER_ROLE` roles to `msg.sender`_
+_Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`_
 
 ### recordEnergyConsumption
 
@@ -82,7 +82,7 @@ function recordEnergyConsumption(address user, uint256 supplierId, uint256 times
 Records the energy consumption for a user and token at a specific timestamp.
 @dev
 Requirements:
-- `msg.sender` must have ORACLE_PROVIDER_ROLE
+- `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
 - `user` must have token with `supplierId`
 - `timestamp` must be equal to 21:00
 
@@ -102,7 +102,7 @@ function updateEnergyConsumptionsAndGetResult(address user, uint256 supplierId) 
 ```
 
 Gets the energy consumption for a user, token
-Requirements: `msg.sender` must have ORACLE_PROVIDER_ROLE
+Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
 
 #### Parameters
 

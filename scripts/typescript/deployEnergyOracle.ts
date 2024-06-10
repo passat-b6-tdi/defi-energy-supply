@@ -4,7 +4,7 @@ import { BytesLike, ContractFactory } from 'ethers';
 
 const MANAGER_ADDRESS: BytesLike = '0x61E0e280B1E05FCEfb684dd729cDe782fd98cd40';
 
-export async function deployOracle(manager_address: BytesLike): Promise<EnergyOracle> {
+export async function deployEnergyOracle(manager_address: BytesLike): Promise<EnergyOracle> {
   if (manager_address == undefined || manager_address == '') {
     throw Error('Manager address is not defined');
   }
@@ -21,7 +21,7 @@ export async function deployOracle(manager_address: BytesLike): Promise<EnergyOr
 }
 
 async function main() {
-  await deployOracle(MANAGER_ADDRESS);
+  await deployEnergyOracle(MANAGER_ADDRESS);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

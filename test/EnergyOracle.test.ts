@@ -6,7 +6,7 @@ import { EnergyOracle, EscrowMock, MCGR, Manager, Register, StakingReward } from
 import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
-describe('Oracle', function () {
+describe('EnergyOracle', function () {
   let otherAccAddress: string;
   let admin_role: string,
     minter_role: string,
@@ -46,8 +46,8 @@ describe('Oracle', function () {
     )) as Manager;
     await manager.deployed();
 
-    const Oracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-    const energyOracle: EnergyOracle = (await Oracle.deploy(manager.address)) as EnergyOracle;
+    const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
+    const energyOracle: EnergyOracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
     await energyOracle.deployed();
 
     const EscrowMock: ContractFactory = await ethers.getContractFactory('EscrowMock');
@@ -58,14 +58,14 @@ describe('Oracle', function () {
     minter_role = await mcgr.MINTER_BURNER_ROLE();
 
     energy_oracle_manager = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
-    oracle_provider = await energyOracle.ORACLE_PROVIDER_ROLE();
+    oracle_provider = await energyOracle.ENERGY_ORACLE_PROVIDER_ROLE();
     escrow_role = await energyOracle.ESCROW();
 
     await energyOracle.grantRole(escrow_role, deployer.address);
     await energyOracle.grantRole(escrow_role, escrow.address);
     await mcgr.grantRole(minter_role, energyOracle.address);
 
-    return { mcgr, elu, ELU, nrgs, NRGS, manager, energyOracle, Oracle, escrow, deployer, otherAcc };
+    return { mcgr, elu, ELU, nrgs, NRGS, manager, energyOracle, EnergyOracle, escrow, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
@@ -235,7 +235,7 @@ describe('Oracle', function () {
       );
     });
 
-    it('Only ORACLE_PROVIDER_ROLE can record energy consumption', async () => {
+    it('Only ENERGY_ORACLE_PROVIDER_ROLE can record energy consumption', async () => {
       const { energyOracle, otherAcc } = await loadFixture(deployFixture);
       const error = `AccessControl: account ${otherAccAddress} is missing role ${oracle_provider}`;
 
