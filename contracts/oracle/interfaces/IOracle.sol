@@ -14,7 +14,10 @@ interface IEnergyOracle {
     /// @param user The user address
     /// @param supplierId The token ID
     /// @return consumption The energy consumption value
-    function getEnergyConsumption(address user, uint256 supplierId) external returns (uint256 consumption);
+    function updateEnergyConsumptionsAndGetResult(
+        address user,
+        uint256 supplierId
+    ) external returns (uint256 consumption);
 
     /**
      * @notice Records the energy consumption for a user and token at a specific timestamp.

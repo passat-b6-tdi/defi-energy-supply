@@ -6,10 +6,10 @@ _This contract allows recording and retrieving energy consumption data for users
 The contract is managed by an Oracle Provider who can record energy consumption and an Energy Oracle Manager
 who can retrieve the consumption data._
 
-### getEnergyConsumption
+### updateEnergyConsumptionsAndGetResult
 
 ```solidity
-function getEnergyConsumption(address user, uint256 supplierId) external returns (uint256 consumption)
+function updateEnergyConsumptionsAndGetResult(address user, uint256 supplierId) external returns (uint256 consumption)
 ```
 
 Gets the energy consumption for a user, token

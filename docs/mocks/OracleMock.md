@@ -2,9 +2,9 @@
 
 ## OracleMock
 
-### getEnergyConsumption
+### updateEnergyConsumptionsAndGetResult
 
 ```solidity
-function getEnergyConsumption(address user, uint256 tokenId) public returns (uint256 consumption)
+function updateEnergyConsumptionsAndGetResult(address user, uint256 tokenId) public returns (uint256 consumption)
 ```
 

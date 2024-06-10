@@ -29,7 +29,7 @@ _Emmited when an Oracle provider_
 event EnergyConsumptionSent(address sender, address user, uint256 supplierId, uint256 timestamp, uint256 consumption)
 ```
 
-_Emmited when called getEnergyConsumption()_
+_Emmited when called updateEnergyConsumptionsAndGetResult()_
 
 ### OutlierDetected
 
@@ -103,10 +103,10 @@ Requirements:
 | timestamp | uint256 | The timestamp for the energy consumption |
 | consumption | uint256 | The energy consumption value |
 
-### getEnergyConsumption
+### updateEnergyConsumptionsAndGetResult
 
 ```solidity
-function getEnergyConsumption(address user, uint256 supplierId) public returns (uint256 consumption)
+function updateEnergyConsumptionsAndGetResult(address user, uint256 supplierId) public returns (uint256 consumption)
 ```
 
 Gets the energy consumption for a user, token

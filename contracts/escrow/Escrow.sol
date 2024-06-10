@@ -44,7 +44,7 @@ contract Escrow is Parent {
 
         require(manager.ELU().balanceOf(user, supplierId) > 0, "Escrow: user connected to another supplier");
 
-        uint256 consumption = manager.oracle().getEnergyConsumption(user, supplierId);
+        uint256 consumption = manager.oracle().updateEnergyConsumptionsAndGetResult(user, supplierId);
         uint256 needToBePaid = consumption + manager.fees();
 
         require(paidAmount >= needToBePaid, "Escrow: not enough funds sent");

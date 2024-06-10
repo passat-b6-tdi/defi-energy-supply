@@ -258,7 +258,7 @@ describe('Oracle', function () {
       const { oracle, otherAcc } = await loadFixture(deployFixture);
       const error = `AccessControl: account ${otherAccAddress} is missing role ${escrow_role}`;
 
-      await expect(oracle.connect(otherAcc).getEnergyConsumption(otherAcc.address, 1)).to.be.revertedWith(error);
+      await expect(oracle.connect(otherAcc).updateEnergyConsumptionsAndGetResult(otherAcc.address, 1)).to.be.revertedWith(error);
     });
 
     it('Zero address checks', async () => {
@@ -267,7 +267,7 @@ describe('Oracle', function () {
       const address0 = ethers.constants.AddressZero;
 
       await expect(oracle.recordEnergyConsumption(address0, 1, 50, 10)).to.be.revertedWith(error);
-      await expect(oracle.getEnergyConsumption(address0, 1)).to.be.revertedWith(error);
+      await expect(oracle.updateEnergyConsumptionsAndGetResult(address0, 1)).to.be.revertedWith(error);
     });
 
     it('Pausable', async () => {
@@ -278,17 +278,17 @@ describe('Oracle', function () {
       const error = 'Pausable: paused';
 
       await oracle.recordEnergyConsumption(otherAccAddress, 1, 50, 10);
-      await oracle.getEnergyConsumption(otherAccAddress, 1);
+      await oracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 1);
 
       await oracle.pause();
 
       await expect(oracle.recordEnergyConsumption(otherAccAddress, 1, 50, 10)).to.be.revertedWith(error);
-      await expect(oracle.getEnergyConsumption(otherAccAddress, 1)).to.be.revertedWith(error);
+      await expect(oracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 1)).to.be.revertedWith(error);
 
       await oracle.unpause();
 
       await oracle.recordEnergyConsumption(otherAccAddress, 1, 50, 10);
-      await oracle.getEnergyConsumption(otherAccAddress, 1);
+      await oracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 1);
     });
 
     it('Only correct user can be recorded', async () => {
@@ -299,7 +299,7 @@ describe('Oracle', function () {
       const error = 'EnergyOracle: user is not correct';
 
       await expect(oracle.recordEnergyConsumption(otherAccAddress, 2, 50, 10)).to.be.revertedWith(error);
-      await expect(oracle.getEnergyConsumption(otherAccAddress, 2)).to.be.revertedWith(error);
+      await expect(oracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 2)).to.be.revertedWith(error);
     });
 
     it('Only correct timestamp for record accepted', async () => {
