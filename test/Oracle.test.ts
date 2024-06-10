@@ -258,7 +258,9 @@ describe('Oracle', function () {
       const { oracle, otherAcc } = await loadFixture(deployFixture);
       const error = `AccessControl: account ${otherAccAddress} is missing role ${escrow_role}`;
 
-      await expect(oracle.connect(otherAcc).updateEnergyConsumptionsAndGetResult(otherAcc.address, 1)).to.be.revertedWith(error);
+      await expect(
+        oracle.connect(otherAcc).updateEnergyConsumptionsAndGetResult(otherAcc.address, 1),
+      ).to.be.revertedWith(error);
     });
 
     it('Zero address checks', async () => {

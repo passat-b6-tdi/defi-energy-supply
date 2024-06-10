@@ -12,7 +12,7 @@ export async function deployRegister(manager_address: BytesLike): Promise<Regist
   console.log(`Register deployment`);
 
   const Register: ContractFactory = await ethers.getContractFactory('Register');
-  const register = await Register.deploy(manager_address) as Register;
+  const register = (await Register.deploy(manager_address)) as Register;
   await register.deployed();
 
   console.log(`Register deployed to ${register.address}`);

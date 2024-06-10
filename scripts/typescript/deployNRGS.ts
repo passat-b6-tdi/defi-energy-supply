@@ -6,7 +6,7 @@ export async function deployNRGS(): Promise<NRGS> {
   console.log(`NRGS deployment`);
 
   const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
-  const nrgs = await NRGS.deploy() as NRGS;
+  const nrgs = (await NRGS.deploy()) as NRGS;
   await nrgs.deployed();
 
   console.log(`NRGS deployed to ${nrgs.address}`);
@@ -17,7 +17,6 @@ export async function deployNRGS(): Promise<NRGS> {
 async function main() {
   await deployNRGS();
 }
-
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.

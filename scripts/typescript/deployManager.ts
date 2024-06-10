@@ -30,7 +30,7 @@ export async function deployManager(elu: BytesLike, mcgr: BytesLike, nrgs: Bytes
   console.log(`Manager deployment`);
 
   const Manager: ContractFactory = await ethers.getContractFactory('Manager');
-  const manager = await Manager.deploy(mcgr, elu, nrgs, feeReceiver, reward, tolerance, fees) as Manager;
+  const manager = (await Manager.deploy(mcgr, elu, nrgs, feeReceiver, reward, tolerance, fees)) as Manager;
   await manager.deployed();
 
   console.log(`Manager deployed to ${manager.address}`);

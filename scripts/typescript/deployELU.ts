@@ -6,7 +6,7 @@ export async function deployELU(): Promise<ELU> {
   console.log(`ELU deployment`);
 
   const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-  const elu = await ELU.deploy() as ELU;
+  const elu = (await ELU.deploy()) as ELU;
   await elu.deployed();
 
   console.log(`ELU deployed to ${elu.address}`);

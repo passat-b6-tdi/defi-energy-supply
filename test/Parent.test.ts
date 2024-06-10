@@ -7,72 +7,72 @@ import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
 describe('Parent', function () {
-	// We define a fixture to reuse the same setup in every test.
-	// We use loadFixture to run this setup once, snapshot that state,
-	// and reset Hardhat Network to that snapshot in every test.
-	async function deployFixture() {
-		const [deployer, otherAcc] = await ethers.getSigners();
+  // We define a fixture to reuse the same setup in every test.
+  // We use loadFixture to run this setup once, snapshot that state,
+  // and reset Hardhat Network to that snapshot in every test.
+  async function deployFixture() {
+    const [deployer, otherAcc] = await ethers.getSigners();
 
-		const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
-		const mcgr: MCGR = (await MCGR.deploy()) as MCGR;
-		await mcgr.deployed();
+    const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
+    const mcgr: MCGR = (await MCGR.deploy()) as MCGR;
+    await mcgr.deployed();
 
-		const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
-		const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
-		await nrgs.deployed();
+    const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
+    const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
+    await nrgs.deployed();
 
-		const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-		const elu: ELU = (await ELU.deploy()) as ELU;
-		await elu.deployed();
+    const ELU: ContractFactory = await ethers.getContractFactory('ELU');
+    const elu: ELU = (await ELU.deploy()) as ELU;
+    await elu.deployed();
 
-		const Manager: ContractFactory = await ethers.getContractFactory('Manager');
-		const manager1: Manager = (await Manager.deploy(
-			mcgr.address,
-			elu.address,
-			nrgs.address,
-			deployer.address,
-			10,
-			5,
-			10,
-		)) as Manager;
-		await manager1.deployed();
+    const Manager: ContractFactory = await ethers.getContractFactory('Manager');
+    const manager1: Manager = (await Manager.deploy(
+      mcgr.address,
+      elu.address,
+      nrgs.address,
+      deployer.address,
+      10,
+      5,
+      10,
+    )) as Manager;
+    await manager1.deployed();
 
-		const manager2: Manager = (await Manager.deploy(
-			mcgr.address,
-			elu.address,
-			nrgs.address,
-			deployer.address,
-			10,
-			5,
-			10,
-		)) as Manager;
-		await manager2.deployed();
+    const manager2: Manager = (await Manager.deploy(
+      mcgr.address,
+      elu.address,
+      nrgs.address,
+      deployer.address,
+      10,
+      5,
+      10,
+    )) as Manager;
+    await manager2.deployed();
 
-		const ParentMock: ContractFactory = await ethers.getContractFactory('ParentMock');
-		const parent: ParentMock = (await ParentMock.deploy(manager1.address)) as ParentMock;
-		await parent.deployed();
+    const ParentMock: ContractFactory = await ethers.getContractFactory('ParentMock');
+    const parent: ParentMock = (await ParentMock.deploy(manager1.address)) as ParentMock;
+    await parent.deployed();
 
-		return { manager1, manager2, parent, otherAcc };
-	}
+    return { manager1, manager2, parent, otherAcc };
+  }
 
-	it('Works correctly', async () => {
-		const { manager1, manager2, parent } = await loadFixture(deployFixture);
+  it('Works correctly', async () => {
+    const { manager1, manager2, parent } = await loadFixture(deployFixture);
 
-		expect(await parent.manager()).to.be.eq(manager1.address)
+    expect(await parent.manager()).to.be.eq(manager1.address);
 
-		await parent.changeManager(manager2.address);
+    await parent.changeManager(manager2.address);
 
-		expect(await parent.manager()).to.be.eq(manager2.address)
-	});
+    expect(await parent.manager()).to.be.eq(manager2.address);
+  });
 
-	it('Modifiers correct', async () => {
-		const { otherAcc, parent, manager2 } = await loadFixture(deployFixture);
+  it('Modifiers correct', async () => {
+    const { otherAcc, parent, manager2 } = await loadFixture(deployFixture);
 
-		const errorMsg1 = "Parent: account is address 0";
-		const errorMsg2 = `AccessControl: account ${otherAcc.address.toLowerCase()} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`;
+    const errorMsg1 = 'Parent: account is address 0';
+    const errorMsg2 = `AccessControl: account ${otherAcc.address.toLowerCase()} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`;
 
-		await expect(parent.changeManager(ethers.constants.AddressZero)).to.be.revertedWith(errorMsg1)
+    await expect(parent.changeManager(ethers.constants.AddressZero)).to.be.revertedWith(errorMsg1);
 
-		await expect(parent.connect(otherAcc).changeManager(manager2.address)).to.be.revertedWith(errorMsg2)
-	});
+    await expect(parent.connect(otherAcc).changeManager(manager2.address)).to.be.revertedWith(errorMsg2);
+  });
 });

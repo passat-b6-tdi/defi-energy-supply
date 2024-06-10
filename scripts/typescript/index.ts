@@ -10,5 +10,3 @@ export { deployStaking } from './deployStaking';
 export { deployOracle } from './deployOracle';
 
 export { deployMain } from './deployMain';
-
-

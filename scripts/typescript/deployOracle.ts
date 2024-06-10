@@ -12,7 +12,7 @@ export async function deployOracle(manager_address: BytesLike): Promise<EnergyOr
   console.log(`Oracle deployment`);
 
   const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-  const oracle = await EnergyOracle.deploy(manager_address) as EnergyOracle;
+  const oracle = (await EnergyOracle.deploy(manager_address)) as EnergyOracle;
   await oracle.deployed();
 
   console.log(`EnergyOracle deployed to ${oracle.address}`);

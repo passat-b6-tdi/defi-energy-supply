@@ -129,7 +129,7 @@ describe(`Tokens`, function () {
       await expect(elu.connect(otherAcc).burn(otherAcc.address, 0, 10)).to.be.revertedWith(
         `AccessControl: account ${otherAccAddress} is missing role ${register_role}`,
       );
-      await elu.burn(otherAcc.address, 0, 10)
+      await elu.burn(otherAcc.address, 0, 10);
       expect(await elu.balanceOf(otherAcc.address, 0)).to.eq(0);
     });
   });

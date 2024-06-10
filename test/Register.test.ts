@@ -9,7 +9,11 @@ import { staking } from '../typechain/contracts';
 
 describe('Register', function () {
   let otherAccAddress: string;
-  let admin_role: string, minter_role: string, staking_role: string, register_manager_role: string, register_role: string;
+  let admin_role: string,
+    minter_role: string,
+    staking_role: string,
+    register_manager_role: string,
+    register_role: string;
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
@@ -164,7 +168,6 @@ describe('Register', function () {
 
       const registrationUser = await register.registerElectricityUser(otherAcc.address, 5);
 
-
       expect(registrationUser).to.emit(register, 'UserRegistered');
       expect(registrationUser).to.emit(elu, 'Transfer');
       expect(await elu.balanceOf(otherAcc.address, 5)).to.be.eq(1);
@@ -175,7 +178,6 @@ describe('Register', function () {
       const registrationSupplier = await register.registerSupplier(deployer.address, 5, 10);
 
       const registrationUser = await register.registerElectricityUser(otherAcc.address, 5);
-
 
       expect(registrationUser).to.emit(register, 'UserRegistered');
       expect(registrationUser).to.emit(elu, 'Transfer');
@@ -196,9 +198,9 @@ describe('Register', function () {
       const errorMsg = `AccessControl: account ${otherAccAddress} is missing role ${register_manager_role}`;
 
       await expect(register.connect(otherAcc).registerSupplier(deployer.address, 5, 10)).to.be.revertedWith(errorMsg);
-      await expect(
-        register.connect(otherAcc).registerElectricityUser(otherAcc.address, 10),
-      ).to.be.revertedWith(errorMsg);
+      await expect(register.connect(otherAcc).registerElectricityUser(otherAcc.address, 10)).to.be.revertedWith(
+        errorMsg,
+      );
       await expect(register.connect(otherAcc).unRegisterSupplier(otherAcc.address, 10)).to.be.revertedWith(errorMsg);
       await expect(register.connect(otherAcc).unRegisterElectricityUser(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,

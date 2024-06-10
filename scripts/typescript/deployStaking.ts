@@ -8,7 +8,7 @@ export async function deployStaking(manager_address: BytesLike): Promise<Staking
   console.log(`StakingReward deployment`);
 
   const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward');
-  const stakingReward = await StakingReward.deploy(manager_address) as StakingReward;
+  const stakingReward = (await StakingReward.deploy(manager_address)) as StakingReward;
   await stakingReward.deployed();
 
   console.log(`StakingReward deployed to ${stakingReward.address}`);
@@ -19,7 +19,6 @@ export async function deployStaking(manager_address: BytesLike): Promise<Staking
 async function main() {
   await deployStaking(MANAGER_ADDRESS);
 }
-
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.

@@ -12,7 +12,7 @@ export async function deployMain(manager_address: BytesLike): Promise<Main> {
   console.log(`Main deployment`);
 
   const Main: ContractFactory = await ethers.getContractFactory('Main');
-  const main = await Main.deploy(manager_address) as Main;
+  const main = (await Main.deploy(manager_address)) as Main;
   await main.deployed();
 
   console.log(`Main deployed to ${main.address}`);

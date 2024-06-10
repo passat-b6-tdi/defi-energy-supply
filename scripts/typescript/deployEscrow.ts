@@ -12,7 +12,7 @@ export async function deployEscrow(manager_address: BytesLike): Promise<Escrow> 
   console.log(`Escrow deployment`);
 
   const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
-  const escrow = await Escrow.deploy(manager_address) as Escrow;
+  const escrow = (await Escrow.deploy(manager_address)) as Escrow;
   await escrow.deployed();
 
   console.log(`Escrow deployed to ${escrow.address}`);

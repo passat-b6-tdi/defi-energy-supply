@@ -10,7 +10,7 @@ dotenv.config();
 export enum AccountTypes {
   Mnemonic,
   PK,
-  TestnetPk
+  TestnetPk,
 }
 
 export function getNetworkAccounts(account: string, accountType: AccountTypes): HttpNetworkAccountsUserConfig {
