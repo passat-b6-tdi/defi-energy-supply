@@ -111,13 +111,25 @@ describe('Main', function () {
     await mcgr.connect(otherAcc).approve(main.address, ethers.constants.MaxUint256);
     await elu.connect(otherAcc).setApprovalForAll(register.address, true);
 
-    return { mcgr, elu, nrgs, register, stakingReward, manager, escrow, main, energyOracle, deployer, otherAcc, anotherAcc };
+    return {
+      mcgr,
+      elu,
+      nrgs,
+      register,
+      stakingReward,
+      manager,
+      escrow,
+      main,
+      energyOracle,
+      deployer,
+      otherAcc,
+      anotherAcc,
+    };
   }
 
   it('Deployed correctly', async () => {
-    const { mcgr, elu, nrgs, register, stakingReward, manager, escrow, main, energyOracle, deployer } = await loadFixture(
-      deployFixture,
-    );
+    const { mcgr, elu, nrgs, register, stakingReward, manager, escrow, main, energyOracle, deployer } =
+      await loadFixture(deployFixture);
 
     expect(mcgr.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
@@ -259,7 +271,12 @@ describe('Main', function () {
     const now = await time.latest();
     const consumption = 20;
 
-    const recordConsumption = await energyOracle.recordEnergyConsumption(otherAcc.address, supplierId, now, consumption);
+    const recordConsumption = await energyOracle.recordEnergyConsumption(
+      otherAcc.address,
+      supplierId,
+      now,
+      consumption,
+    );
     const recordedConsumption = await energyOracle.energyConsumptions(otherAcc.address, supplierId, 0);
 
     expect(recordConsumption).to.emit(energyOracle, 'EnergyConsumptionRecorded');

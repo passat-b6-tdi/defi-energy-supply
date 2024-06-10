@@ -230,18 +230,18 @@ describe('EnergyOracle', function () {
       expect(userTokenConsumptions1.timestamp).to.equal(timestamp);
       expect(userTokenConsumptions1.consumption).to.equal(consumption);
 
-      await expect(energyOracle.recordEnergyConsumption(user, tokenId, timestamp + 50, consumption + 10)).to.be.revertedWith(
-        'EnergyOracle: Previous value is not within acceptable range',
-      );
+      await expect(
+        energyOracle.recordEnergyConsumption(user, tokenId, timestamp + 50, consumption + 10),
+      ).to.be.revertedWith('EnergyOracle: Previous value is not within acceptable range');
     });
 
     it('Only ENERGY_ORACLE_PROVIDER_ROLE can record energy consumption', async () => {
       const { energyOracle, otherAcc } = await loadFixture(deployFixture);
       const error = `AccessControl: account ${otherAccAddress} is missing role ${oracle_provider}`;
 
-      await expect(energyOracle.connect(otherAcc).recordEnergyConsumption(otherAcc.address, 1, 50, 10)).to.be.revertedWith(
-        error,
-      );
+      await expect(
+        energyOracle.connect(otherAcc).recordEnergyConsumption(otherAcc.address, 1, 50, 10),
+      ).to.be.revertedWith(error);
     });
 
     it('Only ENERGY_ORACLE_MANAGER_ROLE can pause/unpause', async () => {
