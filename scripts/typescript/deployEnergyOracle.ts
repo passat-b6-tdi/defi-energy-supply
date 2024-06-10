@@ -9,7 +9,7 @@ export async function deployEnergyOracle(manager_address: BytesLike): Promise<En
     throw Error('Manager address is not defined');
   }
 
-  console.log(`Oracle deployment`);
+  console.log(`EnergyOracle deployment`);
 
   const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
   const energyOracle = (await EnergyOracle.deploy(manager_address)) as EnergyOracle;

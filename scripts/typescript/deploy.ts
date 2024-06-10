@@ -74,7 +74,7 @@ async function main() {
   await escrow.deployed();
   console.log(`Escrow deployed to ${escrow.address}`);
 
-  console.log(`Oracle deployment`);
+  console.log(`EnergyOracle deployment`);
   const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
   const energyOracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
   await energyOracle.deployed();

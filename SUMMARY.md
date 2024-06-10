@@ -9,7 +9,7 @@
   - manager
     - [Manager](docs/manager/manager.md)
   - energy-oracle
-    - [Oracle](docs/energy-oracle/energyoracle.md)
+    - [EnergyOracle](docs/energy-oracle/energyoracle.md)
   - register
     - [Register](docs/register/register.md)
   - staking

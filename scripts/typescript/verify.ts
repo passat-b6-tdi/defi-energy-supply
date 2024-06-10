@@ -13,7 +13,7 @@ const Manager = '0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf';
 
 const Escrow = '0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C';
 const Main = '0x8759fe749f3feDf0A7319C83551bd475Cd6c2201';
-const Oracle = '0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4';
+const EnergyOracle = '0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4';
 const Register = '0x92aC6a4d4D3ddFb7eA2B32847D6Cf89FAF4F948b';
 const StakingReward = '0x5fC19FFcf9fA10B16A4892306862413f7E34EB09';
 
@@ -66,8 +66,8 @@ async function verifyEscrow(manager_address: BytesLike): Promise<void> {
 }
 
 async function verifyOracle(manager_address: BytesLike): Promise<void> {
-  if (Oracle != undefined && Oracle != '') {
-    await verifyContract(Oracle, [manager_address]);
+  if (EnergyOracle != undefined && EnergyOracle != '') {
+    await verifyContract(EnergyOracle, [manager_address]);
   }
 }
 

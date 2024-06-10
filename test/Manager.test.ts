@@ -54,8 +54,8 @@ describe('Manager', function () {
     const register: Register = (await Register.deploy(manager.address)) as Register;
     await register.deployed();
 
-    const Oracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-    const energyOracle: EnergyOracle = (await Oracle.deploy(manager.address)) as EnergyOracle;
+    const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
+    const energyOracle: EnergyOracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
     await energyOracle.deployed();
 
     const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
@@ -213,7 +213,7 @@ describe('Manager', function () {
       expect(changes).to.emit(manager, 'RegisterChanged');
     });
 
-    it('Manager can change Oracle', async () => {
+    it('Manager can change EnergyOracle', async () => {
       const { manager, energyOracle } = await loadFixture(deployFixture);
 
       const changes = await manager.changeEnergyOracle(energyOracle.address);

@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 /**
  * @title IMCGR interface of MCGR contract
- * Can be used as staking reward token, or rewards for Oracle makers.
+ * Can be used as staking reward token, or rewards for Energy Oracle makers.
  * @author Bohdan
  */
 interface IMCGR {

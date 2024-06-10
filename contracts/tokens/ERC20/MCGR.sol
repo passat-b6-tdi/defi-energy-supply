@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title MCGR token contract
- * Can be used as staking reward token, or rewards for Oracle makers.
+ * Can be used as staking reward token, or rewards for Energy Oracle makers.
  * @author Bohdan
  */
 contract MCGR is ERC20, AccessControl {

@@ -12,7 +12,7 @@ struct EnergyConsumption {
 ## EnergyOracle
 
 _This contract allows recording and retrieving energy consumption data for users and tokens.
-The contract is managed by an Oracle Provider who can record energy consumption and an Energy Oracle Manager
+The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
 who can retrieve the consumption data._
 
 ### EnergyConsumptionRecorded
@@ -21,7 +21,7 @@ who can retrieve the consumption data._
 event EnergyConsumptionRecorded(address sender, address whoseConsumption, uint256 supplierId, uint256 consumption, uint256 timestamp)
 ```
 
-_Emmited when an Oracle provider_
+_Emmited when an Energy Oracle provider_
 
 ### EnergyConsumptionSent
 

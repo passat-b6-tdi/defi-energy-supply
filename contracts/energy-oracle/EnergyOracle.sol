@@ -11,14 +11,14 @@ struct EnergyConsumption {
 }
 
 /**
- * @title Oracle contract to record indicators of consumed energy from the source
+ * @title Energy Oracle contract to record indicators of consumed energy from the source
  * @dev This contract allows recording and retrieving energy consumption data for users and tokens.
- * The contract is managed by an Oracle Provider who can record energy consumption and an Energy Oracle Manager
+ * The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
  * who can retrieve the consumption data.
  * @author Bohdan
  */
 contract EnergyOracle is Parent, Pausable {
-    ///@dev Emmited when an Oracle provider
+    ///@dev Emmited when an Energy Oracle provider
     event EnergyConsumptionRecorded(
         address indexed sender,
         address indexed whoseConsumption,

@@ -12,7 +12,7 @@ The Energy Billing Automation System is a comprehensive solution designed to aut
 
 - Manager [0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf](https://sepolia.arbiscan.io/address/0x8D2971DD07b42Bf63f82E72F08a07431573aB1Bf#code)
 
-- Oracle [0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4](https://sepolia.arbiscan.io/address/0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4#code)
+- EnergyOracle [0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4](https://sepolia.arbiscan.io/address/0x1888C7F3fF23793ea0B462D319D9DF122f67f6b4#code)
 
 - Escrow [0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C](https://sepolia.arbiscan.io/address/0xf8Fa8CCeB1F19541a71b6732B28f5c626528d92C#code)
 
