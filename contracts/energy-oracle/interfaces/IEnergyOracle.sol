@@ -13,8 +13,7 @@ interface IEnergyOracle {
     /// Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
     /// @param user The user address
     /// @param supplierId The supplier ID
-    /// @return consumption The energy consumption value
-    function updateEnergyConsumptions(address user, uint256 supplierId) external returns (uint256 consumption);
+    function updateEnergyConsumptions(address user, uint256 supplierId) external;
 
     /**
      * @notice Records the energy consumption for a user to supplier at a specific timestamp.

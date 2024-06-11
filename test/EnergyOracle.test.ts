@@ -100,15 +100,14 @@ describe('EnergyOracle', function () {
       const tokenId = 10;
       const consumption = 20;
 
-      const record = await energyOracle.recordEnergyConsumption(user, tokenId, timestamp, consumption);
-      const userTokenConsumptions = await energyOracle.energyConsumptions(user, tokenId, 0);
+      const record = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
+      const userTokenConsumptions = await energyOracle.energyConsumptions(user, tokenId);
 
       const balAfter = await mcgr.balanceOf(deployer.address);
       expect(balAfter).to.eq(20);
 
       expect(record).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(userTokenConsumptions.timestamp).to.equal(timestamp);
-      expect(userTokenConsumptions.consumption).to.equal(consumption);
+      expect(userTokenConsumptions).to.equal(consumption);
     });
 
     it('ESCROW can read and delete consumption', async () => {
@@ -124,15 +123,14 @@ describe('EnergyOracle', function () {
       const tokenId = 10;
       const consumption = 20;
 
-      const record = await energyOracle.recordEnergyConsumption(user, tokenId, timestamp, consumption);
-      let userTokenConsumptions = await energyOracle.energyConsumptions(user, tokenId, 0);
+      const record = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
+      let userTokenConsumptions = await energyOracle.energyConsumptions(user, tokenId);
 
       const balAfter = await mcgr.balanceOf(deployer.address);
       expect(balAfter).to.eq(20);
 
       expect(record).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(userTokenConsumptions.timestamp).to.equal(timestamp);
-      expect(userTokenConsumptions.consumption).to.equal(consumption);
+      expect(userTokenConsumptions).to.equal(consumption);
 
       let read = await escrow.read(user, tokenId);
 
@@ -146,9 +144,7 @@ describe('EnergyOracle', function () {
 
       consumptions = await escrow.consumption();
 
-      expect(consumptions).to.be.eq(0);
-
-      await expect(energyOracle.energyConsumptions(user, tokenId, 0)).to.be.reverted;
+      expect(consumptions).to.be.eq(consumption);
     });
 
     it('Multiple ORACLE_PROVIDERs can record consumption', async () => {
@@ -164,83 +160,51 @@ describe('EnergyOracle', function () {
       const tokenId = 10;
       const consumption = 20;
 
-      const record1 = await energyOracle.recordEnergyConsumption(user, tokenId, timestamp, consumption);
-      const userTokenConsumptions1 = await energyOracle.energyConsumptions(user, tokenId, 0);
+      const record1 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
+      const userTokenConsumptions1 = await energyOracle.energyConsumptions(user, tokenId);
 
       let balAfter = await mcgr.balanceOf(deployer.address);
       expect(balAfter).to.eq(20);
 
       expect(record1).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(userTokenConsumptions1.timestamp).to.equal(timestamp);
-      expect(userTokenConsumptions1.consumption).to.equal(consumption);
+      expect(userTokenConsumptions1).to.equal(consumption);
 
-      const record2 = await energyOracle.recordEnergyConsumption(user, tokenId, timestamp + 50, consumption + 5);
-      const userTokenConsumptions2 = await energyOracle.energyConsumptions(user, tokenId, 0);
+      const record2 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption + 5);
+      const userTokenConsumptions2 = await energyOracle.energyConsumptions(user, tokenId);
 
       balAfter = await mcgr.balanceOf(deployer.address);
       expect(balAfter).to.eq(40);
 
       expect(record2).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(userTokenConsumptions2.timestamp).to.equal(timestamp + 50);
-      expect(userTokenConsumptions2.consumption).to.equal(consumption + 2);
+      expect(userTokenConsumptions2).to.equal(consumption + 5);
 
-      const record3 = await energyOracle.recordEnergyConsumption(user, tokenId, timestamp + 50, consumption);
-      const userTokenConsumptions3 = await energyOracle.energyConsumptions(user, tokenId, 0);
+      const record3 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
+      const userTokenConsumptions3 = await energyOracle.energyConsumptions(user, tokenId);
 
       balAfter = await mcgr.balanceOf(deployer.address);
       expect(balAfter).to.eq(60);
 
       expect(record3).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(userTokenConsumptions3.timestamp).to.equal(timestamp + 50);
-      expect(userTokenConsumptions3.consumption).to.equal(consumption + 1);
+      expect(userTokenConsumptions3).to.equal(consumption);
 
-      const record4 = await energyOracle.recordEnergyConsumption(user, tokenId, timestamp + 50, consumption - 4);
-      const userTokenConsumptions4 = await energyOracle.energyConsumptions(user, tokenId, 0);
+      const record4 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption - 4);
+      const userTokenConsumptions4 = await energyOracle.energyConsumptions(user, tokenId);
 
       balAfter = await mcgr.balanceOf(deployer.address);
       expect(balAfter).to.eq(80);
 
       expect(record4).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(userTokenConsumptions4.timestamp).to.equal(timestamp + 50);
-      expect(userTokenConsumptions4.consumption).to.equal(consumption - 2);
+      expect(userTokenConsumptions4).to.equal(consumption - 4);
     });
   });
 
   describe('Errors', function () {
-    it('Multiple ORACLE_PROVIDERs need to record consumprtion within the acceptable range', async () => {
-      const { energyOracle, elu, deployer, mcgr } = await loadFixture(deployFixture);
-
-      await elu.mint(deployer.address, 10, deployer.address);
-
-      const balBefore = await mcgr.balanceOf(deployer.address);
-      expect(balBefore).to.eq(0);
-
-      const timestamp = (await time.latest()) - 100;
-      const user = deployer.address;
-      const tokenId = 10;
-      const consumption = 20;
-
-      const record1 = await energyOracle.recordEnergyConsumption(user, tokenId, timestamp, consumption);
-      const userTokenConsumptions1 = await energyOracle.energyConsumptions(user, tokenId, 0);
-
-      let balAfter = await mcgr.balanceOf(deployer.address);
-      expect(balAfter).to.eq(20);
-
-      expect(record1).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(userTokenConsumptions1.timestamp).to.equal(timestamp);
-      expect(userTokenConsumptions1.consumption).to.equal(consumption);
-
-      await expect(
-        energyOracle.recordEnergyConsumption(user, tokenId, timestamp + 50, consumption + 10),
-      ).to.be.revertedWith('EnergyOracle: Previous value is not within acceptable range');
-    });
-
     it('Only ENERGY_ORACLE_PROVIDER_ROLE can record energy consumption', async () => {
       const { energyOracle, otherAcc } = await loadFixture(deployFixture);
       const error = `AccessControl: account ${otherAccAddress} is missing role ${oracle_provider}`;
 
       await expect(
-        energyOracle.connect(otherAcc).recordEnergyConsumption(otherAcc.address, 1, 50, 10),
+        energyOracle.connect(otherAcc).recordEnergyConsumption(otherAcc.address, 1, 10),
       ).to.be.revertedWith(error);
     });
 
@@ -259,7 +223,7 @@ describe('EnergyOracle', function () {
       const error = `AccessControl: account ${otherAccAddress} is missing role ${escrow_role}`;
 
       await expect(
-        energyOracle.connect(otherAcc).updateEnergyConsumptionsAndGetResult(otherAcc.address, 1),
+        energyOracle.connect(otherAcc).updateEnergyConsumptions(otherAcc.address, 1),
       ).to.be.revertedWith(error);
     });
 
@@ -268,8 +232,8 @@ describe('EnergyOracle', function () {
       const error = 'Parent: account is address 0';
       const address0 = ethers.constants.AddressZero;
 
-      await expect(energyOracle.recordEnergyConsumption(address0, 1, 50, 10)).to.be.revertedWith(error);
-      await expect(energyOracle.updateEnergyConsumptionsAndGetResult(address0, 1)).to.be.revertedWith(error);
+      await expect(energyOracle.recordEnergyConsumption(address0, 1, 10)).to.be.revertedWith(error);
+      await expect(energyOracle.updateEnergyConsumptions(address0, 1)).to.be.revertedWith(error);
     });
 
     it('Pausable', async () => {
@@ -279,18 +243,18 @@ describe('EnergyOracle', function () {
 
       const error = 'Pausable: paused';
 
-      await energyOracle.recordEnergyConsumption(otherAccAddress, 1, 50, 10);
-      await energyOracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 1);
+      await energyOracle.recordEnergyConsumption(otherAccAddress, 1, 10);
+      await energyOracle.updateEnergyConsumptions(otherAccAddress, 1);
 
       await energyOracle.pause();
 
-      await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 1, 50, 10)).to.be.revertedWith(error);
-      await expect(energyOracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 1)).to.be.revertedWith(error);
+      await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 1, 10)).to.be.revertedWith(error);
+      await expect(energyOracle.updateEnergyConsumptions(otherAccAddress, 1)).to.be.revertedWith(error);
 
       await energyOracle.unpause();
 
-      await energyOracle.recordEnergyConsumption(otherAccAddress, 1, 50, 10);
-      await energyOracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 1);
+      await energyOracle.recordEnergyConsumption(otherAccAddress, 1, 10);
+      await energyOracle.updateEnergyConsumptions(otherAccAddress, 1);
     });
 
     it('Only correct user can be recorded', async () => {
@@ -300,20 +264,8 @@ describe('EnergyOracle', function () {
 
       const error = 'EnergyOracle: user is not correct';
 
-      await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 2, 50, 10)).to.be.revertedWith(error);
-      await expect(energyOracle.updateEnergyConsumptionsAndGetResult(otherAccAddress, 2)).to.be.revertedWith(error);
-    });
-
-    it('Only correct timestamp for record accepted', async () => {
-      const { energyOracle, elu } = await loadFixture(deployFixture);
-
-      await elu.mint(otherAccAddress, 1, otherAccAddress);
-
-      const error = 'EnergyOracle: timestamp has not yet arrived';
-
-      const timestamp = (await time.latest()) + 100;
-
-      await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 1, timestamp, 10)).to.be.revertedWith(error);
+      await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 2, 10)).to.be.revertedWith(error);
+      await expect(energyOracle.updateEnergyConsumptions(otherAccAddress, 2)).to.be.revertedWith(error);
     });
   });
 });

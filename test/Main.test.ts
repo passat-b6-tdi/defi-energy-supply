@@ -270,22 +270,21 @@ describe('Main', function () {
     const recordConsumption = await energyOracle.recordEnergyConsumption(
       otherAcc.address,
       supplierId,
-      now,
       consumption,
     );
-    const recordedConsumption = await energyOracle.energyConsumptions(otherAcc.address, supplierId, 0);
+    const recordedConsumption = await energyOracle.energyConsumptions(otherAcc.address, supplierId);
 
     expect(recordConsumption).to.emit(energyOracle, 'EnergyConsumptionRecorded');
     expect(recordConsumption).to.changeTokenBalance(mcgr, deployer, 20);
     expect(await mcgr.balanceOf(deployer.address)).to.eq(20);
-    expect(recordedConsumption.consumption).to.be.eq(consumption);
+    expect(recordedConsumption).to.be.eq(consumption);
 
-    const amountToPay = recordedConsumption.consumption.add(10);
+    const amountToPay = recordedConsumption.add(10);
 
     const pay = await main.connect(otherAcc).payForElectricity(supplierId, amountToPay);
     expect(pay).to.emit(escrow, 'PaidForEnergy');
     expect(pay).to.changeTokenBalances(mcgr, [otherAcc, anotherAcc], [-amountToPay, amountToPay]);
-    expect(await mcgr.balanceOf(anotherAcc.address)).to.eq(recordedConsumption.consumption);
+    expect(await mcgr.balanceOf(anotherAcc.address)).to.eq(recordedConsumption);
     expect(await mcgr.balanceOf(otherAcc.address)).to.eq(BigNumber.from(10000).sub(amountToPay.add(10)));
   });
 
