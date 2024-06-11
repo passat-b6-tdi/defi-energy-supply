@@ -44,7 +44,7 @@ contract Escrow is Parent {
 
         require(manager.ELU().balanceOf(user, supplierId) > 0, "Escrow: user connected to another supplier");
 
-        uint256 consumption = manager.energyOracle().updateEnergyConsumptionsAndGetResult(user, supplierId);
+        uint256 consumption = manager.energyOracle().energyConsumptions(user, supplierId);
         uint256 needToBePaid = consumption + manager.fees();
 
         require(paidAmount >= needToBePaid, "Escrow: not enough funds sent");
@@ -61,6 +61,8 @@ contract Escrow is Parent {
         if (amountRemaining > 0) {
             require(manager.MCGR().transfer(user, amountRemaining), "Escrow: transfer to user failed");
         }
+
+        manager.energyOracle().updateEnergyConsumptions(user, supplierId);
 
         emit PaidForEnergy(user, supplierId, supplier, consumption);
     }

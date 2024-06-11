@@ -9,18 +9,15 @@ pragma solidity ^0.8.19;
  * @author Bohdan
  */
 interface IEnergyOracle {
-    /// @notice Gets the energy consumption for a user, token
+    /// @notice Gets the energy consumption for a user to supplier
     /// Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
     /// @param user The user address
-    /// @param supplierId The token ID
+    /// @param supplierId The supplier ID
     /// @return consumption The energy consumption value
-    function updateEnergyConsumptionsAndGetResult(
-        address user,
-        uint256 supplierId
-    ) external returns (uint256 consumption);
+    function updateEnergyConsumptions(address user, uint256 supplierId) external returns (uint256 consumption);
 
     /**
-     * @notice Records the energy consumption for a user and token at a specific timestamp.
+     * @notice Records the energy consumption for a user to supplier at a specific timestamp.
      * @dev
      * Requirements:
      * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
@@ -28,7 +25,7 @@ interface IEnergyOracle {
      * - `timestamp` must be equal to 21:00
      *
      * @param user The user address
-     * @param supplierId The token ID
+     * @param supplierId The supplier ID
      * @param timestamp The timestamp for the energy consumption
      * @param consumption The energy consumption value
      */
@@ -37,14 +34,8 @@ interface IEnergyOracle {
     /**
      * @dev Retrieves the timestamp and consumption value for a specific energy consumption record.
      * @param user The address of the user.
-     * @param supplierId The ID of the token.
-     * @param id The index of the energy consumption record.
-     * @return timestamp The timestamp of the energy consumption record.
+     * @param supplierId The ID of the supplier.
      * @return consumption The consumption value of the energy consumption record.
      */
-    function energyConsumptions(
-        address user,
-        uint256 supplierId,
-        uint256 id
-    ) external view returns (uint timestamp, uint consumption);
+    function energyConsumptions(address user, uint256 supplierId) external view returns (uint consumption);
 }
