@@ -33,15 +33,10 @@ contract Main is Parent {
      * - `buildingsNumber` must be greater than 0.
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
      *
-     * @param supplierId The ID of the supplier.
-     * @param amountOfUsers The number of users to whom the supplier can provide electricity.
+     * @param supplier The address of the supplier.
      */
-    function registerSupplier(
-        address supplier,
-        uint256 supplierId,
-        uint256 amountOfUsers
-    ) external onlyRole(MAIN_MANAGER_ROLE) gtZero(amountOfUsers) {
-        manager.register().registerSupplier(supplier, supplierId, amountOfUsers);
+    function registerSupplier(address supplier) external onlyRole(MAIN_MANAGER_ROLE) {
+        manager.register().registerSupplier(supplier);
     }
 
     /**

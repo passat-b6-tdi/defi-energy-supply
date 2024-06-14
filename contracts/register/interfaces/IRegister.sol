@@ -14,10 +14,8 @@ interface IRegister {
      * - `supplier` must have NRGS token.
      *
      * @param supplier The address of the supplier.
-     * @param supplierId The ID of the supplier.
-     * @param amountOfUsers The amount of users for the supplier.
      */
-    function registerSupplier(address supplier, uint256 supplierId, uint256 amountOfUsers) external;
+    function registerSupplier(address supplier) external;
 
     /**
      * @notice Registers an Electricity user.

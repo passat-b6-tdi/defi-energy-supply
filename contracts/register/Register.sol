@@ -15,7 +15,6 @@ contract Register is Parent, ERC1155Holder {
         address indexed sender,
         address indexed supplier,
         uint256 indexed supplierId,
-        uint256 amountOfUsers,
         uint256 timestamp
     );
     ///@dev Emmited when a user unregisters as an Energy supplier
@@ -31,6 +30,7 @@ contract Register is Parent, ERC1155Holder {
         address indexed sender,
         address indexed user,
         uint256 indexed usersSupplierId,
+        address supplierAddress,
         uint256 timestamp
     );
     ///@dev Emmited when a user unregisters as an Electricity user
@@ -38,11 +38,15 @@ contract Register is Parent, ERC1155Holder {
         address indexed sender,
         address indexed user,
         uint256 indexed usersSupplierId,
+        address supplierAddress,
         uint256 timestamp
     );
 
     /// @dev Keccak256 hashed `REGISTER_MANAGER_ROLE` string
     bytes32 public constant REGISTER_MANAGER_ROLE = keccak256(bytes("REGISTER_MANAGER_ROLE"));
+
+    /// @dev Counter of suppliers Ids
+    uint256 public currentSupplierId = 1;
 
     /// @notice Constructor to initialize Register contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`
@@ -58,21 +62,17 @@ contract Register is Parent, ERC1155Holder {
      * - `supplier` must have NRGS token.
      *
      * @param supplier The address of the supplier.
-     * @param supplierId The ID of the supplier.
-     * @param amountOfUsers The amount of users for the supplier.
      */
-    function registerSupplier(
-        address supplier,
-        uint256 supplierId,
-        uint256 amountOfUsers
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(supplier) {
-        manager.NRGS().mint(supplier, supplierId);
+    function registerSupplier(address supplier) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(supplier) {
+        uint256 supplierId = currentSupplierId;
 
-        manager.ELU().mint(address(this), supplierId, amountOfUsers);
+        currentSupplierId++;
+
+        manager.NRGS().mint(supplier, supplierId);
 
         manager.staking().enterStaking(supplier, supplierId);
 
-        emit SupplierRegistered(msg.sender, supplier, supplierId, amountOfUsers, block.timestamp);
+        emit SupplierRegistered(msg.sender, supplier, supplierId, block.timestamp);
     }
 
     /**
@@ -88,9 +88,16 @@ contract Register is Parent, ERC1155Holder {
         address user,
         uint256 usersSupplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
-        manager.ELU().safeTransferFrom(address(this), user, usersSupplierId, 1, "");
+        require(
+            manager.ELU().balanceOf(user, usersSupplierId) == 0,
+            "Register: can not register already registered user"
+        );
 
-        emit UserRegistered(msg.sender, user, usersSupplierId, block.timestamp);
+        address supplier = manager.NRGS().ownerOf(usersSupplierId);
+
+        manager.ELU().mint(user, usersSupplierId, 1);
+
+        emit UserRegistered(msg.sender, user, usersSupplierId, supplier, block.timestamp);
     }
 
     /**
@@ -125,11 +132,12 @@ contract Register is Parent, ERC1155Holder {
         address user,
         uint256 usersSupplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
-        require(manager.ELU().balanceOf(user, usersSupplierId) > 0, "Register: supplier is not correct");
+        require(manager.ELU().balanceOf(user, usersSupplierId) == 1, "Register: supplier is not correct");
+        address supplier = manager.NRGS().ownerOf(usersSupplierId);
 
-        manager.ELU().safeTransferFrom(user, address(this), usersSupplierId, 1, "");
+        manager.ELU().burn(user, usersSupplierId, 1);
 
-        emit UserUnregistered(msg.sender, user, usersSupplierId, block.timestamp);
+        emit UserUnregistered(msg.sender, user, usersSupplierId, supplier, block.timestamp);
     }
 
     /// @inheritdoc AccessControl
