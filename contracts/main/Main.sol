@@ -94,7 +94,7 @@ contract Main is Parent {
         require(manager.ELU().balanceOf(msg.sender, usersSupplierId) > 0, "Main: only Electricity Users to Supplier");
 
         require(
-            manager.MCGR().transferFrom(msg.sender, address(manager.escrow()), amountToPay + manager.fees()),
+            manager.MGT().transferFrom(msg.sender, address(manager.escrow()), amountToPay + manager.fees()),
             "Main: transfer to Escrow failed"
         );
 

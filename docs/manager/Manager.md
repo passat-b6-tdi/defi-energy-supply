@@ -4,13 +4,13 @@
 
 _This contract manages the links to various contracts and stores configuration values for the system._
 
-### MCGRchanged
+### MGTchanged
 
 ```solidity
-event MCGRchanged(address sender, contract IMCGR newMCGR)
+event MGTchanged(address sender, contract IMGT newMGT)
 ```
 
-_Emitted when a manager has changed the `MCGR` link to another contract_
+_Emitted when a manager has changed the `MGT` link to another contract_
 
 ### ELUchanged
 
@@ -100,10 +100,10 @@ bytes32 MANAGER_ROLE
 
 _Keccak256 hashed `MANAGER_ROLE` string_
 
-### MCGR
+### MGT
 
 ```solidity
-contract IMCGR MCGR
+contract IMGT MGT
 ```
 
 _Reward token_
@@ -207,32 +207,32 @@ _Throws if passed value is <=0_
 ### constructor
 
 ```solidity
-constructor(contract IMCGR _MCGR, contract IELU _ELU, contract INRGS _NRGS, address _feeReceiver, uint256 _rewardAmount, uint256 _tolerance, uint256 _fees) public
+constructor(contract IMGT _MGT, contract IELU _ELU, contract INRGS _NRGS, address _feeReceiver, uint256 _rewardAmount, uint256 _tolerance, uint256 _fees) public
 ```
 
 Constructor to initialize the Manager contract
 
 _Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender`
-Sets `MCGR` token address, `ELU` and `NRGS` tokens addresses, `staking` address
+Sets `MGT` token address, `ELU` and `NRGS` tokens addresses, `staking` address
 Sets `feeReceiver` address
 Sets `rewardAmount`, `tolerance`, and `fees`_
 
-### changeMCGR
+### changeMGT
 
 ```solidity
-function changeMCGR(contract IMCGR _MCGR) external
+function changeMGT(contract IMGT _MGT) external
 ```
 
-Changes MCGR link to another contract.
+Changes MGT link to another contract.
 Requirements:
 - `msg.sender` must have `MANAGER_ROLE`
-- `_MCGR` must be not address 0
+- `_MGT` must be not address 0
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _MCGR | contract IMCGR | IMCGR |
+| _MGT | contract IMGT | IMGT |
 
 ### changeNRGS
 

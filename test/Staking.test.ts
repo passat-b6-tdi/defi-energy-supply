@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MCGR, Manager, StakingReward, Register } from '../typechain';
+import { MGT, Manager, StakingReward, Register } from '../typechain';
 import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
@@ -17,9 +17,9 @@ describe('Staking', function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
-    const mcgr: MCGR = (await MCGR.deploy()) as MCGR;
-    await mcgr.deployed();
+    const MGT: ContractFactory = await ethers.getContractFactory('MGT');
+    const MGT: MGT = (await MGT.deploy()) as MGT;
+    await MGT.deployed();
 
     const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
     const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
@@ -31,7 +31,7 @@ describe('Staking', function () {
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      mcgr.address,
+      MGT.address,
       elu.address,
       nrgs.address,
       deployer.address,
@@ -49,31 +49,31 @@ describe('Staking', function () {
     const register: Register = (await Register.deploy(manager.address)) as Register;
     await register.deployed();
 
-    admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
-    minter_role = await mcgr.MINTER_BURNER_ROLE();
+    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
+    minter_role = await MGT.MINTER_BURNER_ROLE();
     register_role = await nrgs.REGISTER_ROLE();
     staking_role = await stakingReward.STAKING_MANAGER_ROLE();
 
-    await mcgr.grantRole(minter_role, stakingReward.address);
+    await MGT.grantRole(minter_role, stakingReward.address);
 
-    return { mcgr, MCGR, nrgs, NRGS, register, stakingReward, manager, deployer, otherAcc };
+    return { MGT, MGT, nrgs, NRGS, register, stakingReward, manager, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mcgr, nrgs, stakingReward, manager, deployer } = await loadFixture(deployFixture);
+    const { MGT, nrgs, stakingReward, manager, deployer } = await loadFixture(deployFixture);
 
-    expect(mcgr.address).to.be.properAddress;
+    expect(MGT.address).to.be.properAddress;
     expect(stakingReward.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
 
-    expect(await mcgr.name()).to.be.eq('Mictrogrid Reward Token');
-    expect(await mcgr.symbol()).to.be.eq('MCGR');
+    expect(await MGT.name()).to.be.eq('Mictrogrid Token');
+    expect(await MGT.symbol()).to.be.eq('MGT');
     expect(await nrgs.name()).to.be.eq('Energy Supplier Token');
     expect(await nrgs.symbol()).to.be.eq('NRGS');
 
-    expect(await mcgr.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await mcgr.hasRole(minter_role, deployer.address)).to.be.true;
-    expect(await mcgr.hasRole(minter_role, stakingReward.address)).to.be.true;
+    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await MGT.hasRole(minter_role, stakingReward.address)).to.be.true;
 
     expect(await nrgs.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
@@ -99,7 +99,7 @@ describe('Staking', function () {
     });
 
     it('Manager can remove supplier from staking', async () => {
-      const { stakingReward, nrgs, deployer, mcgr } = await loadFixture(deployFixture);
+      const { stakingReward, nrgs, deployer, MGT } = await loadFixture(deployFixture);
       await nrgs.mint(deployer.address, 0);
 
       const txEnter = await stakingReward.enterStaking(deployer.address, 0);
@@ -152,11 +152,11 @@ describe('Staking', function () {
     });
 
     it('Manager can send rewards to supplier', async () => {
-      const { stakingReward, nrgs, deployer, mcgr, manager } = await loadFixture(deployFixture);
+      const { stakingReward, nrgs, deployer, MGT, manager } = await loadFixture(deployFixture);
       await nrgs.mint(deployer.address, 0);
 
-      let mcgrBalance = await mcgr.balanceOf(deployer.address);
-      expect(mcgrBalance).to.eq(0);
+      let MGTBalance = await MGT.balanceOf(deployer.address);
+      expect(MGTBalance).to.eq(0);
 
       const txEnter = await stakingReward.enterStaking(deployer.address, 0);
       let now = await time.latest();
@@ -177,11 +177,11 @@ describe('Staking', function () {
 
       const txSend = await stakingReward.sendRewards(deployer.address, 0);
       now = await time.latest();
-      mcgrBalance = await mcgr.balanceOf(deployer.address);
+      MGTBalance = await MGT.balanceOf(deployer.address);
 
       expect(txSend).to.emit(stakingReward, 'RewardSent');
       expect(sup.updatedAt).to.be.approximately(now, 1000);
-      expect(mcgrBalance.toNumber()).to.be.eq(rewardToUser.add(rewardAmount).toNumber());
+      expect(MGTBalance.toNumber()).to.be.eq(rewardToUser.add(rewardAmount).toNumber());
     });
   });
 

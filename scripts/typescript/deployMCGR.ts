@@ -1,20 +1,20 @@
 import { ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
-import { MCGR } from '../../typechain';
+import { MGT } from '../../typechain';
 
-export async function deployMCGR(): Promise<MCGR> {
-  console.log(`MCGR deployment`);
+export async function deployMGT(): Promise<MGT> {
+  console.log(`MGT deployment`);
 
-  const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
-  const mcgr = (await MCGR.deploy()) as MCGR;
-  await mcgr.deployed();
+  const MGT: ContractFactory = await ethers.getContractFactory('MGT');
+  const MGT = (await MGT.deploy()) as MGT;
+  await MGT.deployed();
 
-  console.log(`MCGR deployed to ${mcgr.address}`);
-  return mcgr;
+  console.log(`MGT deployed to ${MGT.address}`);
+  return MGT;
 }
 
 async function main() {
-  await deployMCGR();
+  await deployMGT();
 }
 
 // We recommend this pattern to be able to use async/await everywhere

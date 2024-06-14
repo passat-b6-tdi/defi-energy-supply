@@ -6,7 +6,7 @@ The Energy Billing Automation System is a comprehensive solution designed to aut
 
 - Electricity Users Token (ELU token) [0x700959F95fCd583C01b8Da2239ED9c2858dCBEce](https://sepolia.arbiscan.io/address/0x700959F95fCd583C01b8Da2239ED9c2858dCBEce#code)
 
-- Microgrid Token (MCGR token) [0x273d2c9e4A4F90DBfF3B40feefE088ee786f8FD2](https://sepolia.arbiscan.io/address/0x273d2c9e4A4F90DBfF3B40feefE088ee786f8FD2#code)
+- Microgrid Token (MGT token) [0x273d2c9e4A4F90DBfF3B40feefE088ee786f8FD2](https://sepolia.arbiscan.io/address/0x273d2c9e4A4F90DBfF3B40feefE088ee786f8FD2#code)
 
 - Energy Supplier Token (NRGS token) [0xb5a4F41c70D25191Df4cE4b0fCABD9d335e044c7](https://sepolia.arbiscan.io/address/0xb5a4F41c70D25191Df4cE4b0fCABD9d335e044c7#code)
 

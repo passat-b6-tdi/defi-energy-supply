@@ -137,7 +137,7 @@ contract StakingReward is Parent {
         suppliers[supplier][tokenId].pendingReward = 0;
         suppliers[supplier][tokenId].updatedAt = block.timestamp;
 
-        manager.MCGR().mint(supplier, _supplier.pendingReward);
+        manager.MGT().mint(supplier, _supplier.pendingReward);
     }
 
     function _updateRewardRate(uint _updatedAt) private view returns (uint256 rewardToUser) {

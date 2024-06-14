@@ -5,18 +5,19 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
- * @title MCGR Token contract
+ * @title MG Token contract
  * Can be used as staking reward token, or rewards for Energy Oracle makers.
+ * Equals to 1 kW.
  * @author Bohdan
  */
-contract MCGR is ERC20, AccessControl {
+contract MGT is ERC20, AccessControl {
     /// @dev Keccak256 hashed `MINTER_BURNER_ROLE` string
     bytes32 public constant MINTER_BURNER_ROLE = keccak256(bytes("MINTER_ROLE"));
 
     /// @notice Constructor to initialize ERC20 token contract
     /// @dev Grants each roles to `msg.sender`
     /// @dev Sets `name` and `symbol` of ERC20 token
-    constructor() ERC20("Mictrogrid Reward Token", "MCGR") {
+    constructor() ERC20("Mictrogrid Token", "MGT") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_BURNER_ROLE, msg.sender);
     }

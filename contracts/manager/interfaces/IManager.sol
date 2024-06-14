@@ -4,14 +4,14 @@ pragma solidity ^0.8.19;
 import "../../energy-oracle/interfaces/IEnergyOracle.sol";
 import "../../staking/interfaces/IStakingReward.sol";
 import "../../register/interfaces/IRegister.sol";
-import "../../tokens/ERC20/interfaces/IMCGR.sol";
+import "../../tokens/ERC20/interfaces/IMGT.sol";
 import "../../tokens/ERC721/interfaces/INRGS.sol";
 import "../../tokens/ERC1155/interfaces/IELU.sol";
 import "../../escrow/interfaces/IEscrow.sol";
 
 interface IManager {
-    ///@dev Reward token
-    function MCGR() external view returns (IMCGR);
+    ///@dev Microgrid token
+    function MGT() external view returns (IMGT);
 
     ///@dev Electricity user NFT token
     function ELU() external view returns (IELU);

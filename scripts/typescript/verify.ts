@@ -3,7 +3,7 @@ import { verifyContract } from './helpers/verify-contract';
 import { ethers } from 'hardhat';
 
 const ELU = '0x700959F95fCd583C01b8Da2239ED9c2858dCBEce';
-const MCGR = '0x273d2c9e4A4F90DBfF3B40feefE088ee786f8FD2';
+const MGT = '0x273d2c9e4A4F90DBfF3B40feefE088ee786f8FD2';
 const NRGS = '0xb5a4F41c70D25191Df4cE4b0fCABD9d335e044c7';
 
 const reward = 10;
@@ -22,7 +22,7 @@ async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
 
   await verifyELU();
-  await verifyMCGR();
+  await verifyMGT();
   await verifyNRGS();
 
   await verifyManager(deployer.address);
@@ -42,9 +42,9 @@ async function verifyELU(): Promise<void> {
   }
 }
 
-async function verifyMCGR(): Promise<void> {
-  if (MCGR != undefined && MCGR != '') {
-    await verifyContract(MCGR);
+async function verifyMGT(): Promise<void> {
+  if (MGT != undefined && MGT != '') {
+    await verifyContract(MGT);
   }
 }
 
@@ -55,8 +55,8 @@ async function verifyNRGS(): Promise<void> {
 }
 
 async function verifyManager(feeReceiver: BytesLike): Promise<void> {
-  if (ELU != undefined && ELU != '' && NRGS != undefined && NRGS != '' && MCGR != undefined && MCGR != '') {
-    await verifyContract(Manager, [MCGR, ELU, NRGS, feeReceiver, reward, tolerance, fees]);
+  if (ELU != undefined && ELU != '' && NRGS != undefined && NRGS != '' && MGT != undefined && MGT != '') {
+    await verifyContract(Manager, [MGT, ELU, NRGS, feeReceiver, reward, tolerance, fees]);
   }
 }
 

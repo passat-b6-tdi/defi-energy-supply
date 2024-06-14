@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { ParentMock, Manager, MCGR } from '../typechain';
+import { ParentMock, Manager, MGT } from '../typechain';
 import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
@@ -13,9 +13,9 @@ describe('Parent', function () {
   async function deployFixture() {
     const [deployer, otherAcc] = await ethers.getSigners();
 
-    const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
-    const mcgr: MCGR = (await MCGR.deploy()) as MCGR;
-    await mcgr.deployed();
+    const MGT: ContractFactory = await ethers.getContractFactory('MGT');
+    const MGT: MGT = (await MGT.deploy()) as MGT;
+    await MGT.deployed();
 
     const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
     const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
@@ -27,7 +27,7 @@ describe('Parent', function () {
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager1: Manager = (await Manager.deploy(
-      mcgr.address,
+      MGT.address,
       elu.address,
       nrgs.address,
       deployer.address,
@@ -38,7 +38,7 @@ describe('Parent', function () {
     await manager1.deployed();
 
     const manager2: Manager = (await Manager.deploy(
-      mcgr.address,
+      MGT.address,
       elu.address,
       nrgs.address,
       deployer.address,

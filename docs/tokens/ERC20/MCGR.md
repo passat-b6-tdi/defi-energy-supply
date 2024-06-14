@@ -1,6 +1,6 @@
 # Solidity API
 
-## MCGR
+## MGT
 
 ### MINTER_BURNER_ROLE
 

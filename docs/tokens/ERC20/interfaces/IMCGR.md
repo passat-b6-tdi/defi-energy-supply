@@ -1,6 +1,6 @@
 # Solidity API
 
-## IMCGR
+## IMGT
 
 ### mint
 

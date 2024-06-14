@@ -2,10 +2,10 @@
 
 ## IManager
 
-### MCGR
+### MGT
 
 ```solidity
-function MCGR() external view returns (contract IMCGR)
+function MGT() external view returns (contract IMGT)
 ```
 
 _Reward token_

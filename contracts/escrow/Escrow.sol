@@ -51,15 +51,15 @@ contract Escrow is Parent {
 
         uint256 amountRemaining = paidAmount - needToBePaid;
 
-        require(manager.MCGR().transfer(supplier, consumption), "Escrow: transfer to supplier failed");
+        require(manager.MGT().transfer(supplier, consumption), "Escrow: transfer to supplier failed");
 
         require(
-            manager.MCGR().transfer(manager.feeReceiver(), manager.fees()),
+            manager.MGT().transfer(manager.feeReceiver(), manager.fees()),
             "Escrow: transfer to fee receiver failed"
         );
 
         if (amountRemaining > 0) {
-            require(manager.MCGR().transfer(user, amountRemaining), "Escrow: transfer to user failed");
+            require(manager.MGT().transfer(user, amountRemaining), "Escrow: transfer to user failed");
         }
 
         manager.energyOracle().updateEnergyConsumptions(user, supplierId);

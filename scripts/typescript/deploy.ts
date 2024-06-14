@@ -1,7 +1,7 @@
 import hre, { ethers } from 'hardhat';
-import { ELU, EnergyOracle, Escrow, MCGR, Main, Manager, NRGS, Register, StakingReward } from '../../typechain';
+import { ELU, EnergyOracle, Escrow, MGT, Main, Manager, NRGS, Register, StakingReward } from '../../typechain';
 import {
-  deployMCGR,
+  deployMGT,
   deployELU,
   deployNRGS,
   deployManager,
@@ -33,11 +33,11 @@ async function main() {
   await elu.deployed();
   console.log(`ELU deployed to ${elu.address}`);
 
-  console.log(`MCGR deployment`);
-  const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
-  const mcgr = (await MCGR.deploy()) as MCGR;
-  await mcgr.deployed();
-  console.log(`MCGR deployed to ${mcgr.address}`);
+  console.log(`MGT deployment`);
+  const MGT: ContractFactory = await ethers.getContractFactory('MGT');
+  const MGT = (await MGT.deploy()) as MGT;
+  await MGT.deployed();
+  console.log(`MGT deployed to ${MGT.address}`);
 
   console.log(`NRGS deployment`);
   const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
@@ -53,7 +53,7 @@ async function main() {
 
   const Manager: ContractFactory = await ethers.getContractFactory('Manager');
   const manager = (await Manager.deploy(
-    mcgr.address,
+    MGT.address,
     elu.address,
     nrgs.address,
     feeReceiver,
@@ -104,7 +104,7 @@ async function main() {
   console.log('Manager set up - end');
 
   // Roles definition
-  minter_role = await mcgr.MINTER_BURNER_ROLE();
+  minter_role = await MGT.MINTER_BURNER_ROLE();
 
   register_role = await nrgs.REGISTER_ROLE();
 
@@ -127,8 +127,8 @@ async function main() {
 
   await elu.grantRole(register_role, register.address);
   await nrgs.grantRole(register_role, register.address);
-  await mcgr.grantRole(minter_role, stakingReward.address);
-  await mcgr.grantRole(minter_role, energyOracle.address);
+  await MGT.grantRole(minter_role, stakingReward.address);
+  await MGT.grantRole(minter_role, energyOracle.address);
   console.log('Granting roles - end');
 }
 

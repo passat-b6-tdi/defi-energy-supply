@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MCGR, Manager, Register, StakingReward } from '../typechain';
+import { MGT, Manager, Register, StakingReward } from '../typechain';
 import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 import { staking } from '../typechain/contracts';
@@ -22,9 +22,9 @@ describe('Register', function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MCGR: ContractFactory = await ethers.getContractFactory('MCGR');
-    const mcgr: MCGR = (await MCGR.deploy()) as MCGR;
-    await mcgr.deployed();
+    const MGT: ContractFactory = await ethers.getContractFactory('MGT');
+    const MGT: MGT = (await MGT.deploy()) as MGT;
+    await MGT.deployed();
 
     const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
     const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
@@ -36,7 +36,7 @@ describe('Register', function () {
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      mcgr.address,
+      MGT.address,
       elu.address,
       nrgs.address,
       deployer.address,
@@ -54,8 +54,8 @@ describe('Register', function () {
     const register: Register = (await Register.deploy(manager.address)) as Register;
     await register.deployed();
 
-    admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
-    minter_role = await mcgr.MINTER_BURNER_ROLE();
+    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
+    minter_role = await MGT.MINTER_BURNER_ROLE();
 
     staking_role = await stakingReward.STAKING_MANAGER_ROLE();
     register_role = await nrgs.REGISTER_ROLE();
@@ -64,7 +64,7 @@ describe('Register', function () {
     await manager.changeRewardAmount(10);
     await manager.changeStakingContract(stakingReward.address);
 
-    await mcgr.grantRole(minter_role, stakingReward.address);
+    await MGT.grantRole(minter_role, stakingReward.address);
 
     await nrgs.grantRole(register_role, register.address);
     await elu.grantRole(register_role, register.address);
@@ -73,26 +73,26 @@ describe('Register', function () {
 
     await elu.connect(otherAcc).setApprovalForAll(register.address, true);
 
-    return { mcgr, elu, ELU, nrgs, NRGS, manager, stakingReward, StakingReward, register, deployer, otherAcc };
+    return { MGT, elu, ELU, nrgs, NRGS, manager, stakingReward, StakingReward, register, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mcgr, elu, nrgs, stakingReward, register, manager, deployer } = await loadFixture(deployFixture);
+    const { MGT, elu, nrgs, stakingReward, register, manager, deployer } = await loadFixture(deployFixture);
 
-    expect(mcgr.address).to.be.properAddress;
+    expect(MGT.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
     expect(elu.address).to.be.properAddress;
     expect(stakingReward.address).to.be.properAddress;
     expect(register.address).to.be.properAddress;
 
-    expect(await mcgr.name()).to.be.eq('Mictrogrid Reward Token');
-    expect(await mcgr.symbol()).to.be.eq('MCGR');
+    expect(await MGT.name()).to.be.eq('Mictrogrid Token');
+    expect(await MGT.symbol()).to.be.eq('MGT');
     expect(await nrgs.name()).to.be.eq('Energy Supplier Token');
     expect(await nrgs.symbol()).to.be.eq('NRGS');
 
-    expect(await mcgr.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await mcgr.hasRole(minter_role, deployer.address)).to.be.true;
-    expect(await mcgr.hasRole(minter_role, stakingReward.address)).to.be.true;
+    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await MGT.hasRole(minter_role, stakingReward.address)).to.be.true;
 
     expect(await nrgs.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;

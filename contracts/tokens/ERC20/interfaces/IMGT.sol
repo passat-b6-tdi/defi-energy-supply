@@ -2,11 +2,12 @@
 pragma solidity ^0.8.19;
 
 /**
- * @title IMCGR interface of MCGR contract
+ * @title IMGT interface of MGT contract
  * Can be used as staking reward token, or rewards for Energy Oracle makers.
+ * Equals to 1 kW.
  * @author Bohdan
  */
-interface IMCGR {
+interface IMGT {
     /**
      * @dev Mints `to` address some `amount` of tokens
      * Requirements:

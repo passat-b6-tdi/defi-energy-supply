@@ -2,7 +2,7 @@ import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MCGR } from '../typechain';
+import { MGT } from '../typechain';
 import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
@@ -17,9 +17,9 @@ describe(`Tokens`, function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MCGR: ContractFactory = await ethers.getContractFactory(`MCGR`);
-    const mcgr: MCGR = (await MCGR.deploy()) as MCGR;
-    await mcgr.deployed();
+    const MGT: ContractFactory = await ethers.getContractFactory(`MGT`);
+    const MGT: MGT = (await MGT.deploy()) as MGT;
+    await MGT.deployed();
 
     const ELU: ContractFactory = await ethers.getContractFactory(`ELU`);
     const elu: ELU = (await ELU.deploy()) as ELU;
@@ -29,23 +29,23 @@ describe(`Tokens`, function () {
     const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
     await nrgs.deployed();
 
-    admin_role = await mcgr.DEFAULT_ADMIN_ROLE();
-    minter_role = await mcgr.MINTER_BURNER_ROLE();
+    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
+    minter_role = await MGT.MINTER_BURNER_ROLE();
 
     register_role = await nrgs.REGISTER_ROLE();
 
-    return { mcgr, elu, nrgs, deployer, otherAcc };
+    return { MGT, elu, nrgs, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mcgr, elu, nrgs, deployer } = await loadFixture(deployFixture);
+    const { MGT, elu, nrgs, deployer } = await loadFixture(deployFixture);
 
-    expect(mcgr.address).to.be.properAddress;
+    expect(MGT.address).to.be.properAddress;
     expect(elu.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
 
-    expect(await mcgr.name()).to.be.eq(`Mictrogrid Reward Token`);
-    expect(await mcgr.symbol()).to.be.eq(`MCGR`);
+    expect(await MGT.name()).to.be.eq(`Mictrogrid Token`);
+    expect(await MGT.symbol()).to.be.eq(`MGT`);
 
     expect(await elu.name()).to.be.eq(`Electricity Users Token`);
     expect(await elu.symbol()).to.be.eq(`ELU`);
@@ -53,8 +53,8 @@ describe(`Tokens`, function () {
     expect(await nrgs.name()).to.be.eq(`Energy Supplier Token`);
     expect(await nrgs.symbol()).to.be.eq(`NRGS`);
 
-    expect(await mcgr.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await mcgr.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
 
     expect(await elu.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await elu.hasRole(register_role, deployer.address)).to.be.true;
@@ -63,19 +63,19 @@ describe(`Tokens`, function () {
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
   });
 
-  describe(`MCGR`, function () {
-    it('MCGR can be minted and burner only by mint_burn manager', async () => {
-      const { mcgr, otherAcc } = await loadFixture(deployFixture);
+  describe(`MGT`, function () {
+    it('MGT can be minted and burner only by mint_burn manager', async () => {
+      const { MGT, otherAcc } = await loadFixture(deployFixture);
 
-      await expect(mcgr.connect(otherAcc).mint(otherAcc.address, 10)).to.be.revertedWith(
+      await expect(MGT.connect(otherAcc).mint(otherAcc.address, 10)).to.be.revertedWith(
         `AccessControl: account ${otherAccAddress} is missing role ${minter_role}`,
       );
-      expect(await mcgr.mint(otherAcc.address, 10)).to.changeTokenBalance(mcgr, otherAcc, 10);
+      expect(await MGT.mint(otherAcc.address, 10)).to.changeTokenBalance(MGT, otherAcc, 10);
 
-      await expect(mcgr.connect(otherAcc).burn(otherAcc.address, 10)).to.be.revertedWith(
+      await expect(MGT.connect(otherAcc).burn(otherAcc.address, 10)).to.be.revertedWith(
         `AccessControl: account ${otherAccAddress} is missing role ${minter_role}`,
       );
-      expect(await mcgr.burn(otherAcc.address, 10)).to.changeTokenBalance(mcgr, otherAcc, -10);
+      expect(await MGT.burn(otherAcc.address, 10)).to.changeTokenBalance(MGT, otherAcc, -10);
     });
   });
 

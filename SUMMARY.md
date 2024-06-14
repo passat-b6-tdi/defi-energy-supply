@@ -18,6 +18,6 @@
     - ERC1155
       - [ELU](docs/tokens/erc1155/elu.md)
     - ERC20
-      - [MCGR](docs/tokens/erc20/mcgr.md)
+      - [MGT](docs/tokens/erc20/MGT.md)
     - ERC721
       - [NRGS](docs/tokens/erc721/nrgs.md)

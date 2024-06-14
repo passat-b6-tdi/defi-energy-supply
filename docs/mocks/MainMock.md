@@ -8,16 +8,16 @@
 contract IEscrow escrow
 ```
 
-### mcgr
+### MGT
 
 ```solidity
-contract IMCGR mcgr
+contract IMGT MGT
 ```
 
 ### constructor
 
 ```solidity
-constructor(contract IEscrow _escrow, contract IMCGR _mcgr) public
+constructor(contract IEscrow _escrow, contract IMGT _MGT) public
 ```
 
 ### send

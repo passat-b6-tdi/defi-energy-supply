@@ -1,4 +1,4 @@
-export { deployMCGR } from './deployMCGR';
+export { deployMGT } from './deployMGT';
 export { deployELU } from './deployELU';
 export { deployNRGS } from './deployNRGS';
 

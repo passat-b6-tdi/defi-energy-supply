@@ -12,8 +12,8 @@ import "./interfaces/IManager.sol";
  */
 contract Manager is AccessControl, IManager {
     // Contracts
-    /// @dev Emitted when a manager has changed the `MCGR` link to another contract
-    event MCGRchanged(address indexed sender, IMCGR newMCGR);
+    /// @dev Emitted when a manager has changed the `MGT` link to another contract
+    event MGTchanged(address indexed sender, IMGT newMGT);
     // NFTs
     /// @dev Emitted when a manager has changed the `ELU` link to another contract
     event ELUchanged(address indexed sender, IELU newELU);
@@ -44,8 +44,8 @@ contract Manager is AccessControl, IManager {
     bytes32 public constant MANAGER_ROLE = keccak256(bytes("MANAGER_ROLE"));
 
     // Contracts
-    /// @dev Reward token
-    IMCGR public MCGR;
+    /// @dev Microgrid token
+    IMGT public MGT;
     /// @dev Electricity Users SFT token
     IELU public ELU;
     /// @dev Energy Supplier NFT token
@@ -86,12 +86,12 @@ contract Manager is AccessControl, IManager {
     /**
      * @notice Constructor to initialize the Manager contract
      * @dev Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender`
-     * Sets `MCGR` token address, `ELU` and `NRGS` tokens addresses, `staking` address
+     * Sets `MGT` token address, `ELU` and `NRGS` tokens addresses, `staking` address
      * Sets `feeReceiver` address
      * Sets `rewardAmount`, `tolerance`, and `fees`
      */
     constructor(
-        IMCGR _MCGR,
+        IMGT _MGT,
         IELU _ELU,
         INRGS _NRGS,
         address _feeReceiver,
@@ -102,7 +102,7 @@ contract Manager is AccessControl, IManager {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MANAGER_ROLE, msg.sender);
 
-        MCGR = _MCGR;
+        MGT = _MGT;
         ELU = _ELU;
         NRGS = _NRGS;
 
@@ -114,17 +114,17 @@ contract Manager is AccessControl, IManager {
     }
 
     /**
-     * @notice Changes MCGR link to another contract.
+     * @notice Changes MGT link to another contract.
      * Requirements:
      * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_MCGR` must be not address 0
+     * - `_MGT` must be not address 0
      *
-     * @param _MCGR IMCGR
+     * @param _MGT IMGT
      */
-    function changeMCGR(IMCGR _MCGR) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_MCGR)) {
-        emit MCGRchanged(msg.sender, _MCGR);
+    function changeMGT(IMGT _MGT) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_MGT)) {
+        emit MGTchanged(msg.sender, _MGT);
 
-        MCGR = _MCGR;
+        MGT = _MGT;
     }
 
     /**

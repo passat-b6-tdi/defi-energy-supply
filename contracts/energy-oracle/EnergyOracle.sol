@@ -77,7 +77,7 @@ contract EnergyOracle is Parent, Pausable {
     {
         _energyConsumptions[user][supplierId] = consumption;
 
-        manager.MCGR().mint(msg.sender, manager.rewardAmount() * 2);
+        manager.MGT().mint(msg.sender, manager.rewardAmount() * 2);
 
         emit EnergyConsumptionRecorded(msg.sender, user, supplierId, consumption, block.timestamp);
     }
