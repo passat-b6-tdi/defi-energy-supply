@@ -28,10 +28,10 @@ contract StakingReward is Parent {
     uint256 public totalSuppliers;
 
     /// @dev Address to supplier
-    mapping(address => mapping(uint => Supplier)) public suppliers;
+    mapping(address => mapping(uint256 => Supplier)) public suppliers;
 
     /// @dev Throws if passed not correct owner of tokenId
-    modifier isCorrectOwner(address supplier, uint tokenId) {
+    modifier isCorrectOwner(address supplier, uint256 tokenId) {
         require(manager.NRGS().ownerOf(tokenId) == supplier, "StakingReward: supplier is not the owner of this token");
         _;
     }
@@ -114,12 +114,12 @@ contract StakingReward is Parent {
      */
     function updateRewards(
         address supplier,
-        uint tokenId
+        uint256 tokenId
     ) public zeroAddressCheck(supplier) isCorrectOwner(supplier, tokenId) returns (Supplier memory) {
         return _updateRewards(supplier, tokenId);
     }
 
-    function _updateRewards(address supplier, uint tokenId) private returns (Supplier memory) {
+    function _updateRewards(address supplier, uint256 tokenId) private returns (Supplier memory) {
         Supplier storage _supplier = suppliers[supplier][tokenId];
 
         require(_supplier.updatedAt > 0, "StakingReward: supplier is not entered with this token");
@@ -131,7 +131,7 @@ contract StakingReward is Parent {
         return _supplier;
     }
 
-    function _sendRewards(address supplier, uint tokenId) private {
+    function _sendRewards(address supplier, uint256 tokenId) private {
         Supplier memory _supplier = _updateRewards(supplier, tokenId);
 
         suppliers[supplier][tokenId].pendingReward = 0;
@@ -140,8 +140,8 @@ contract StakingReward is Parent {
         manager.MGT().mint(supplier, _supplier.pendingReward);
     }
 
-    function _updateRewardRate(uint _updatedAt) private view returns (uint256 rewardToUser) {
-        uint timePassed = block.timestamp - _updatedAt;
+    function _updateRewardRate(uint256 _updatedAt) private view returns (uint256 rewardToUser) {
+        uint256 timePassed = block.timestamp - _updatedAt;
 
         rewardToUser = (manager.rewardAmount() * timePassed) / totalSuppliers;
     }

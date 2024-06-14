@@ -12,7 +12,7 @@ interface IStakingReward {
     }
 
     /// @dev Address to supplier
-    function suppliers(address supplier, uint tokenId) external view returns (Supplier memory);
+    function suppliers(address supplier, uint256 tokenId) external view returns (Supplier memory);
 
     /**
      * @notice Enters staking process.
@@ -57,5 +57,5 @@ interface IStakingReward {
      * @param tokenId uint256
      * @return Supplier memory
      */
-    function updateRewards(address supplier, uint tokenId) external returns (Supplier memory);
+    function updateRewards(address supplier, uint256 tokenId) external returns (Supplier memory);
 }

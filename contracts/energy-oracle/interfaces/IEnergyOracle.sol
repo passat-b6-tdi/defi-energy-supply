@@ -28,7 +28,7 @@ interface IEnergyOracle {
      * @param timestamp The timestamp for the energy consumption
      * @param consumption The energy consumption value
      */
-    function recordEnergyConsumption(address user, uint supplierId, uint256 timestamp, uint256 consumption) external;
+    function recordEnergyConsumption(address user, uint256 supplierId, uint256 timestamp, uint256 consumption) external;
 
     /**
      * @dev Retrieves the timestamp and consumption value for a specific energy consumption record.
@@ -36,5 +36,5 @@ interface IEnergyOracle {
      * @param supplierId The ID of the supplier.
      * @return consumption The consumption value of the energy consumption record.
      */
-    function energyConsumptions(address user, uint256 supplierId) external view returns (uint consumption);
+    function energyConsumptions(address user, uint256 supplierId) external view returns (uint256 consumption);
 }

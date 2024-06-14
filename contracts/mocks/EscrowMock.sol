@@ -6,12 +6,12 @@ import "../energy-oracle/interfaces/IEnergyOracle.sol";
 contract EscrowMock {
     IEnergyOracle public energyOracle;
 
-    uint public consumption;
+    uint256 public consumption;
 
     constructor(IEnergyOracle _energyOracle) {
         energyOracle = _energyOracle;
     }
-    function read(address user, uint tokenId) public {
+    function read(address user, uint256 tokenId) public {
         consumption = energyOracle.energyConsumptions(user, tokenId);
     }
 }
