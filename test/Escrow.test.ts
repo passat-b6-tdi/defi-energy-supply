@@ -17,16 +17,16 @@ describe('Escrow', function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MGT: ContractFactory = await ethers.getContractFactory('MGT');
-    const MGT: MGT = (await MGT.deploy()) as MGT;
-    await MGT.deployed();
+    const MGT_Factory: ContractFactory = await ethers.getContractFactory('MGT');
+    const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
+    await mgt.deployed();
 
-    const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
-    const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
+    const NRGS_Factory: ContractFactory = await ethers.getContractFactory('NRGS');
+    const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU.deploy()) as ELU;
+    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
+    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
     await elu.deployed();
 
     const OracleMock: ContractFactory = await ethers.getContractFactory('OracleMock');
@@ -35,7 +35,7 @@ describe('Escrow', function () {
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      MGT.address,
+      mgt.address,
       elu.address,
       nrgs.address,
       deployer.address,
@@ -52,43 +52,43 @@ describe('Escrow', function () {
     await escrow.deployed();
 
     const MainMock: ContractFactory = await ethers.getContractFactory('MainMock');
-    const main: MainMock = (await MainMock.deploy(escrow.address, MGT.address)) as MainMock;
+    const main: MainMock = (await MainMock.deploy(escrow.address, mgt.address)) as MainMock;
     await main.deployed();
 
-    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
-    minter_role = await MGT.MINTER_BURNER_ROLE();
+    admin_role = await mgt.DEFAULT_ADMIN_ROLE();
+    minter_role = await mgt.MINTER_BURNER_ROLE();
 
     escrow_manager = await escrow.ESCROW_MANAGER_ROLE();
 
     await escrow.grantRole(escrow_manager, main.address);
 
-    return { MGT, elu, ELU, nrgs, NRGS, manager, escrow, main, energyOracle, deployer, otherAcc };
+    return { mgt, elu, ELU_Factory, nrgs, NRGS_Factory, manager, escrow, main, energyOracle, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { MGT, elu, nrgs, escrow, main, deployer } = await loadFixture(deployFixture);
+    const { mgt, elu, nrgs, escrow, main, deployer } = await loadFixture(deployFixture);
 
-    expect(MGT.address).to.be.properAddress;
+    expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
     expect(elu.address).to.be.properAddress;
     expect(escrow.address).to.be.properAddress;
 
-    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
     expect(await escrow.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await escrow.hasRole(escrow_manager, deployer.address)).to.be.true;
     expect(await escrow.hasRole(escrow_manager, main.address)).to.be.true;
   });
 
   it('ESCROW_MANAGER_ROLE can send to supplier, feeReceiver funds', async () => {
-    const { escrow, elu, deployer, otherAcc, main, nrgs, MGT } = await loadFixture(deployFixture);
+    const { escrow, elu, deployer, otherAcc, main, nrgs, mgt } = await loadFixture(deployFixture);
 
     await nrgs.mint(deployer.address, 10);
 
-    await MGT.mint(otherAcc.address, 1000);
-    await MGT.connect(otherAcc).approve(main.address, 1000);
+    await mgt.mint(otherAcc.address, 1000);
+    await mgt.connect(otherAcc).approve(main.address, 1000);
 
-    const balBefore = await MGT.balanceOf(otherAcc.address);
+    const balBefore = await mgt.balanceOf(otherAcc.address);
     expect(balBefore).to.eq(1000);
 
     await elu.mint(otherAcc.address, 10, deployer.address);
@@ -99,21 +99,21 @@ describe('Escrow', function () {
 
     const sending = await main.send(otherAcc.address, 10, needToBePaid);
 
-    const balAfter = await MGT.balanceOf(otherAcc.address);
+    const balAfter = await mgt.balanceOf(otherAcc.address);
     expect(balAfter).to.eq(1000 - (EnergyConsumption + fees));
 
     expect(sending).to.emit(escrow, 'PaidForEnergy');
-    expect(sending).to.changeTokenBalances(MGT, [otherAcc, deployer], [-needToBePaid, needToBePaid]);
+    expect(sending).to.changeTokenBalances(mgt, [otherAcc, deployer], [-needToBePaid, needToBePaid]);
   });
 
   it('Remaining amount will be sent back', async () => {
-    const { escrow, elu, deployer, otherAcc, main, nrgs, MGT } = await loadFixture(deployFixture);
+    const { escrow, elu, deployer, otherAcc, main, nrgs, mgt } = await loadFixture(deployFixture);
 
     await nrgs.mint(deployer.address, 10);
-    await MGT.mint(otherAcc.address, 1000);
-    await MGT.connect(otherAcc).approve(main.address, 1000);
+    await mgt.mint(otherAcc.address, 1000);
+    await mgt.connect(otherAcc).approve(main.address, 1000);
 
-    const balBefore = await MGT.balanceOf(otherAcc.address);
+    const balBefore = await mgt.balanceOf(otherAcc.address);
     expect(balBefore).to.eq(1000);
 
     await elu.mint(otherAcc.address, 10, deployer.address);
@@ -124,11 +124,11 @@ describe('Escrow', function () {
 
     const sending = await main.send(otherAcc.address, 10, needToBePaid + 10);
 
-    const balAfter = await MGT.balanceOf(otherAcc.address);
+    const balAfter = await mgt.balanceOf(otherAcc.address);
     expect(balAfter).to.eq(1000 - (EnergyConsumption + fees));
 
     expect(sending).to.emit(escrow, 'PaidForEnergy');
-    expect(sending).to.changeTokenBalances(MGT, [otherAcc, deployer], [-needToBePaid, needToBePaid]);
+    expect(sending).to.changeTokenBalances(mgt, [otherAcc, deployer], [-needToBePaid, needToBePaid]);
   });
 
   describe('Errors', function () {

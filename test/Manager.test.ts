@@ -22,21 +22,21 @@ describe('Manager', function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MGT: ContractFactory = await ethers.getContractFactory('MGT');
-    const MGT: MGT = (await MGT.deploy()) as MGT;
-    await MGT.deployed();
+    const MGT_Factory: ContractFactory = await ethers.getContractFactory('MGT');
+    const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
+    await mgt.deployed();
 
-    const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
-    const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
+    const NRGS_Factory: ContractFactory = await ethers.getContractFactory('NRGS');
+    const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU.deploy()) as ELU;
+    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
+    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
     await elu.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      MGT.address,
+      mgt.address,
       elu.address,
       nrgs.address,
       deployer.address,
@@ -62,8 +62,8 @@ describe('Manager', function () {
     const escrow: Escrow = (await Escrow.deploy(manager.address)) as Escrow;
     await escrow.deployed();
 
-    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
-    minter_role = await MGT.MINTER_BURNER_ROLE();
+    admin_role = await mgt.DEFAULT_ADMIN_ROLE();
+    minter_role = await mgt.MINTER_BURNER_ROLE();
 
     staking_role = await stakingReward.STAKING_MANAGER_ROLE();
     register_manager_role = await register.REGISTER_MANAGER_ROLE();
@@ -73,7 +73,7 @@ describe('Manager', function () {
     await manager.changeRewardAmount(10);
     await manager.changeStakingContract(stakingReward.address);
 
-    await MGT.grantRole(minter_role, stakingReward.address);
+    await mgt.grantRole(minter_role, stakingReward.address);
 
     await nrgs.grantRole(register_role, register.address);
     await elu.grantRole(register_role, register.address);
@@ -82,12 +82,12 @@ describe('Manager', function () {
 
     return {
       manager,
-      MGT,
-      MGT,
+      mgt,
+      MGT_Factory,
       elu,
-      ELU,
+      ELU_Factory,
       nrgs,
-      NRGS,
+      NRGS_Factory,
       stakingReward,
       StakingReward,
       energyOracle,
@@ -99,23 +99,23 @@ describe('Manager', function () {
   }
 
   it('Deployed correctly', async () => {
-    const { MGT, elu, nrgs, stakingReward, register, manager, escrow, deployer } = await loadFixture(deployFixture);
+    const { mgt, elu, nrgs, stakingReward, register, manager, escrow, deployer } = await loadFixture(deployFixture);
 
-    expect(MGT.address).to.be.properAddress;
+    expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
     expect(elu.address).to.be.properAddress;
     expect(stakingReward.address).to.be.properAddress;
     expect(register.address).to.be.properAddress;
     expect(escrow.address).to.be.properAddress;
 
-    expect(await MGT.name()).to.be.eq('Mictrogrid Token');
-    expect(await MGT.symbol()).to.be.eq('MGT');
+    expect(await mgt.name()).to.be.eq('Mictrogrid Token');
+    expect(await mgt.symbol()).to.be.eq('MGT');
     expect(await nrgs.name()).to.be.eq('Energy Supplier Token');
     expect(await nrgs.symbol()).to.be.eq('NRGS');
 
-    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, stakingReward.address)).to.be.true;
+    expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, stakingReward.address)).to.be.true;
 
     expect(await nrgs.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
@@ -136,27 +136,27 @@ describe('Manager', function () {
   });
 
   describe('Manage', function () {
-    it('Manager can change MGT', async () => {
-      const { manager, MGT, MGT } = await loadFixture(deployFixture);
+    it('Manager can change mgt', async () => {
+      const { manager, MGT_Factory, mgt } = await loadFixture(deployFixture);
 
-      const MGT2: MGT = (await MGT.deploy()) as MGT;
-      await MGT2.deployed();
+      const mgt2: MGT = (await MGT_Factory.deploy()) as MGT;
+      await mgt2.deployed();
 
       const prevMGT = await manager.MGT();
 
-      const changes = await manager.changeMGT(MGT2.address);
+      const changes = await manager.changeMGT(mgt2.address);
       const currMGT = await manager.MGT();
 
-      expect(prevMGT).to.be.eq(MGT.address);
-      expect(currMGT).to.be.eq(MGT2.address);
+      expect(prevMGT).to.be.eq(mgt.address);
+      expect(currMGT).to.be.eq(mgt2.address);
 
       expect(changes).to.emit(manager, 'MGTchanged');
     });
 
-    it('Manager can change ELU', async () => {
-      const { manager, ELU, elu } = await loadFixture(deployFixture);
+    it('Manager can change ELU_Factory', async () => {
+      const { manager, ELU_Factory, elu } = await loadFixture(deployFixture);
 
-      const elu2: ELU = (await ELU.deploy()) as ELU;
+      const elu2: ELU = (await ELU_Factory.deploy()) as ELU;
       await elu2.deployed();
 
       const prevElu = await manager.ELU();
@@ -170,10 +170,10 @@ describe('Manager', function () {
       expect(changes).to.emit(manager, 'ELUchanged');
     });
 
-    it('Manager can change NRGS', async () => {
-      const { manager, NRGS, nrgs } = await loadFixture(deployFixture);
+    it('Manager can change NRGS_Factory', async () => {
+      const { manager, NRGS_Factory, nrgs } = await loadFixture(deployFixture);
 
-      const nrgs2: NRGS = (await NRGS.deploy()) as NRGS;
+      const nrgs2: NRGS = (await NRGS_Factory.deploy()) as NRGS;
       await nrgs2.deployed();
 
       const prevNrgs = await manager.NRGS();

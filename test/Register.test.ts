@@ -22,21 +22,21 @@ describe('Register', function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MGT: ContractFactory = await ethers.getContractFactory('MGT');
-    const MGT: MGT = (await MGT.deploy()) as MGT;
-    await MGT.deployed();
+    const MGT_Factory: ContractFactory = await ethers.getContractFactory('MGT');
+    const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
+    await mgt.deployed();
 
-    const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
-    const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
+    const NRGS_Factory: ContractFactory = await ethers.getContractFactory('NRGS');
+    const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU.deploy()) as ELU;
+    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
+    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
     await elu.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      MGT.address,
+      mgt.address,
       elu.address,
       nrgs.address,
       deployer.address,
@@ -54,8 +54,8 @@ describe('Register', function () {
     const register: Register = (await Register.deploy(manager.address)) as Register;
     await register.deployed();
 
-    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
-    minter_role = await MGT.MINTER_BURNER_ROLE();
+    admin_role = await mgt.DEFAULT_ADMIN_ROLE();
+    minter_role = await mgt.MINTER_BURNER_ROLE();
 
     staking_role = await stakingReward.STAKING_MANAGER_ROLE();
     register_role = await nrgs.REGISTER_ROLE();
@@ -64,7 +64,7 @@ describe('Register', function () {
     await manager.changeRewardAmount(10);
     await manager.changeStakingContract(stakingReward.address);
 
-    await MGT.grantRole(minter_role, stakingReward.address);
+    await mgt.grantRole(minter_role, stakingReward.address);
 
     await nrgs.grantRole(register_role, register.address);
     await elu.grantRole(register_role, register.address);
@@ -73,26 +73,26 @@ describe('Register', function () {
 
     await elu.connect(otherAcc).setApprovalForAll(register.address, true);
 
-    return { MGT, elu, ELU, nrgs, NRGS, manager, stakingReward, StakingReward, register, deployer, otherAcc };
+    return { mgt, elu, ELU_Factory, nrgs, NRGS_Factory, manager, stakingReward, StakingReward, register, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { MGT, elu, nrgs, stakingReward, register, manager, deployer } = await loadFixture(deployFixture);
+    const { mgt, elu, nrgs, stakingReward, register, manager, deployer } = await loadFixture(deployFixture);
 
-    expect(MGT.address).to.be.properAddress;
+    expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
     expect(elu.address).to.be.properAddress;
     expect(stakingReward.address).to.be.properAddress;
     expect(register.address).to.be.properAddress;
 
-    expect(await MGT.name()).to.be.eq('Mictrogrid Token');
-    expect(await MGT.symbol()).to.be.eq('MGT');
+    expect(await mgt.name()).to.be.eq('Mictrogrid Token');
+    expect(await mgt.symbol()).to.be.eq('MGT');
     expect(await nrgs.name()).to.be.eq('Energy Supplier Token');
     expect(await nrgs.symbol()).to.be.eq('NRGS');
 
-    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, stakingReward.address)).to.be.true;
+    expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, stakingReward.address)).to.be.true;
 
     expect(await nrgs.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
@@ -114,13 +114,12 @@ describe('Register', function () {
   describe('Registers', function () {
     it('Manager can register supllier', async () => {
       const { register, stakingReward, nrgs, elu, deployer } = await loadFixture(deployFixture);
-      const registration = await register.registerSupplier(deployer.address, 5, 10);
+      const registration = await register.registerSupplier(deployer.address);
 
-      const ownerOf5 = await nrgs.ownerOf(5);
+      const ownerOf5 = await nrgs.ownerOf(1);
       const now = await time.latest();
-      const suppliers = await elu.balanceOf(register.address, 5);
 
-      const sup = await stakingReward.suppliers(deployer.address, 5);
+      const sup = await stakingReward.suppliers(deployer.address, 1);
 
       expect(registration).to.emit(register, 'SupplierRegistered');
       expect(registration).to.emit(nrgs, 'Transfer');
@@ -128,18 +127,16 @@ describe('Register', function () {
       expect(ownerOf5).to.be.eq(deployer.address);
       expect(sup.updatedAt).to.be.eq(now);
       expect(sup.pendingReward).to.be.eq(0);
-      expect(suppliers).to.eq(10);
     });
 
     it('Manager can un register supllier', async () => {
       const { register, stakingReward, nrgs, elu, deployer } = await loadFixture(deployFixture);
-      const registration = await register.registerSupplier(deployer.address, 5, 10);
+      const registration = await register.registerSupplier(deployer.address);
 
-      const ownerOf5 = await nrgs.ownerOf(5);
-      const suppliers = await elu.balanceOf(register.address, 5);
+      const ownerOf5 = await nrgs.ownerOf(1);
       let now = await time.latest();
 
-      let sup = await stakingReward.suppliers(deployer.address, 5);
+      let sup = await stakingReward.suppliers(deployer.address, 1);
 
       expect(registration).to.emit(register, 'SupplierRegistered');
       expect(registration).to.emit(nrgs, 'Transfer');
@@ -147,13 +144,12 @@ describe('Register', function () {
       expect(ownerOf5).to.be.eq(deployer.address);
       expect(sup.updatedAt).to.be.eq(now);
       expect(sup.pendingReward).to.be.eq(0);
-      expect(suppliers).to.eq(10);
 
-      const unRegistration = await register.unRegisterSupplier(5);
+      const unRegistration = await register.unRegisterSupplier(1);
 
       now = await time.latest();
 
-      sup = await stakingReward.suppliers(deployer.address, 5);
+      sup = await stakingReward.suppliers(deployer.address, 1);
 
       expect(unRegistration).to.emit(register, 'SupplierUnregistered');
       expect(unRegistration).to.emit(nrgs, 'Transfer');
@@ -164,30 +160,30 @@ describe('Register', function () {
 
     it('Manager can register users', async () => {
       const { register, elu, deployer, otherAcc } = await loadFixture(deployFixture);
-      const registrationSupplier = await register.registerSupplier(deployer.address, 5, 10);
+      const registrationSupplier = await register.registerSupplier(deployer.address);
 
-      const registrationUser = await register.registerElectricityUser(otherAcc.address, 5);
+      const registrationUser = await register.registerElectricityUser(otherAcc.address, 1);
 
       expect(registrationUser).to.emit(register, 'UserRegistered');
       expect(registrationUser).to.emit(elu, 'Transfer');
-      expect(await elu.balanceOf(otherAcc.address, 5)).to.be.eq(1);
+      expect(await elu.balanceOf(otherAcc.address, 1)).to.be.eq(1);
     });
 
     it('Manager can un register users', async () => {
       const { register, elu, deployer, otherAcc } = await loadFixture(deployFixture);
-      const registrationSupplier = await register.registerSupplier(deployer.address, 5, 10);
+      const registrationSupplier = await register.registerSupplier(deployer.address);
 
-      const registrationUser = await register.registerElectricityUser(otherAcc.address, 5);
+      const registrationUser = await register.registerElectricityUser(otherAcc.address, 1);
 
       expect(registrationUser).to.emit(register, 'UserRegistered');
       expect(registrationUser).to.emit(elu, 'Transfer');
-      expect(await elu.balanceOf(otherAcc.address, 5)).to.be.eq(1);
+      expect(await elu.balanceOf(otherAcc.address, 1)).to.be.eq(1);
 
-      const unRegistration = await register.unRegisterElectricityUser(otherAcc.address, 5);
+      const unRegistration = await register.unRegisterElectricityUser(otherAcc.address, 1);
 
       expect(unRegistration).to.emit(register, 'SupplierUnregistered');
       expect(unRegistration).to.emit(elu, 'Transfer');
-      expect(await elu.balanceOf(otherAcc.address, 5)).to.be.eq(0);
+      expect(await elu.balanceOf(otherAcc.address, 1)).to.be.eq(0);
     });
   });
 
@@ -197,7 +193,7 @@ describe('Register', function () {
 
       const errorMsg = `AccessControl: account ${otherAccAddress} is missing role ${register_manager_role}`;
 
-      await expect(register.connect(otherAcc).registerSupplier(deployer.address, 5, 10)).to.be.revertedWith(errorMsg);
+      await expect(register.connect(otherAcc).registerSupplier(deployer.address)).to.be.revertedWith(errorMsg);
       await expect(register.connect(otherAcc).registerElectricityUser(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,
       );
@@ -212,7 +208,7 @@ describe('Register', function () {
       const addressZero = ethers.constants.AddressZero;
       const errorMsg = 'Parent: account is address 0';
 
-      await expect(register.registerSupplier(addressZero, 10, 5)).to.be.revertedWith(errorMsg);
+      await expect(register.registerSupplier(addressZero)).to.be.revertedWith(errorMsg);
       await expect(register.registerElectricityUser(addressZero, 10)).to.be.revertedWith(errorMsg);
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith('ERC721: invalid token ID');
       await expect(register.unRegisterElectricityUser(addressZero, 10)).to.be.revertedWith(errorMsg);

@@ -22,21 +22,21 @@ describe('EnergyOracle', function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MGT: ContractFactory = await ethers.getContractFactory('MGT');
-    const MGT: MGT = (await MGT.deploy()) as MGT;
-    await MGT.deployed();
+    const MGT_Factory: ContractFactory = await ethers.getContractFactory('MGT');
+    const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
+    await mgt.deployed();
 
-    const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
-    const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
+    const NRGS_Factory: ContractFactory = await ethers.getContractFactory('NRGS');
+    const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU.deploy()) as ELU;
+    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
+    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
     await elu.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      MGT.address,
+      mgt.address,
       elu.address,
       nrgs.address,
       deployer.address,
@@ -54,8 +54,8 @@ describe('EnergyOracle', function () {
     const escrow: EscrowMock = (await EscrowMock.deploy(energyOracle.address)) as EscrowMock;
     await escrow.deployed();
 
-    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
-    minter_role = await MGT.MINTER_BURNER_ROLE();
+    admin_role = await mgt.DEFAULT_ADMIN_ROLE();
+    minter_role = await mgt.MINTER_BURNER_ROLE();
 
     energy_oracle_manager = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
     oracle_provider = await energyOracle.ENERGY_ORACLE_PROVIDER_ROLE();
@@ -63,23 +63,23 @@ describe('EnergyOracle', function () {
 
     await energyOracle.grantRole(escrow_role, deployer.address);
     await energyOracle.grantRole(escrow_role, escrow.address);
-    await MGT.grantRole(minter_role, energyOracle.address);
+    await mgt.grantRole(minter_role, energyOracle.address);
 
-    return { MGT, elu, ELU, nrgs, NRGS, manager, energyOracle, EnergyOracle, escrow, deployer, otherAcc };
+    return { mgt, elu, ELU_Factory, nrgs, NRGS_Factory, manager, energyOracle, EnergyOracle, escrow, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { MGT, elu, nrgs, energyOracle, manager, deployer } = await loadFixture(deployFixture);
+    const { mgt, elu, nrgs, energyOracle, manager, deployer } = await loadFixture(deployFixture);
 
-    expect(MGT.address).to.be.properAddress;
+    expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
     expect(elu.address).to.be.properAddress;
     expect(energyOracle.address).to.be.properAddress;
     expect(energyOracle.address).to.be.properAddress;
 
-    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, energyOracle.address)).to.be.true;
+    expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, energyOracle.address)).to.be.true;
 
     expect(await energyOracle.hasRole(escrow_role, deployer.address)).to.be.true;
     expect(await energyOracle.hasRole(oracle_provider, deployer.address)).to.be.true;
@@ -88,11 +88,11 @@ describe('EnergyOracle', function () {
 
   describe('Registers', function () {
     it('ORACLE_PROVIDER can record consumption', async () => {
-      const { energyOracle, elu, deployer, MGT } = await loadFixture(deployFixture);
+      const { energyOracle, elu, deployer, mgt } = await loadFixture(deployFixture);
 
       await elu.mint(deployer.address, 10, deployer.address);
 
-      const balBefore = await MGT.balanceOf(deployer.address);
+      const balBefore = await mgt.balanceOf(deployer.address);
       expect(balBefore).to.eq(0);
 
       const timestamp = (await time.latest()) - 100;
@@ -103,7 +103,7 @@ describe('EnergyOracle', function () {
       const record = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
       const userTokenConsumptions = await energyOracle.energyConsumptions(user, tokenId);
 
-      const balAfter = await MGT.balanceOf(deployer.address);
+      const balAfter = await mgt.balanceOf(deployer.address);
       expect(balAfter).to.eq(20);
 
       expect(record).to.emit(energyOracle, 'EnergyConsumptionRecorded');
@@ -111,11 +111,11 @@ describe('EnergyOracle', function () {
     });
 
     it('ESCROW can read and delete consumption', async () => {
-      const { energyOracle, elu, deployer, escrow, MGT } = await loadFixture(deployFixture);
+      const { energyOracle, elu, deployer, escrow, mgt } = await loadFixture(deployFixture);
 
       await elu.mint(deployer.address, 10, deployer.address);
 
-      const balBefore = await MGT.balanceOf(deployer.address);
+      const balBefore = await mgt.balanceOf(deployer.address);
       expect(balBefore).to.eq(0);
 
       const timestamp = (await time.latest()) - 100;
@@ -126,7 +126,7 @@ describe('EnergyOracle', function () {
       const record = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
       let userTokenConsumptions = await energyOracle.energyConsumptions(user, tokenId);
 
-      const balAfter = await MGT.balanceOf(deployer.address);
+      const balAfter = await mgt.balanceOf(deployer.address);
       expect(balAfter).to.eq(20);
 
       expect(record).to.emit(energyOracle, 'EnergyConsumptionRecorded');
@@ -148,11 +148,11 @@ describe('EnergyOracle', function () {
     });
 
     it('Multiple ORACLE_PROVIDERs can record consumption', async () => {
-      const { energyOracle, elu, deployer, MGT } = await loadFixture(deployFixture);
+      const { energyOracle, elu, deployer, mgt } = await loadFixture(deployFixture);
 
       await elu.mint(deployer.address, 10, deployer.address);
 
-      const balBefore = await MGT.balanceOf(deployer.address);
+      const balBefore = await mgt.balanceOf(deployer.address);
       expect(balBefore).to.eq(0);
 
       const timestamp = (await time.latest()) - 100;
@@ -163,7 +163,7 @@ describe('EnergyOracle', function () {
       const record1 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
       const userTokenConsumptions1 = await energyOracle.energyConsumptions(user, tokenId);
 
-      let balAfter = await MGT.balanceOf(deployer.address);
+      let balAfter = await mgt.balanceOf(deployer.address);
       expect(balAfter).to.eq(20);
 
       expect(record1).to.emit(energyOracle, 'EnergyConsumptionRecorded');
@@ -172,7 +172,7 @@ describe('EnergyOracle', function () {
       const record2 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption + 5);
       const userTokenConsumptions2 = await energyOracle.energyConsumptions(user, tokenId);
 
-      balAfter = await MGT.balanceOf(deployer.address);
+      balAfter = await mgt.balanceOf(deployer.address);
       expect(balAfter).to.eq(40);
 
       expect(record2).to.emit(energyOracle, 'EnergyConsumptionRecorded');
@@ -181,7 +181,7 @@ describe('EnergyOracle', function () {
       const record3 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption);
       const userTokenConsumptions3 = await energyOracle.energyConsumptions(user, tokenId);
 
-      balAfter = await MGT.balanceOf(deployer.address);
+      balAfter = await mgt.balanceOf(deployer.address);
       expect(balAfter).to.eq(60);
 
       expect(record3).to.emit(energyOracle, 'EnergyConsumptionRecorded');
@@ -190,7 +190,7 @@ describe('EnergyOracle', function () {
       const record4 = await energyOracle.recordEnergyConsumption(user, tokenId, consumption - 4);
       const userTokenConsumptions4 = await energyOracle.energyConsumptions(user, tokenId);
 
-      balAfter = await MGT.balanceOf(deployer.address);
+      balAfter = await mgt.balanceOf(deployer.address);
       expect(balAfter).to.eq(80);
 
       expect(record4).to.emit(energyOracle, 'EnergyConsumptionRecorded');

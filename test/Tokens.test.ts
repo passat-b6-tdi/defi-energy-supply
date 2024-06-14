@@ -17,35 +17,35 @@ describe(`Tokens`, function () {
 
     otherAccAddress = otherAcc.address.toLowerCase();
 
-    const MGT: ContractFactory = await ethers.getContractFactory(`MGT`);
-    const MGT: MGT = (await MGT.deploy()) as MGT;
-    await MGT.deployed();
+    const MGT_Factory: ContractFactory = await ethers.getContractFactory(`MGT`);
+    const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
+    await mgt.deployed();
 
-    const ELU: ContractFactory = await ethers.getContractFactory(`ELU`);
-    const elu: ELU = (await ELU.deploy()) as ELU;
+    const ELU_Factory: ContractFactory = await ethers.getContractFactory(`ELU`);
+    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
     await elu.deployed();
 
-    const NRGS: ContractFactory = await ethers.getContractFactory(`NRGS`);
-    const nrgs: NRGS = (await NRGS.deploy()) as NRGS;
+    const NRGS_Factory: ContractFactory = await ethers.getContractFactory(`NRGS`);
+    const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    admin_role = await MGT.DEFAULT_ADMIN_ROLE();
-    minter_role = await MGT.MINTER_BURNER_ROLE();
+    admin_role = await mgt.DEFAULT_ADMIN_ROLE();
+    minter_role = await mgt.MINTER_BURNER_ROLE();
 
     register_role = await nrgs.REGISTER_ROLE();
 
-    return { MGT, elu, nrgs, deployer, otherAcc };
+    return { mgt, elu, nrgs, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { MGT, elu, nrgs, deployer } = await loadFixture(deployFixture);
+    const { mgt, elu, nrgs, deployer } = await loadFixture(deployFixture);
 
-    expect(MGT.address).to.be.properAddress;
+    expect(mgt.address).to.be.properAddress;
     expect(elu.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
 
-    expect(await MGT.name()).to.be.eq(`Mictrogrid Token`);
-    expect(await MGT.symbol()).to.be.eq(`MGT`);
+    expect(await mgt.name()).to.be.eq(`Mictrogrid Token`);
+    expect(await mgt.symbol()).to.be.eq(`MGT`);
 
     expect(await elu.name()).to.be.eq(`Electricity Users Token`);
     expect(await elu.symbol()).to.be.eq(`ELU`);
@@ -53,8 +53,8 @@ describe(`Tokens`, function () {
     expect(await nrgs.name()).to.be.eq(`Energy Supplier Token`);
     expect(await nrgs.symbol()).to.be.eq(`NRGS`);
 
-    expect(await MGT.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await MGT.hasRole(minter_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
 
     expect(await elu.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await elu.hasRole(register_role, deployer.address)).to.be.true;
@@ -65,17 +65,17 @@ describe(`Tokens`, function () {
 
   describe(`MGT`, function () {
     it('MGT can be minted and burner only by mint_burn manager', async () => {
-      const { MGT, otherAcc } = await loadFixture(deployFixture);
+      const { mgt, otherAcc } = await loadFixture(deployFixture);
 
-      await expect(MGT.connect(otherAcc).mint(otherAcc.address, 10)).to.be.revertedWith(
+      await expect(mgt.connect(otherAcc).mint(otherAcc.address, 10)).to.be.revertedWith(
         `AccessControl: account ${otherAccAddress} is missing role ${minter_role}`,
       );
-      expect(await MGT.mint(otherAcc.address, 10)).to.changeTokenBalance(MGT, otherAcc, 10);
+      expect(await mgt.mint(otherAcc.address, 10)).to.changeTokenBalance(mgt, otherAcc, 10);
 
-      await expect(MGT.connect(otherAcc).burn(otherAcc.address, 10)).to.be.revertedWith(
+      await expect(mgt.connect(otherAcc).burn(otherAcc.address, 10)).to.be.revertedWith(
         `AccessControl: account ${otherAccAddress} is missing role ${minter_role}`,
       );
-      expect(await MGT.burn(otherAcc.address, 10)).to.changeTokenBalance(MGT, otherAcc, -10);
+      expect(await mgt.burn(otherAcc.address, 10)).to.changeTokenBalance(mgt, otherAcc, -10);
     });
   });
 
