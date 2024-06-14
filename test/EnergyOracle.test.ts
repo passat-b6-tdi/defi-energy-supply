@@ -262,7 +262,7 @@ describe('EnergyOracle', function () {
 
       await ecu.mint(otherAccAddress, 1, otherAccAddress);
 
-      const error = 'EnergyOracle: user is not correct';
+      const error = 'EnergyOracle: consumer is not correct';
 
       await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 2, 10)).to.be.revertedWith(error);
       await expect(energyOracle.updateEnergyConsumptions(otherAccAddress, 2)).to.be.revertedWith(error);

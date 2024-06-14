@@ -27,7 +27,7 @@ contract ECU is ERC1155, AccessControl {
         _grantRole(REGISTER_ROLE, msg.sender);
 
         name = "Electricity Consumer User Token";
-        symbol = "ELC";
+        symbol = "ECU";
     }
 
     /// @dev Mints `to` address ECU token

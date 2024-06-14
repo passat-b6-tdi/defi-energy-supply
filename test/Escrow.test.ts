@@ -156,7 +156,7 @@ describe('Escrow', function () {
 
     it('User needs to be correctly connected to supplier', async () => {
       const { escrow, deployer, otherAcc, nrgs } = await loadFixture(deployFixture);
-      const error = 'Escrow: user connected to another supplier';
+      const error = 'Escrow: consumer connected to another supplier';
 
       await nrgs.mint(deployer.address, 10);
 
