@@ -2,15 +2,15 @@
 
 ## Escrow
 
-_A contract for managing energy payments and transfers between users and suppliers._
+_A contract for managing energy payments and transfers between consumers and suppliers._
 
 ### PaidForEnergy
 
 ```solidity
-event PaidForEnergy(address user, uint256 tokenId, address supplier, uint256 amount)
+event PaidForEnergy(address consumer, uint256 tokenId, address supplier, uint256 amount)
 ```
 
-_Emmited when a user paid for energy_
+_Emmited when a consumer paid for energy_
 
 ### ESCROW_MANAGER_ROLE
 
@@ -39,20 +39,20 @@ _Grants `DEFAULT_ADMIN_ROLE` and `ESCROW_MANAGER_ROLE` roles to the contract dep
 ### sendFundsToSupplier
 
 ```solidity
-function sendFundsToSupplier(address user, uint256 supplierId, uint256 paidAmount) public
+function sendFundsToSupplier(address consumer, uint256 supplierId, uint256 paidAmount) public
 ```
 
-_Sends funds to the supplier for the energy consumed by a user.
+_Sends funds to the supplier for the energy consumed by a consumer.
 Requirements:
 - `msg.sender` must have `ESCROW_MANAGER_ROLE`
 - `paidAmount` must be > 0
-- `user` must be not address 0_
+- `consumer` must be not address 0_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address | The address of the user. |
+| consumer | address | The address of the consumer. |
 | supplierId | uint256 | The ID of the token. |
-| paidAmount | uint256 | The amount of funds sent by the user. |
+| paidAmount | uint256 | The amount of funds sent by the consumer. |
 

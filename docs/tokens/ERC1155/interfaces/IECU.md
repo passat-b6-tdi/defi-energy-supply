@@ -16,7 +16,7 @@ _Mints `to` address ECU token_
 | ---- | ---- | ----------- |
 | to | address | The address to mint the token to |
 | tokenId | uint256 | The ID of the token to mint |
-| amountOfUsers | uint256 | The amount of users for the token being minted |
+| amountOfUsers | uint256 | The amount of consumers for the token being minted |
 
 ### burn
 

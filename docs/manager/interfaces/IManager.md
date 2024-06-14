@@ -8,7 +8,7 @@
 function MGT() external view returns (contract IMGT)
 ```
 
-_Reward token_
+_Microgrid token_
 
 ### ECU
 
@@ -16,7 +16,7 @@ _Reward token_
 function ECU() external view returns (contract IECU)
 ```
 
-_Electricity consumer NFT token_
+_Electricity Consumer User NFT token_
 
 ### NRGS
 

@@ -5,7 +5,7 @@
 ### SupplierRegistered
 
 ```solidity
-event SupplierRegistered(address sender, address supplier, uint256 supplierId, uint256 amountOfUsers, uint256 timestamp)
+event SupplierRegistered(address sender, address supplier, uint256 supplierId, uint256 timestamp)
 ```
 
 _Emmited when a user registers as an Energy supplier_
@@ -16,23 +16,23 @@ _Emmited when a user registers as an Energy supplier_
 event SupplierUnregistered(address sender, address supplier, uint256 supplierId, uint256 timestamp)
 ```
 
-_Emmited when a user unregisters as an Energy supplier_
+_Emmited when an Energy supplier unregisters_
 
 ### UserRegistered
 
 ```solidity
-event UserRegistered(address sender, address user, uint256 usersSupplierId, uint256 timestamp)
+event UserRegistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
 ```
 
-_Emmited when a user registers as an Electricity consumer_
+_Emmited when a supplier registers a user as Electricity consumer_
 
 ### UserUnregistered
 
 ```solidity
-event UserUnregistered(address sender, address user, uint256 usersSupplierId, uint256 timestamp)
+event UserUnregistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
 ```
 
-_Emmited when a user unregisters as an Electricity consumer_
+_Emmited when a supplier unregisters an Electricity consumer_
 
 ### REGISTER_MANAGER_ROLE
 
@@ -41,6 +41,14 @@ bytes32 REGISTER_MANAGER_ROLE
 ```
 
 _Keccak256 hashed `REGISTER_MANAGER_ROLE` string_
+
+### currentSupplierId
+
+```solidity
+uint256 currentSupplierId
+```
+
+_Counter of suppliers Ids_
 
 ### constructor
 
@@ -55,7 +63,7 @@ _Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`_
 ### registerSupplier
 
 ```solidity
-function registerSupplier(address supplier, uint256 supplierId, uint256 amountOfUsers) external
+function registerSupplier(address supplier) external
 ```
 
 Registers an Energy supplier.
@@ -69,26 +77,24 @@ Requirements:
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | supplier | address | The address of the supplier. |
-| supplierId | uint256 | The ID of the supplier. |
-| amountOfUsers | uint256 | The amount of users for the supplier. |
 
 ### registerElectricityConsumer
 
 ```solidity
-function registerElectricityConsumer(address user, uint256 usersSupplierId) external
+function registerElectricityConsumer(address consumer, uint256 supplierId) external
 ```
 
 Registers an Electricity consumer.
 Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE.
-- `user` must not be address 0.
+- `consumer` must not be address 0.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address | The address of the user. |
-| usersSupplierId | uint256 | The ID of the supplier for the user. |
+| consumer | address | The address of the consumer. |
+| supplierId | uint256 | The ID of the supplier for the consumer. |
 
 ### unRegisterSupplier
 
@@ -110,21 +116,21 @@ Requirements:
 ### unRegisterElectricityConsumer
 
 ```solidity
-function unRegisterElectricityConsumer(address user, uint256 usersSupplierId) external
+function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external
 ```
 
 Unregisters an Electricity consumer.
 Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE.
-- `user` must not be address 0.
-- `user` must have ECU token.
+- `consumer` must not be address 0.
+- `consumer` must have ECU token.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address | The address of the user. |
-| usersSupplierId | uint256 | The ID of the supplier for the user. |
+| consumer | address | The address of the consumer. |
+| supplierId | uint256 | The ID of the supplier for the consumer. |
 
 ### supportsInterface
 

@@ -37,7 +37,7 @@ _Grants `DEFAULT_ADMIN_ROLE`, `MAIN_MANAGER_ROLE`,`SUPPLIER_ROLE` and `USER_ROLE
 ### registerSupplier
 
 ```solidity
-function registerSupplier(address supplier, uint256 supplierId, uint256 amountOfUsers) external
+function registerSupplier(address supplier) external
 ```
 
 Registers an Energy supplier.
@@ -50,14 +50,12 @@ Requirements:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address |  |
-| supplierId | uint256 | The ID of the supplier. |
-| amountOfUsers | uint256 | The number of users to whom the supplier can provide electricity. |
+| supplier | address | The address of the supplier. |
 
 ### registerElectricityConsumer
 
 ```solidity
-function registerElectricityConsumer(address user, uint256 usersSupplierId) external
+function registerElectricityConsumer(address consumer, uint256 supplierId) external
 ```
 
 Registers an Electricity consumer.
@@ -69,8 +67,8 @@ Requirements:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address |  |
-| usersSupplierId | uint256 | The ID of the supplier for the user. |
+| consumer | address |  |
+| supplierId | uint256 | The ID of the supplier for the consumer. |
 
 ### unRegisterSupplier
 
@@ -92,7 +90,7 @@ Requirements:
 ### unRegisterElectricityConsumer
 
 ```solidity
-function unRegisterElectricityConsumer(address user, uint256 usersSupplierId) external
+function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external
 ```
 
 Unregisters an Electricity consumer.
@@ -104,26 +102,26 @@ Requirements:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address |  |
-| usersSupplierId | uint256 | The ID of the supplier for the user. |
+| consumer | address |  |
+| supplierId | uint256 | The ID of the supplier for the consumer. |
 
 ### payForElectricity
 
 ```solidity
-function payForElectricity(uint256 usersSupplierId, uint256 amountToPay) external
+function payForElectricity(uint256 supplierId, uint256 amountToPay) external
 ```
 
 Pays for electricity.
 Requirements:
 - `supplierId` must be greater than 0.
 - `amountToPay` must be greater than 0.
-- `msg.sender` must be a user.
+- `msg.sender` must be a consumer.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| usersSupplierId | uint256 | The ID of the supplier for the user. |
+| supplierId | uint256 | The ID of the supplier for the consumer. |
 | amountToPay | uint256 | The amount to pay for electricity. |
 
 ### getRewards

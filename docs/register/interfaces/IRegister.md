@@ -5,7 +5,7 @@
 ### registerSupplier
 
 ```solidity
-function registerSupplier(address supplier, uint256 supplierId, uint256 amountOfUsers) external
+function registerSupplier(address supplier) external
 ```
 
 Registers an Energy supplier.
@@ -19,8 +19,6 @@ Requirements:
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | supplier | address | The address of the supplier. |
-| supplierId | uint256 | The ID of the supplier. |
-| amountOfUsers | uint256 | The amount of users for the supplier. |
 
 ### registerElectricityConsumer
 

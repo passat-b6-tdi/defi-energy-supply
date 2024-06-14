@@ -1,17 +1,8 @@
 # Solidity API
 
-## EnergyConsumption
-
-```solidity
-struct EnergyConsumption {
-  uint256 timestamp;
-  uint256 consumption;
-}
-```
-
 ## EnergyOracle
 
-_This contract allows recording and retrieving energy consumption data for users and tokens.
+_This contract allows recording and retrieving energy consumption data for consumers and tokens.
 The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
 who can retrieve the consumption data._
 
@@ -23,10 +14,10 @@ event EnergyConsumptionRecorded(address sender, address whoseConsumption, uint25
 
 _Emmited when an Energy Oracle provider_
 
-### EnergyConsumptionSent
+### EnergyConsumptionPaid
 
 ```solidity
-event EnergyConsumptionSent(address sender, address whoseConsumption, uint256 supplierId, uint256 consumption, uint256 timestamp)
+event EnergyConsumptionPaid(address sender, address whoseConsumption, uint256 supplierId, uint256 timestamp)
 ```
 
 _Emmited when called updateEnergyConsumptionsAndGetResult()_
@@ -73,49 +64,61 @@ Constructor to initialize StakingManagement contract
 
 _Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`_
 
-### recordEnergyConsumption
+### recordEnergyProduction
 
 ```solidity
-function recordEnergyConsumption(address user, uint256 supplierId, uint256 timestamp, uint256 consumption) external
+function recordEnergyProduction(address supplier, uint256 supplierId, uint256 production) external
 ```
 
-Records the energy consumption for a user and token at a specific timestamp.
+Records the energy production by the supplier at a specific timestamp.
 @dev
 Requirements:
 - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-- `user` must have token with `supplierId`
-- `timestamp` must be equal to 21:00
+- `supplier` must have `supplierId`
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address | The user address |
-| supplierId | uint256 | The token ID |
-| timestamp | uint256 | The timestamp for the energy consumption |
-| consumption | uint256 | The energy consumption value |
+| supplier | address | The supplier address |
+| supplierId | uint256 | The supplier ID |
+| production | uint256 | The energy production value |
 
-### updateEnergyConsumptionsAndGetResult
+### recordEnergyConsumption
 
 ```solidity
-function updateEnergyConsumptionsAndGetResult(address user, uint256 supplierId) public returns (uint256 consumption)
+function recordEnergyConsumption(address consumer, uint256 supplierId, uint256 consumption) external
 ```
 
-Gets the energy consumption for a user, token
+Records the energy consumption for a consumer and supplier at a specific timestamp.
+@dev
+Requirements:
+- `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
+- `consumer` must have supplier with `supplierId`
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| consumer | address | The consumer address |
+| supplierId | uint256 | The supplier ID |
+| consumption | uint256 | The energy consumption value |
+
+### updateEnergyConsumptions
+
+```solidity
+function updateEnergyConsumptions(address consumer, uint256 supplierId) public
+```
+
+Updates the energy consumption for a consumer, supplier
 Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address | The user address |
-| supplierId | uint256 | The token ID |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| consumption | uint256 | The energy consumption value |
+| consumer | address | The consumer address |
+| supplierId | uint256 | The supplier ID |
 
 ### pause
 
@@ -142,23 +145,42 @@ _Requirements:
 ### energyConsumptions
 
 ```solidity
-function energyConsumptions(address user, uint256 supplierId, uint256 id) public view returns (uint256 timestamp, uint256 consumption)
+function energyConsumptions(address consumer, uint256 supplierId) public view returns (uint256 consumption)
 ```
 
-_Retrieves the timestamp and consumption value for a specific energy consumption record._
+_Retrieves the consumption value for a specific energy consumption record._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| user | address | The address of the user. |
-| supplierId | uint256 | The ID of the token. |
-| id | uint256 | The index of the energy consumption record. |
+| consumer | address | The address of the consumer. |
+| supplierId | uint256 | The ID of the supplier. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| timestamp | uint256 | The timestamp of the energy consumption record. |
 | consumption | uint256 | The consumption value of the energy consumption record. |
+
+### energyProductions
+
+```solidity
+function energyProductions(address supplier, uint256 supplierId) public view returns (uint256 production)
+```
+
+_Retrieves the production value for a specific energy production record._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| supplier | address | The address of the supplier. |
+| supplierId | uint256 | The ID of the supplier. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| production | uint256 | The production value of the energy production record. |
 

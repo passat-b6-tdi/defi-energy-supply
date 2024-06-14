@@ -23,6 +23,6 @@ constructor(contract IEnergyOracle _energyOracle) public
 ### read
 
 ```solidity
-function read(address user, uint256 tokenId) public
+function read(address consumer, uint256 tokenId) public
 ```
 

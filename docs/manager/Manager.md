@@ -106,7 +106,7 @@ _Keccak256 hashed `MANAGER_ROLE` string_
 contract IMGT MGT
 ```
 
-_Reward token_
+_Microgrid token_
 
 ### ECU
 
