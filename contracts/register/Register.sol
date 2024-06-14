@@ -26,7 +26,7 @@ contract Register is Parent, ERC1155Holder {
     );
 
     ///@dev Emmited when a supplier registers a user as Electricity consumer
-    event UserRegistered(
+    event ConsumerRegistered(
         address indexed sender,
         address indexed consumer,
         uint256 indexed supplierId,
@@ -34,7 +34,7 @@ contract Register is Parent, ERC1155Holder {
         uint256 timestamp
     );
     ///@dev Emmited when a supplier unregisters an Electricity consumer
-    event UserUnregistered(
+    event ConsumerUnregistered(
         address indexed sender,
         address indexed consumer,
         uint256 indexed supplierId,
@@ -97,7 +97,7 @@ contract Register is Parent, ERC1155Holder {
 
         manager.ECU().mint(consumer, supplierId, 1);
 
-        emit UserRegistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
+        emit ConsumerRegistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
     /**
@@ -137,7 +137,7 @@ contract Register is Parent, ERC1155Holder {
 
         manager.ECU().burn(consumer, supplierId, 1);
 
-        emit UserUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
+        emit ConsumerUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
     /// @inheritdoc AccessControl

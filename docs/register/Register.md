@@ -18,18 +18,18 @@ event SupplierUnregistered(address sender, address supplier, uint256 supplierId,
 
 _Emmited when an Energy supplier unregisters_
 
-### UserRegistered
+### ConsumerRegistered
 
 ```solidity
-event UserRegistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
+event ConsumerRegistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
 ```
 
 _Emmited when a supplier registers a user as Electricity consumer_
 
-### UserUnregistered
+### ConsumerUnregistered
 
 ```solidity
-event UserUnregistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
+event ConsumerUnregistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
 ```
 
 _Emmited when a supplier unregisters an Electricity consumer_

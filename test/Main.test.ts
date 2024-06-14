@@ -180,7 +180,7 @@ describe('Main', function () {
 
       const registerUser = await main.connect(anotherAcc).registerElectricityConsumer(otherAcc.address, supplierId);
 
-      expect(registerUser).to.emit(register, 'UserRegistered');
+      expect(registerUser).to.emit(register, 'ConsumerRegistered');
       expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
       expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
     });
@@ -229,13 +229,13 @@ describe('Main', function () {
 
       const registerUser = await main.connect(anotherAcc).registerElectricityConsumer(otherAcc.address, supplierId);
 
-      expect(registerUser).to.emit(register, 'UserRegistered');
+      expect(registerUser).to.emit(register, 'ConsumerRegistered');
       expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
       expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
 
       const unRegisterUser = await main.connect(anotherAcc).unRegisterElectricityConsumer(otherAcc.address, supplierId);
 
-      expect(unRegisterUser).to.emit(register, 'UserUnregistered');
+      expect(unRegisterUser).to.emit(register, 'ConsumerUnregistered');
       expect(unRegisterUser).to.changeTokenBalance(ecu, otherAcc, -1);
       expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(0);
     });
@@ -260,7 +260,7 @@ describe('Main', function () {
 
     const registerUser = await main.connect(anotherAcc).registerElectricityConsumer(otherAcc.address, supplierId);
 
-    expect(registerUser).to.emit(register, 'UserRegistered');
+    expect(registerUser).to.emit(register, 'ConsumerRegistered');
     expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
     expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
 

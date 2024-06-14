@@ -164,7 +164,7 @@ describe('Register', function () {
 
       const registrationUser = await register.registerElectricityConsumer(otherAcc.address, 1);
 
-      expect(registrationUser).to.emit(register, 'UserRegistered');
+      expect(registrationUser).to.emit(register, 'ConsumerRegistered');
       expect(registrationUser).to.emit(ecu, 'Transfer');
       expect(await ecu.balanceOf(otherAcc.address, 1)).to.be.eq(1);
     });
@@ -175,7 +175,7 @@ describe('Register', function () {
 
       const registrationUser = await register.registerElectricityConsumer(otherAcc.address, 1);
 
-      expect(registrationUser).to.emit(register, 'UserRegistered');
+      expect(registrationUser).to.emit(register, 'ConsumerRegistered');
       expect(registrationUser).to.emit(ecu, 'Transfer');
       expect(await ecu.balanceOf(otherAcc.address, 1)).to.be.eq(1);
 
