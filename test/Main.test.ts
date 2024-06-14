@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { Escrow, MGT, Manager, EnergyOracle, StakingReward, Register, Main } from '../typechain';
-import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
+import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
 describe('Main', function () {
@@ -34,14 +34,14 @@ describe('Main', function () {
     const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
-    await elu.deployed();
+    const ECU_Factory: ContractFactory = await ethers.getContractFactory('ECU');
+    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
+    await ecu.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
       mgt.address,
-      elu.address,
+      ecu.address,
       nrgs.address,
       deployer.address,
       10,
@@ -99,17 +99,17 @@ describe('Main', function () {
     await energyOracle.grantRole(energy_oracle_provider_role, main.address);
     await energyOracle.grantRole(_escrow_, escrow.address);
 
-    await elu.grantRole(register_role, register.address);
+    await ecu.grantRole(register_role, register.address);
     await nrgs.grantRole(register_role, register.address);
     await mgt.grantRole(minter_role, stakingReward.address);
     await mgt.grantRole(minter_role, energyOracle.address);
 
     await mgt.connect(otherAcc).approve(main.address, ethers.constants.MaxUint256);
-    await elu.connect(otherAcc).setApprovalForAll(register.address, true);
+    await ecu.connect(otherAcc).setApprovalForAll(register.address, true);
 
     return {
       mgt,
-      elu,
+      ecu,
       nrgs,
       register,
       stakingReward,
@@ -124,12 +124,12 @@ describe('Main', function () {
   }
 
   it('Deployed correctly', async () => {
-    const { mgt, elu, nrgs, register, stakingReward, manager, escrow, main, energyOracle, deployer } =
+    const { mgt, ecu, nrgs, register, stakingReward, manager, escrow, main, energyOracle, deployer } =
       await loadFixture(deployFixture);
 
     expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
-    expect(elu.address).to.be.properAddress;
+    expect(ecu.address).to.be.properAddress;
     expect(register.address).to.be.properAddress;
     expect(stakingReward.address).to.be.properAddress;
     expect(manager.address).to.be.properAddress;
@@ -142,7 +142,7 @@ describe('Main', function () {
     expect(await energyOracle.hasRole(energy_oracle_provider_role, main.address)).to.be.true;
     expect(await energyOracle.hasRole(_escrow_, escrow.address)).to.be.true;
 
-    expect(await elu.hasRole(register_role, register.address)).to.be.true;
+    expect(await ecu.hasRole(register_role, register.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, register.address)).to.be.true;
     expect(await mgt.hasRole(minter_role, stakingReward.address)).to.be.true;
     expect(await mgt.hasRole(minter_role, energyOracle.address)).to.be.true;
@@ -150,7 +150,7 @@ describe('Main', function () {
 
   describe('Register', function () {
     it('Can register supplier in register contract', async () => {
-      const { main, register, stakingReward, nrgs, elu, anotherAcc } = await loadFixture(deployFixture);
+      const { main, register, stakingReward, nrgs, ecu, anotherAcc } = await loadFixture(deployFixture);
 
       const supplierId = 1;
       const buildingNumber = 555;
@@ -160,12 +160,12 @@ describe('Main', function () {
       expect(registerSupplier).to.emit(register, 'SupplierRegistered');
       expect(registerSupplier).to.emit(stakingReward, 'EnterStaking');
       expect(registerSupplier).to.changeTokenBalance(nrgs, anotherAcc, 1);
-      expect(registerSupplier).to.changeTokenBalance(elu, register, buildingNumber);
+      expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
       expect(await stakingReward.totalSuppliers()).to.eq(1);
     });
 
-    it('Can register electricity user in register contract', async () => {
-      const { main, register, stakingReward, nrgs, elu, otherAcc, anotherAcc } = await loadFixture(deployFixture);
+    it('Can register Electricity consumer in register contract', async () => {
+      const { main, register, stakingReward, nrgs, ecu, otherAcc, anotherAcc } = await loadFixture(deployFixture);
 
       const supplierId = 1;
       const buildingNumber = 555;
@@ -175,18 +175,18 @@ describe('Main', function () {
       expect(registerSupplier).to.emit(register, 'SupplierRegistered');
       expect(registerSupplier).to.emit(stakingReward, 'EnterStaking');
       expect(registerSupplier).to.changeTokenBalance(nrgs, anotherAcc, 1);
-      expect(registerSupplier).to.changeTokenBalance(elu, register, buildingNumber);
+      expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
       expect(await stakingReward.totalSuppliers()).to.eq(1);
 
       const registerUser = await main.connect(anotherAcc).registerElectricityUser(otherAcc.address, supplierId);
 
       expect(registerUser).to.emit(register, 'UserRegistered');
-      expect(registerUser).to.changeTokenBalances(elu, [register, otherAcc], [-1, 1]);
-      expect(await elu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
+      expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
+      expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
     });
 
     it('Can unregister supplier in register contract', async () => {
-      const { main, register, stakingReward, nrgs, elu, mgt, anotherAcc } = await loadFixture(deployFixture);
+      const { main, register, stakingReward, nrgs, ecu, mgt, anotherAcc } = await loadFixture(deployFixture);
 
       const supplierId = 1;
       const buildingNumber = 555;
@@ -196,7 +196,7 @@ describe('Main', function () {
       expect(registerSupplier).to.emit(register, 'SupplierRegistered');
       expect(registerSupplier).to.emit(stakingReward, 'EnterStaking');
       expect(registerSupplier).to.changeTokenBalance(nrgs, anotherAcc, 1);
-      expect(registerSupplier).to.changeTokenBalance(elu, register, buildingNumber);
+      expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
       expect(await stakingReward.totalSuppliers()).to.eq(1);
 
       const seconds = 3000;
@@ -207,14 +207,14 @@ describe('Main', function () {
       expect(unRegisterSupplier).to.emit(register, 'SupplierUnregistered');
       expect(unRegisterSupplier).to.emit(stakingReward, 'ExitStaking');
       expect(unRegisterSupplier).to.changeTokenBalance(nrgs, anotherAcc, -1);
-      expect(unRegisterSupplier).to.changeTokenBalance(elu, register, -buildingNumber);
+      expect(unRegisterSupplier).to.changeTokenBalance(ecu, register, -buildingNumber);
       expect(await stakingReward.totalSuppliers()).to.eq(0);
 
       expect(await mgt.balanceOf(anotherAcc.address)).to.be.approximately(seconds * 10, 10);
     });
 
-    it('Can unregister electricity user in register contract', async () => {
-      const { main, register, stakingReward, nrgs, elu, anotherAcc, otherAcc } = await loadFixture(deployFixture);
+    it('Can unregister Electricity consumer in register contract', async () => {
+      const { main, register, stakingReward, nrgs, ecu, anotherAcc, otherAcc } = await loadFixture(deployFixture);
 
       const supplierId = 1;
       const buildingNumber = 555;
@@ -224,25 +224,25 @@ describe('Main', function () {
       expect(registerSupplier).to.emit(register, 'SupplierRegistered');
       expect(registerSupplier).to.emit(stakingReward, 'EnterStaking');
       expect(registerSupplier).to.changeTokenBalance(nrgs, anotherAcc, 1);
-      expect(registerSupplier).to.changeTokenBalance(elu, register, buildingNumber);
+      expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
       expect(await stakingReward.totalSuppliers()).to.eq(1);
 
       const registerUser = await main.connect(anotherAcc).registerElectricityUser(otherAcc.address, supplierId);
 
       expect(registerUser).to.emit(register, 'UserRegistered');
-      expect(registerUser).to.changeTokenBalances(elu, [register, otherAcc], [-1, 1]);
-      expect(await elu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
+      expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
+      expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
 
       const unRegisterUser = await main.connect(anotherAcc).unRegisterElectricityUser(otherAcc.address, supplierId);
 
       expect(unRegisterUser).to.emit(register, 'UserUnregistered');
-      expect(unRegisterUser).to.changeTokenBalance(elu, otherAcc, -1);
-      expect(await elu.balanceOf(otherAcc.address, supplierId)).to.eq(0);
+      expect(unRegisterUser).to.changeTokenBalance(ecu, otherAcc, -1);
+      expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(0);
     });
   });
 
-  it('Can pay for electricity from electricity user', async () => {
-    const { main, register, stakingReward, energyOracle, escrow, nrgs, elu, mgt, anotherAcc, otherAcc, deployer } =
+  it('Can pay for electricity from Electricity consumer', async () => {
+    const { main, register, stakingReward, energyOracle, escrow, nrgs, ecu, mgt, anotherAcc, otherAcc, deployer } =
       await loadFixture(deployFixture);
 
     await mgt.mint(otherAcc.address, 10000);
@@ -255,14 +255,14 @@ describe('Main', function () {
     expect(registerSupplier).to.emit(register, 'SupplierRegistered');
     expect(registerSupplier).to.emit(stakingReward, 'EnterStaking');
     expect(registerSupplier).to.changeTokenBalance(nrgs, anotherAcc, 1);
-    expect(registerSupplier).to.changeTokenBalance(elu, register, buildingNumber);
+    expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
     expect(await stakingReward.totalSuppliers()).to.eq(1);
 
     const registerUser = await main.connect(anotherAcc).registerElectricityUser(otherAcc.address, supplierId);
 
     expect(registerUser).to.emit(register, 'UserRegistered');
-    expect(registerUser).to.changeTokenBalances(elu, [register, otherAcc], [-1, 1]);
-    expect(await elu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
+    expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
+    expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
 
     const now = await time.latest();
     const consumption = 20;
@@ -289,7 +289,7 @@ describe('Main', function () {
   });
 
   it('Can get rewards from staking to supplier', async () => {
-    const { main, register, stakingReward, nrgs, elu, mgt, anotherAcc } = await loadFixture(deployFixture);
+    const { main, register, stakingReward, nrgs, ecu, mgt, anotherAcc } = await loadFixture(deployFixture);
 
     const supplierId = 1;
     const buildingNumber = 555;
@@ -299,7 +299,7 @@ describe('Main', function () {
     expect(registerSupplier).to.emit(register, 'SupplierRegistered');
     expect(registerSupplier).to.emit(stakingReward, 'EnterStaking');
     expect(registerSupplier).to.changeTokenBalance(nrgs, anotherAcc, 1);
-    expect(registerSupplier).to.changeTokenBalance(elu, register, buildingNumber);
+    expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
     expect(await stakingReward.totalSuppliers()).to.eq(1);
 
     const seconds = 3000;
@@ -340,7 +340,7 @@ describe('Main', function () {
   it('OnlyRole USER_ROLE modifier', async () => {
     const { main, otherAcc } = await loadFixture(deployFixture);
 
-    const errorMsg = `Main: only Electricity Users to Supplier`;
+    const errorMsg = `Main: only Electricity Consumers to Supplier`;
 
     await expect(main.connect(otherAcc).payForElectricity(10, 10)).to.revertedWith(errorMsg);
   });

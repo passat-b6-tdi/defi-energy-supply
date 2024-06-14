@@ -44,7 +44,7 @@ contract EnergyOracle is Parent, Pausable {
 
     /// @dev Throws if passed address 0 as parameter
     modifier isCorrectUser(address account, uint256 supplierId) {
-        require(manager.ELU().balanceOf(account, supplierId) > 0, "EnergyOracle: user is not correct");
+        require(manager.ECU().balanceOf(account, supplierId) > 0, "EnergyOracle: user is not correct");
         _;
     }
 

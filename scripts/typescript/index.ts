@@ -1,5 +1,5 @@
 export { deployMGT } from './deployMGT';
-export { deployELU } from './deployELU';
+export { deployECU } from './deployECU';
 export { deployNRGS } from './deployNRGS';
 
 export { deployManager } from './deployManager';

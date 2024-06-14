@@ -10,13 +10,13 @@ function MGT() external view returns (contract IMGT)
 
 _Reward token_
 
-### ELU
+### ECU
 
 ```solidity
-function ELU() external view returns (contract IELU)
+function ECU() external view returns (contract IECU)
 ```
 
-_Electricity user NFT token_
+_Electricity consumer NFT token_
 
 ### NRGS
 

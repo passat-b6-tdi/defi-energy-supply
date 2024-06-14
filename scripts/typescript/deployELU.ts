@@ -1,21 +1,21 @@
 import { ethers } from 'hardhat';
-import { ELU } from '../../typechain';
+import { ECU } from '../../typechain';
 import { ContractFactory } from 'ethers';
 
-export async function deployELU(): Promise<ELU> {
-  console.log(`ELU deployment`);
+export async function deployECU(): Promise<ECU> {
+  console.log(`ECU deployment`);
 
-  const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-  const elu = (await ELU.deploy()) as ELU;
-  await elu.deployed();
+  const ECU: ContractFactory = await ethers.getContractFactory('ECU');
+  const ecu = (await ECU.deploy()) as ECU;
+  await ecu.deployed();
 
-  console.log(`ELU deployed to ${elu.address}`);
+  console.log(`ECU deployed to ${ecu.address}`);
 
-  return elu;
+  return ecu;
 }
 
 async function main() {
-  await deployELU();
+  await deployECU();
 }
 
 // We recommend this pattern to be able to use async/await everywhere

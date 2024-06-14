@@ -16,7 +16,7 @@
     - [StakingReward](docs/staking/stakingreward.md)
   - tokens
     - ERC1155
-      - [ELU](docs/tokens/erc1155/elu.md)
+      - [ECU](docs/tokens/erc1155/ecu.md)
     - ERC20
       - [MGT](docs/tokens/erc20/MGT.md)
     - ERC721

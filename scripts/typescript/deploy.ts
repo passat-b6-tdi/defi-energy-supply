@@ -1,8 +1,8 @@
 import hre, { ethers } from 'hardhat';
-import { ELU, EnergyOracle, Escrow, MGT, Main, Manager, NRGS, Register, StakingReward } from '../../typechain';
+import { ECU, EnergyOracle, Escrow, MGT, Main, Manager, NRGS, Register, StakingReward } from '../../typechain';
 import {
   deployMGT,
-  deployELU,
+  deployECU,
   deployNRGS,
   deployManager,
   deployEscrow,
@@ -27,11 +27,11 @@ async function main() {
 
   console.log('Deployment process - start');
 
-  console.log(`ELU deployment`);
-  const ELU: ContractFactory = await ethers.getContractFactory('ELU');
-  const elu = (await ELU.deploy()) as ELU;
-  await elu.deployed();
-  console.log(`ELU deployed to ${elu.address}`);
+  console.log(`ECU deployment`);
+  const ECU: ContractFactory = await ethers.getContractFactory('ECU');
+  const ecu = (await ECU.deploy()) as ECU;
+  await ecu.deployed();
+  console.log(`ECU deployed to ${ecu.address}`);
 
   console.log(`MGT deployment`);
   const MGT: ContractFactory = await ethers.getContractFactory('MGT');
@@ -54,7 +54,7 @@ async function main() {
   const Manager: ContractFactory = await ethers.getContractFactory('Manager');
   const manager = (await Manager.deploy(
     MGT.address,
-    elu.address,
+    ecu.address,
     nrgs.address,
     feeReceiver,
     reward,
@@ -125,7 +125,7 @@ async function main() {
   await energyOracle.grantRole(energy_oracle_provider_role, main.address);
   await energyOracle.grantRole(_escrow_, escrow.address);
 
-  await elu.grantRole(register_role, register.address);
+  await ecu.grantRole(register_role, register.address);
   await nrgs.grantRole(register_role, register.address);
   await MGT.grantRole(minter_role, stakingReward.address);
   await MGT.grantRole(minter_role, energyOracle.address);

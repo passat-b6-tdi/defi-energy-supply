@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { EnergyOracle, EscrowMock, MGT, Manager, Register, StakingReward } from '../typechain';
-import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
+import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
 describe('EnergyOracle', function () {
@@ -30,14 +30,14 @@ describe('EnergyOracle', function () {
     const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
-    await elu.deployed();
+    const ECU_Factory: ContractFactory = await ethers.getContractFactory('ECU');
+    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
+    await ecu.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
       mgt.address,
-      elu.address,
+      ecu.address,
       nrgs.address,
       deployer.address,
       10,
@@ -65,15 +65,15 @@ describe('EnergyOracle', function () {
     await energyOracle.grantRole(escrow_role, escrow.address);
     await mgt.grantRole(minter_role, energyOracle.address);
 
-    return { mgt, elu, ELU_Factory, nrgs, NRGS_Factory, manager, energyOracle, EnergyOracle, escrow, deployer, otherAcc };
+    return { mgt, ecu, ECU_Factory, nrgs, NRGS_Factory, manager, energyOracle, EnergyOracle, escrow, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mgt, elu, nrgs, energyOracle, manager, deployer } = await loadFixture(deployFixture);
+    const { mgt, ecu, nrgs, energyOracle, manager, deployer } = await loadFixture(deployFixture);
 
     expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
-    expect(elu.address).to.be.properAddress;
+    expect(ecu.address).to.be.properAddress;
     expect(energyOracle.address).to.be.properAddress;
     expect(energyOracle.address).to.be.properAddress;
 
@@ -88,9 +88,9 @@ describe('EnergyOracle', function () {
 
   describe('Registers', function () {
     it('ORACLE_PROVIDER can record consumption', async () => {
-      const { energyOracle, elu, deployer, mgt } = await loadFixture(deployFixture);
+      const { energyOracle, ecu, deployer, mgt } = await loadFixture(deployFixture);
 
-      await elu.mint(deployer.address, 10, deployer.address);
+      await ecu.mint(deployer.address, 10, deployer.address);
 
       const balBefore = await mgt.balanceOf(deployer.address);
       expect(balBefore).to.eq(0);
@@ -111,9 +111,9 @@ describe('EnergyOracle', function () {
     });
 
     it('ESCROW can read and delete consumption', async () => {
-      const { energyOracle, elu, deployer, escrow, mgt } = await loadFixture(deployFixture);
+      const { energyOracle, ecu, deployer, escrow, mgt } = await loadFixture(deployFixture);
 
-      await elu.mint(deployer.address, 10, deployer.address);
+      await ecu.mint(deployer.address, 10, deployer.address);
 
       const balBefore = await mgt.balanceOf(deployer.address);
       expect(balBefore).to.eq(0);
@@ -148,9 +148,9 @@ describe('EnergyOracle', function () {
     });
 
     it('Multiple ORACLE_PROVIDERs can record consumption', async () => {
-      const { energyOracle, elu, deployer, mgt } = await loadFixture(deployFixture);
+      const { energyOracle, ecu, deployer, mgt } = await loadFixture(deployFixture);
 
-      await elu.mint(deployer.address, 10, deployer.address);
+      await ecu.mint(deployer.address, 10, deployer.address);
 
       const balBefore = await mgt.balanceOf(deployer.address);
       expect(balBefore).to.eq(0);
@@ -237,9 +237,9 @@ describe('EnergyOracle', function () {
     });
 
     it('Pausable', async () => {
-      const { energyOracle, elu } = await loadFixture(deployFixture);
+      const { energyOracle, ecu } = await loadFixture(deployFixture);
 
-      await elu.mint(otherAccAddress, 1, otherAccAddress);
+      await ecu.mint(otherAccAddress, 1, otherAccAddress);
 
       const error = 'Pausable: paused';
 
@@ -258,9 +258,9 @@ describe('EnergyOracle', function () {
     });
 
     it('Only correct user can be recorded', async () => {
-      const { energyOracle, elu } = await loadFixture(deployFixture);
+      const { energyOracle, ecu } = await loadFixture(deployFixture);
 
-      await elu.mint(otherAccAddress, 1, otherAccAddress);
+      await ecu.mint(otherAccAddress, 1, otherAccAddress);
 
       const error = 'EnergyOracle: user is not correct';
 

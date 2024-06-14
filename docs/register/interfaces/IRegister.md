@@ -28,7 +28,7 @@ Requirements:
 function registerElectricityUser(address user, uint256 supplierId) external
 ```
 
-Registers an Electricity user.
+Registers an Electricity consumer.
 Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE.
 - `user` must not be address 0.
@@ -63,11 +63,11 @@ Requirements:
 function unRegisterElectricityUser(address user, uint256 supplierId) external
 ```
 
-Unregisters an Electricity user.
+Unregisters an Electricity consumer.
 Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE.
 - `user` must not be address 0.
-- `user` must have ELU token.
+- `user` must have ECU token.
 
 #### Parameters
 

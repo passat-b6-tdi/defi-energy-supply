@@ -42,7 +42,7 @@ contract Escrow is Parent {
     ) public onlyRole(ESCROW_MANAGER_ROLE) zeroAddressCheck(user) gtZero(paidAmount) {
         address supplier = manager.NRGS().ownerOf(supplierId);
 
-        require(manager.ELU().balanceOf(user, supplierId) > 0, "Escrow: user connected to another supplier");
+        require(manager.ECU().balanceOf(user, supplierId) > 0, "Escrow: user connected to another supplier");
 
         uint256 consumption = manager.energyOracle().energyConsumptions(user, supplierId);
         uint256 needToBePaid = consumption + manager.fees();

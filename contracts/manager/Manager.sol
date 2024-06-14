@@ -15,8 +15,8 @@ contract Manager is AccessControl, IManager {
     /// @dev Emitted when a manager has changed the `MGT` link to another contract
     event MGTchanged(address indexed sender, IMGT newMGT);
     // NFTs
-    /// @dev Emitted when a manager has changed the `ELU` link to another contract
-    event ELUchanged(address indexed sender, IELU newELU);
+    /// @dev Emitted when a manager has changed the `ECU` link to another contract
+    event ECUchanged(address indexed sender, IECU newECU);
     /// @dev Emitted when a manager has changed the `NRGS` link to another contract
     event NRGSchanged(address indexed sender, INRGS newNRGS);
     /// @dev Emitted when a manager has changed the `staking` link to another contract
@@ -46,8 +46,8 @@ contract Manager is AccessControl, IManager {
     // Contracts
     /// @dev Microgrid token
     IMGT public MGT;
-    /// @dev Electricity Users SFT token
-    IELU public ELU;
+    /// @dev Electricity Consumers SFT token
+    IECU public ECU;
     /// @dev Energy Supplier NFT token
     INRGS public NRGS;
 
@@ -86,13 +86,13 @@ contract Manager is AccessControl, IManager {
     /**
      * @notice Constructor to initialize the Manager contract
      * @dev Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender`
-     * Sets `MGT` token address, `ELU` and `NRGS` tokens addresses, `staking` address
+     * Sets `MGT` token address, `ECU` and `NRGS` tokens addresses, `staking` address
      * Sets `feeReceiver` address
      * Sets `rewardAmount`, `tolerance`, and `fees`
      */
     constructor(
         IMGT _MGT,
-        IELU _ELU,
+        IECU _ECU,
         INRGS _NRGS,
         address _feeReceiver,
         uint256 _rewardAmount,
@@ -103,7 +103,7 @@ contract Manager is AccessControl, IManager {
         _grantRole(MANAGER_ROLE, msg.sender);
 
         MGT = _MGT;
-        ELU = _ELU;
+        ECU = _ECU;
         NRGS = _NRGS;
 
         feeReceiver = _feeReceiver;
@@ -143,18 +143,18 @@ contract Manager is AccessControl, IManager {
     }
 
     /**
-     * @notice Changes ELU link to another contract.
+     * @notice Changes ECU link to another contract.
      * Requirements:
      * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_ELU` must be not address 0
+     * - `_ECU` must be not address 0
      *
-     * @param _ELU IELU
+     * @param _ECU IECU
 
      */
-    function changeELU(IELU _ELU) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_ELU)) {
-        emit ELUchanged(msg.sender, _ELU);
+    function changeECU(IECU _ECU) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_ECU)) {
+        emit ECUchanged(msg.sender, _ECU);
 
-        ELU = _ELU;
+        ECU = _ECU;
     }
 
     /**

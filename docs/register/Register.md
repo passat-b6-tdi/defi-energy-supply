@@ -24,7 +24,7 @@ _Emmited when a user unregisters as an Energy supplier_
 event UserRegistered(address sender, address user, uint256 usersSupplierId, uint256 timestamp)
 ```
 
-_Emmited when a user registers as an Electricity user_
+_Emmited when a user registers as an Electricity consumer_
 
 ### UserUnregistered
 
@@ -32,7 +32,7 @@ _Emmited when a user registers as an Electricity user_
 event UserUnregistered(address sender, address user, uint256 usersSupplierId, uint256 timestamp)
 ```
 
-_Emmited when a user unregisters as an Electricity user_
+_Emmited when a user unregisters as an Electricity consumer_
 
 ### REGISTER_MANAGER_ROLE
 
@@ -78,7 +78,7 @@ Requirements:
 function registerElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
-Registers an Electricity user.
+Registers an Electricity consumer.
 Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE.
 - `user` must not be address 0.
@@ -113,11 +113,11 @@ Requirements:
 function unRegisterElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
-Unregisters an Electricity user.
+Unregisters an Electricity consumer.
 Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE.
 - `user` must not be address 0.
-- `user` must have ELU token.
+- `user` must have ECU token.
 
 #### Parameters
 

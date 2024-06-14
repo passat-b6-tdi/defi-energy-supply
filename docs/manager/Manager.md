@@ -12,13 +12,13 @@ event MGTchanged(address sender, contract IMGT newMGT)
 
 _Emitted when a manager has changed the `MGT` link to another contract_
 
-### ELUchanged
+### ECUchanged
 
 ```solidity
-event ELUchanged(address sender, contract IELU newELU)
+event ECUchanged(address sender, contract IECU newECU)
 ```
 
-_Emitted when a manager has changed the `ELU` link to another contract_
+_Emitted when a manager has changed the `ECU` link to another contract_
 
 ### NRGSchanged
 
@@ -108,13 +108,13 @@ contract IMGT MGT
 
 _Reward token_
 
-### ELU
+### ECU
 
 ```solidity
-contract IELU ELU
+contract IECU ECU
 ```
 
-_Electricity Users SFT token_
+_Electricity Consumers SFT token_
 
 ### NRGS
 
@@ -207,13 +207,13 @@ _Throws if passed value is <=0_
 ### constructor
 
 ```solidity
-constructor(contract IMGT _MGT, contract IELU _ELU, contract INRGS _NRGS, address _feeReceiver, uint256 _rewardAmount, uint256 _tolerance, uint256 _fees) public
+constructor(contract IMGT _MGT, contract IECU _ECU, contract INRGS _NRGS, address _feeReceiver, uint256 _rewardAmount, uint256 _tolerance, uint256 _fees) public
 ```
 
 Constructor to initialize the Manager contract
 
 _Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender`
-Sets `MGT` token address, `ELU` and `NRGS` tokens addresses, `staking` address
+Sets `MGT` token address, `ECU` and `NRGS` tokens addresses, `staking` address
 Sets `feeReceiver` address
 Sets `rewardAmount`, `tolerance`, and `fees`_
 
@@ -251,22 +251,22 @@ Requirements:
 | ---- | ---- | ----------- |
 | _NRGS | contract INRGS | INRGS |
 
-### changeELU
+### changeECU
 
 ```solidity
-function changeELU(contract IELU _ELU) external
+function changeECU(contract IECU _ECU) external
 ```
 
-Changes ELU link to another contract.
+Changes ECU link to another contract.
 Requirements:
 - `msg.sender` must have `MANAGER_ROLE`
-- `_ELU` must be not address 0
+- `_ECU` must be not address 0
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _ELU | contract IELU | IELU |
+| _ECU | contract IECU | IECU |
 
 ### changeStakingContract
 

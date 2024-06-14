@@ -18,7 +18,7 @@ interface IRegister {
     function registerSupplier(address supplier) external;
 
     /**
-     * @notice Registers an Electricity user.
+     * @notice Registers an Electricity consumer.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
      * - `user` must not be address 0.
@@ -39,11 +39,11 @@ interface IRegister {
     function unRegisterSupplier(uint256 supplierId) external;
 
     /**
-     * @notice Unregisters an Electricity user.
+     * @notice Unregisters an Electricity consumer.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
      * - `user` must not be address 0.
-     * - `user` must have ELU token.
+     * - `user` must have ECU token.
      *
      * @param user The address of the user.
      * @param supplierId The ID of the supplier.

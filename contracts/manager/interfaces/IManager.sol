@@ -6,15 +6,15 @@ import "../../staking/interfaces/IStakingReward.sol";
 import "../../register/interfaces/IRegister.sol";
 import "../../tokens/ERC20/interfaces/IMGT.sol";
 import "../../tokens/ERC721/interfaces/INRGS.sol";
-import "../../tokens/ERC1155/interfaces/IELU.sol";
+import "../../tokens/ERC1155/interfaces/IECU.sol";
 import "../../escrow/interfaces/IEscrow.sol";
 
 interface IManager {
     ///@dev Microgrid token
     function MGT() external view returns (IMGT);
 
-    ///@dev Electricity user NFT token
-    function ELU() external view returns (IELU);
+    ///@dev Electricity Consumers NFT token
+    function ECU() external view returns (IECU);
 
     ///@dev Energy Supplier NFT token
     function NRGS() external view returns (INRGS);

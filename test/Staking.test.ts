@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { MGT, Manager, StakingReward, Register } from '../typechain';
-import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
+import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
 describe('Staking', function () {
@@ -25,14 +25,14 @@ describe('Staking', function () {
     const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
-    await elu.deployed();
+    const ECU_Factory: ContractFactory = await ethers.getContractFactory('ECU');
+    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
+    await ecu.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
       mgt.address,
-      elu.address,
+      ecu.address,
       nrgs.address,
       deployer.address,
       10,

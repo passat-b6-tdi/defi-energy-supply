@@ -1,6 +1,6 @@
 # Solidity API
 
-## IELU
+## IECU
 
 ### mint
 
@@ -8,7 +8,7 @@
 function mint(address to, uint256 tokenId, uint256 amountOfUsers) external
 ```
 
-_Mints `to` address ELU token_
+_Mints `to` address ECU token_
 
 #### Parameters
 
@@ -24,7 +24,7 @@ _Mints `to` address ELU token_
 function burn(address from, uint256 tokenId, uint256 amount) external
 ```
 
-_Burns `from` address ELU token_
+_Burns `from` address ECU token_
 
 #### Parameters
 

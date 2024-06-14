@@ -25,7 +25,7 @@ contract Register is Parent, ERC1155Holder {
         uint256 timestamp
     );
 
-    ///@dev Emmited when a user registers as an Electricity user
+    ///@dev Emmited when a user registers as an Electricity consumer
     event UserRegistered(
         address indexed sender,
         address indexed user,
@@ -33,7 +33,7 @@ contract Register is Parent, ERC1155Holder {
         address supplierAddress,
         uint256 timestamp
     );
-    ///@dev Emmited when a user unregisters as an Electricity user
+    ///@dev Emmited when a user unregisters as an Electricity consumer
     event UserUnregistered(
         address indexed sender,
         address indexed user,
@@ -76,7 +76,7 @@ contract Register is Parent, ERC1155Holder {
     }
 
     /**
-     * @notice Registers an Electricity user.
+     * @notice Registers an Electricity consumer.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
      * - `user` must not be address 0.
@@ -89,13 +89,13 @@ contract Register is Parent, ERC1155Holder {
         uint256 usersSupplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
         require(
-            manager.ELU().balanceOf(user, usersSupplierId) == 0,
+            manager.ECU().balanceOf(user, usersSupplierId) == 0,
             "Register: can not register already registered user"
         );
 
         address supplier = manager.NRGS().ownerOf(usersSupplierId);
 
-        manager.ELU().mint(user, usersSupplierId, 1);
+        manager.ECU().mint(user, usersSupplierId, 1);
 
         emit UserRegistered(msg.sender, user, usersSupplierId, supplier, block.timestamp);
     }
@@ -119,11 +119,11 @@ contract Register is Parent, ERC1155Holder {
     }
 
     /**
-     * @notice Unregisters an Electricity user.
+     * @notice Unregisters an Electricity consumer.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
      * - `user` must not be address 0.
-     * - `user` must have ELU token.
+     * - `user` must have ECU token.
      *
      * @param user The address of the user.
      * @param usersSupplierId The ID of the supplier for the user.
@@ -132,10 +132,10 @@ contract Register is Parent, ERC1155Holder {
         address user,
         uint256 usersSupplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
-        require(manager.ELU().balanceOf(user, usersSupplierId) == 1, "Register: supplier is not correct");
+        require(manager.ECU().balanceOf(user, usersSupplierId) == 1, "Register: supplier is not correct");
         address supplier = manager.NRGS().ownerOf(usersSupplierId);
 
-        manager.ELU().burn(user, usersSupplierId, 1);
+        manager.ECU().burn(user, usersSupplierId, 1);
 
         emit UserUnregistered(msg.sender, user, usersSupplierId, supplier, block.timestamp);
     }

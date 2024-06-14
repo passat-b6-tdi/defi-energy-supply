@@ -3,7 +3,7 @@ import { ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { Escrow, MGT, Manager, OracleMock, MainMock } from '../typechain';
-import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
+import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
 describe('Escrow', function () {
@@ -25,9 +25,9 @@ describe('Escrow', function () {
     const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
-    await elu.deployed();
+    const ECU_Factory: ContractFactory = await ethers.getContractFactory('ECU');
+    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
+    await ecu.deployed();
 
     const OracleMock: ContractFactory = await ethers.getContractFactory('OracleMock');
     const energyOracle: OracleMock = (await OracleMock.deploy()) as OracleMock;
@@ -36,7 +36,7 @@ describe('Escrow', function () {
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
       mgt.address,
-      elu.address,
+      ecu.address,
       nrgs.address,
       deployer.address,
       10,
@@ -62,15 +62,15 @@ describe('Escrow', function () {
 
     await escrow.grantRole(escrow_manager, main.address);
 
-    return { mgt, elu, ELU_Factory, nrgs, NRGS_Factory, manager, escrow, main, energyOracle, deployer, otherAcc };
+    return { mgt, ecu, ECU_Factory, nrgs, NRGS_Factory, manager, escrow, main, energyOracle, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mgt, elu, nrgs, escrow, main, deployer } = await loadFixture(deployFixture);
+    const { mgt, ecu, nrgs, escrow, main, deployer } = await loadFixture(deployFixture);
 
     expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
-    expect(elu.address).to.be.properAddress;
+    expect(ecu.address).to.be.properAddress;
     expect(escrow.address).to.be.properAddress;
 
     expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
@@ -81,7 +81,7 @@ describe('Escrow', function () {
   });
 
   it('ESCROW_MANAGER_ROLE can send to supplier, feeReceiver funds', async () => {
-    const { escrow, elu, deployer, otherAcc, main, nrgs, mgt } = await loadFixture(deployFixture);
+    const { escrow, ecu, deployer, otherAcc, main, nrgs, mgt } = await loadFixture(deployFixture);
 
     await nrgs.mint(deployer.address, 10);
 
@@ -91,7 +91,7 @@ describe('Escrow', function () {
     const balBefore = await mgt.balanceOf(otherAcc.address);
     expect(balBefore).to.eq(1000);
 
-    await elu.mint(otherAcc.address, 10, deployer.address);
+    await ecu.mint(otherAcc.address, 10, deployer.address);
 
     const EnergyConsumption = 555;
     const fees = 10;
@@ -107,7 +107,7 @@ describe('Escrow', function () {
   });
 
   it('Remaining amount will be sent back', async () => {
-    const { escrow, elu, deployer, otherAcc, main, nrgs, mgt } = await loadFixture(deployFixture);
+    const { escrow, ecu, deployer, otherAcc, main, nrgs, mgt } = await loadFixture(deployFixture);
 
     await nrgs.mint(deployer.address, 10);
     await mgt.mint(otherAcc.address, 1000);
@@ -116,7 +116,7 @@ describe('Escrow', function () {
     const balBefore = await mgt.balanceOf(otherAcc.address);
     expect(balBefore).to.eq(1000);
 
-    await elu.mint(otherAcc.address, 10, deployer.address);
+    await ecu.mint(otherAcc.address, 10, deployer.address);
 
     const EnergyConsumption = 555;
     const fees = 10;
@@ -164,12 +164,12 @@ describe('Escrow', function () {
     });
 
     it('Escrow must be properly paid', async () => {
-      const { escrow, deployer, otherAcc, elu, nrgs } = await loadFixture(deployFixture);
+      const { escrow, deployer, otherAcc, ecu, nrgs } = await loadFixture(deployFixture);
       const error = 'Escrow: not enough funds sent';
 
       await nrgs.mint(deployer.address, 10);
 
-      await elu.mint(deployer.address, 10, otherAcc.address);
+      await ecu.mint(deployer.address, 10, otherAcc.address);
 
       await expect(escrow.sendFundsToSupplier(deployer.address, 10, 5)).to.be.revertedWith(error);
     });

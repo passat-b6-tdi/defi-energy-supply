@@ -40,7 +40,7 @@ contract Main is Parent {
     }
 
     /**
-     * @notice Registers an Electricity user.
+     * @notice Registers an Electricity consumer.
      * Requirements:
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a supplier.
@@ -64,7 +64,7 @@ contract Main is Parent {
     }
 
     /**
-     * @notice Unregisters an Electricity user.
+     * @notice Unregisters an Electricity consumer.
      * Requirements:
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a supplier.
@@ -86,7 +86,10 @@ contract Main is Parent {
      * @param amountToPay The amount to pay for electricity.
      */
     function payForElectricity(uint256 usersSupplierId, uint256 amountToPay) external gtZero(amountToPay) {
-        require(manager.ELU().balanceOf(msg.sender, usersSupplierId) > 0, "Main: only Electricity Users to Supplier");
+        require(
+            manager.ECU().balanceOf(msg.sender, usersSupplierId) > 0,
+            "Main: only Electricity Consumers to Supplier"
+        );
 
         require(
             manager.MGT().transferFrom(msg.sender, address(manager.escrow()), amountToPay + manager.fees()),

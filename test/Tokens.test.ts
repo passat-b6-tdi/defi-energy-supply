@@ -3,7 +3,7 @@ import { ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { MGT } from '../typechain';
-import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
+import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
 describe(`Tokens`, function () {
@@ -21,9 +21,9 @@ describe(`Tokens`, function () {
     const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
     await mgt.deployed();
 
-    const ELU_Factory: ContractFactory = await ethers.getContractFactory(`ELU`);
-    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
-    await elu.deployed();
+    const ECU_Factory: ContractFactory = await ethers.getContractFactory(`ECU`);
+    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
+    await ecu.deployed();
 
     const NRGS_Factory: ContractFactory = await ethers.getContractFactory(`NRGS`);
     const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
@@ -34,21 +34,21 @@ describe(`Tokens`, function () {
 
     register_role = await nrgs.REGISTER_ROLE();
 
-    return { mgt, elu, nrgs, deployer, otherAcc };
+    return { mgt, ecu, nrgs, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mgt, elu, nrgs, deployer } = await loadFixture(deployFixture);
+    const { mgt, ecu, nrgs, deployer } = await loadFixture(deployFixture);
 
     expect(mgt.address).to.be.properAddress;
-    expect(elu.address).to.be.properAddress;
+    expect(ecu.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
 
     expect(await mgt.name()).to.be.eq(`Mictrogrid Token`);
     expect(await mgt.symbol()).to.be.eq(`MGT`);
 
-    expect(await elu.name()).to.be.eq(`Electricity Users Token`);
-    expect(await elu.symbol()).to.be.eq(`ELU`);
+    expect(await ecu.name()).to.be.eq(`Electricity Consumer Token`);
+    expect(await ecu.symbol()).to.be.eq(`ECU`);
 
     expect(await nrgs.name()).to.be.eq(`Energy Supplier Token`);
     expect(await nrgs.symbol()).to.be.eq(`NRGS`);
@@ -56,8 +56,8 @@ describe(`Tokens`, function () {
     expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
 
-    expect(await elu.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await elu.hasRole(register_role, deployer.address)).to.be.true;
+    expect(await ecu.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await ecu.hasRole(register_role, deployer.address)).to.be.true;
 
     expect(await nrgs.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
@@ -101,36 +101,36 @@ describe(`Tokens`, function () {
     });
   });
 
-  describe(`ELU`, function () {
-    it('ELU can add user to supplier', async () => {
-      const { elu, otherAcc, deployer } = await loadFixture(deployFixture);
+  describe(`ECU`, function () {
+    it('ECU can add user to supplier', async () => {
+      const { ecu, otherAcc, deployer } = await loadFixture(deployFixture);
 
-      await elu.mint(otherAcc.address, 0, 10);
-      expect(await elu.balanceOf(otherAcc.address, 0)).to.eq(10);
+      await ecu.mint(otherAcc.address, 0, 10);
+      expect(await ecu.balanceOf(otherAcc.address, 0)).to.eq(10);
     });
 
-    it('ELU can be minted only by register manager', async () => {
-      const { elu, otherAcc } = await loadFixture(deployFixture);
+    it('ECU can be minted only by register manager', async () => {
+      const { ecu, otherAcc } = await loadFixture(deployFixture);
 
-      await expect(elu.connect(otherAcc).mint(otherAcc.address, 0, 10)).to.be.revertedWith(
+      await expect(ecu.connect(otherAcc).mint(otherAcc.address, 0, 10)).to.be.revertedWith(
         `AccessControl: account ${otherAccAddress} is missing role ${register_role}`,
       );
 
-      await elu.mint(otherAcc.address, 0, 10);
-      expect(await elu.balanceOf(otherAcc.address, 0)).to.eq(10);
+      await ecu.mint(otherAcc.address, 0, 10);
+      expect(await ecu.balanceOf(otherAcc.address, 0)).to.eq(10);
     });
 
-    it('ELU can be burned only by register manager', async () => {
-      const { elu, otherAcc } = await loadFixture(deployFixture);
+    it('ECU can be burned only by register manager', async () => {
+      const { ecu, otherAcc } = await loadFixture(deployFixture);
 
-      await elu.mint(otherAcc.address, 0, 10);
-      expect(await elu.balanceOf(otherAcc.address, 0)).to.eq(10);
+      await ecu.mint(otherAcc.address, 0, 10);
+      expect(await ecu.balanceOf(otherAcc.address, 0)).to.eq(10);
 
-      await expect(elu.connect(otherAcc).burn(otherAcc.address, 0, 10)).to.be.revertedWith(
+      await expect(ecu.connect(otherAcc).burn(otherAcc.address, 0, 10)).to.be.revertedWith(
         `AccessControl: account ${otherAccAddress} is missing role ${register_role}`,
       );
-      await elu.burn(otherAcc.address, 0, 10);
-      expect(await elu.balanceOf(otherAcc.address, 0)).to.eq(0);
+      await ecu.burn(otherAcc.address, 0, 10);
+      expect(await ecu.balanceOf(otherAcc.address, 0)).to.eq(0);
     });
   });
 });

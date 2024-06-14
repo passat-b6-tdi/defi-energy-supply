@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { MGT, Manager, Register, StakingReward, EnergyOracle, Escrow } from '../typechain';
-import { ELU } from '../typechain/contracts/tokens/ERC1155/ELU';
+import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
 describe('Manager', function () {
@@ -30,14 +30,14 @@ describe('Manager', function () {
     const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
-    const ELU_Factory: ContractFactory = await ethers.getContractFactory('ELU');
-    const elu: ELU = (await ELU_Factory.deploy()) as ELU;
-    await elu.deployed();
+    const ECU_Factory: ContractFactory = await ethers.getContractFactory('ECU');
+    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
+    await ecu.deployed();
 
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
       mgt.address,
-      elu.address,
+      ecu.address,
       nrgs.address,
       deployer.address,
       10,
@@ -76,7 +76,7 @@ describe('Manager', function () {
     await mgt.grantRole(minter_role, stakingReward.address);
 
     await nrgs.grantRole(register_role, register.address);
-    await elu.grantRole(register_role, register.address);
+    await ecu.grantRole(register_role, register.address);
 
     await stakingReward.grantRole(staking_role, register.address);
 
@@ -84,8 +84,8 @@ describe('Manager', function () {
       manager,
       mgt,
       MGT_Factory,
-      elu,
-      ELU_Factory,
+      ecu,
+      ECU_Factory,
       nrgs,
       NRGS_Factory,
       stakingReward,
@@ -99,11 +99,11 @@ describe('Manager', function () {
   }
 
   it('Deployed correctly', async () => {
-    const { mgt, elu, nrgs, stakingReward, register, manager, escrow, deployer } = await loadFixture(deployFixture);
+    const { mgt, ecu, nrgs, stakingReward, register, manager, escrow, deployer } = await loadFixture(deployFixture);
 
     expect(mgt.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
-    expect(elu.address).to.be.properAddress;
+    expect(ecu.address).to.be.properAddress;
     expect(stakingReward.address).to.be.properAddress;
     expect(register.address).to.be.properAddress;
     expect(escrow.address).to.be.properAddress;
@@ -121,9 +121,9 @@ describe('Manager', function () {
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, register.address)).to.be.true;
 
-    expect(await elu.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await elu.hasRole(register_role, deployer.address)).to.be.true;
-    expect(await elu.hasRole(register_role, register.address)).to.be.true;
+    expect(await ecu.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await ecu.hasRole(register_role, deployer.address)).to.be.true;
+    expect(await ecu.hasRole(register_role, register.address)).to.be.true;
 
     expect(await stakingReward.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await stakingReward.hasRole(staking_role, deployer.address)).to.be.true;
@@ -153,21 +153,21 @@ describe('Manager', function () {
       expect(changes).to.emit(manager, 'MGTchanged');
     });
 
-    it('Manager can change ELU_Factory', async () => {
-      const { manager, ELU_Factory, elu } = await loadFixture(deployFixture);
+    it('Manager can change ECU_Factory', async () => {
+      const { manager, ECU_Factory, ecu } = await loadFixture(deployFixture);
 
-      const elu2: ELU = (await ELU_Factory.deploy()) as ELU;
-      await elu2.deployed();
+      const ecu2: ECU = (await ECU_Factory.deploy()) as ECU;
+      await ecu2.deployed();
 
-      const prevElu = await manager.ELU();
+      const prevElu = await manager.ECU();
 
-      const changes = await manager.changeELU(elu2.address);
-      const currElu = await manager.ELU();
+      const changes = await manager.changeECU(ecu2.address);
+      const currElu = await manager.ECU();
 
-      expect(prevElu).to.be.eq(elu.address);
-      expect(currElu).to.be.eq(elu2.address);
+      expect(prevElu).to.be.eq(ecu.address);
+      expect(currElu).to.be.eq(ecu2.address);
 
-      expect(changes).to.emit(manager, 'ELUchanged');
+      expect(changes).to.emit(manager, 'ECUchanged');
     });
 
     it('Manager can change NRGS_Factory', async () => {
@@ -296,7 +296,7 @@ describe('Manager', function () {
 
       await expect(manager.connect(otherAcc).changeMGT(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeNRGS(otherAcc.address)).to.be.revertedWith(errorMsg);
-      await expect(manager.connect(otherAcc).changeELU(otherAcc.address)).to.be.revertedWith(errorMsg);
+      await expect(manager.connect(otherAcc).changeECU(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeStakingContract(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeRegister(otherAcc.address)).to.be.revertedWith(errorMsg);
       await expect(manager.connect(otherAcc).changeEnergyOracle(otherAcc.address)).to.be.revertedWith(errorMsg);
@@ -314,7 +314,7 @@ describe('Manager', function () {
 
       await expect(manager.changeMGT(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeNRGS(addressZero)).to.be.revertedWith(errorMsg);
-      await expect(manager.changeELU(addressZero)).to.be.revertedWith(errorMsg);
+      await expect(manager.changeECU(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeStakingContract(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeRegister(addressZero)).to.be.revertedWith(errorMsg);
       await expect(manager.changeEnergyOracle(addressZero)).to.be.revertedWith(errorMsg);

@@ -1,6 +1,6 @@
 # Solidity API
 
-## ELU
+## ECU
 
 ### REGISTER_ROLE
 
@@ -32,7 +32,7 @@ _Symbol of this token_
 constructor() public
 ```
 
-Constructor to initialize ELU contract.
+Constructor to initialize ECU contract.
 
 _Grants each role to `msg.sender`.
 Sets `name` and `symbol` of this token._
@@ -43,7 +43,7 @@ Sets `name` and `symbol` of this token._
 function mint(address to, uint256 tokenId, uint256 amountOfUsers) external
 ```
 
-_Mints `to` address ELU token_
+_Mints `to` address ECU token_
 
 #### Parameters
 
@@ -59,7 +59,7 @@ _Mints `to` address ELU token_
 function burn(address from, uint256 tokenId, uint256 amount) public
 ```
 
-_Burns `from` address ELU token_
+_Burns `from` address ECU token_
 
 #### Parameters
 

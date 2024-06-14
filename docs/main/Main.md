@@ -60,7 +60,7 @@ Requirements:
 function registerElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
-Registers an Electricity user.
+Registers an Electricity consumer.
 Requirements:
 - `supplierId` must be greater than 0.
 - `msg.sender` must be a supplier.
@@ -95,7 +95,7 @@ Requirements:
 function unRegisterElectricityUser(address user, uint256 usersSupplierId) external
 ```
 
-Unregisters an Electricity user.
+Unregisters an Electricity consumer.
 Requirements:
 - `supplierId` must be greater than 0.
 - `msg.sender` must be a supplier.
