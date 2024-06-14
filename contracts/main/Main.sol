@@ -47,8 +47,8 @@ contract Main is Parent {
      *
      * @param supplierId The ID of the supplier for the consumer.
      */
-    function registerElectricityUser(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
-        manager.register().registerElectricityUser(consumer, supplierId);
+    function registerElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
+        manager.register().registerElectricityConsumer(consumer, supplierId);
     }
 
     /**
@@ -71,8 +71,8 @@ contract Main is Parent {
      *
      * @param supplierId The ID of the supplier for the consumer.
      */
-    function unRegisterElectricityUser(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
-        manager.register().unRegisterElectricityUser(consumer, supplierId);
+    function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
+        manager.register().unRegisterElectricityConsumer(consumer, supplierId);
     }
 
     /**

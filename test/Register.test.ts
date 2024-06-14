@@ -162,7 +162,7 @@ describe('Register', function () {
       const { register, ecu, deployer, otherAcc } = await loadFixture(deployFixture);
       const registrationSupplier = await register.registerSupplier(deployer.address);
 
-      const registrationUser = await register.registerElectricityUser(otherAcc.address, 1);
+      const registrationUser = await register.registerElectricityConsumer(otherAcc.address, 1);
 
       expect(registrationUser).to.emit(register, 'UserRegistered');
       expect(registrationUser).to.emit(ecu, 'Transfer');
@@ -173,13 +173,13 @@ describe('Register', function () {
       const { register, ecu, deployer, otherAcc } = await loadFixture(deployFixture);
       const registrationSupplier = await register.registerSupplier(deployer.address);
 
-      const registrationUser = await register.registerElectricityUser(otherAcc.address, 1);
+      const registrationUser = await register.registerElectricityConsumer(otherAcc.address, 1);
 
       expect(registrationUser).to.emit(register, 'UserRegistered');
       expect(registrationUser).to.emit(ecu, 'Transfer');
       expect(await ecu.balanceOf(otherAcc.address, 1)).to.be.eq(1);
 
-      const unRegistration = await register.unRegisterElectricityUser(otherAcc.address, 1);
+      const unRegistration = await register.unRegisterElectricityConsumer(otherAcc.address, 1);
 
       expect(unRegistration).to.emit(register, 'SupplierUnregistered');
       expect(unRegistration).to.emit(ecu, 'Transfer');
@@ -194,11 +194,11 @@ describe('Register', function () {
       const errorMsg = `AccessControl: account ${otherAccAddress} is missing role ${register_manager_role}`;
 
       await expect(register.connect(otherAcc).registerSupplier(deployer.address)).to.be.revertedWith(errorMsg);
-      await expect(register.connect(otherAcc).registerElectricityUser(otherAcc.address, 10)).to.be.revertedWith(
+      await expect(register.connect(otherAcc).registerElectricityConsumer(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,
       );
       await expect(register.connect(otherAcc).unRegisterSupplier(10)).to.be.revertedWith(errorMsg);
-      await expect(register.connect(otherAcc).unRegisterElectricityUser(otherAcc.address, 10)).to.be.revertedWith(
+      await expect(register.connect(otherAcc).unRegisterElectricityConsumer(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,
       );
     });
@@ -209,9 +209,9 @@ describe('Register', function () {
       const errorMsg = 'Parent: account is address 0';
 
       await expect(register.registerSupplier(addressZero)).to.be.revertedWith(errorMsg);
-      await expect(register.registerElectricityUser(addressZero, 10)).to.be.revertedWith(errorMsg);
+      await expect(register.registerElectricityConsumer(addressZero, 10)).to.be.revertedWith(errorMsg);
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith('ERC721: invalid token ID');
-      await expect(register.unRegisterElectricityUser(addressZero, 10)).to.be.revertedWith(errorMsg);
+      await expect(register.unRegisterElectricityConsumer(addressZero, 10)).to.be.revertedWith(errorMsg);
     });
 
     it('Requires valid token id', async () => {
@@ -220,7 +220,7 @@ describe('Register', function () {
       const errorMsgForUser = 'Register: supplier is not correct';
 
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith(errorMsgForSupplier);
-      await expect(register.unRegisterElectricityUser(deployer.address, 10)).to.be.revertedWith(errorMsgForUser);
+      await expect(register.unRegisterElectricityConsumer(deployer.address, 10)).to.be.revertedWith(errorMsgForUser);
     });
   });
 });

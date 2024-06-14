@@ -84,7 +84,7 @@ contract Register is Parent, ERC1155Holder {
      * @param consumer The address of the consumer.
      * @param supplierId The ID of the supplier for the consumer.
      */
-    function registerElectricityUser(
+    function registerElectricityConsumer(
         address consumer,
         uint256 supplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
@@ -128,7 +128,7 @@ contract Register is Parent, ERC1155Holder {
      * @param consumer The address of the consumer.
      * @param supplierId The ID of the supplier for the consumer.
      */
-    function unRegisterElectricityUser(
+    function unRegisterElectricityConsumer(
         address consumer,
         uint256 supplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {

@@ -178,7 +178,7 @@ describe('Main', function () {
       expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
       expect(await stakingReward.totalSuppliers()).to.eq(1);
 
-      const registerUser = await main.connect(anotherAcc).registerElectricityUser(otherAcc.address, supplierId);
+      const registerUser = await main.connect(anotherAcc).registerElectricityConsumer(otherAcc.address, supplierId);
 
       expect(registerUser).to.emit(register, 'UserRegistered');
       expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
@@ -227,13 +227,13 @@ describe('Main', function () {
       expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
       expect(await stakingReward.totalSuppliers()).to.eq(1);
 
-      const registerUser = await main.connect(anotherAcc).registerElectricityUser(otherAcc.address, supplierId);
+      const registerUser = await main.connect(anotherAcc).registerElectricityConsumer(otherAcc.address, supplierId);
 
       expect(registerUser).to.emit(register, 'UserRegistered');
       expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
       expect(await ecu.balanceOf(otherAcc.address, supplierId)).to.eq(1);
 
-      const unRegisterUser = await main.connect(anotherAcc).unRegisterElectricityUser(otherAcc.address, supplierId);
+      const unRegisterUser = await main.connect(anotherAcc).unRegisterElectricityConsumer(otherAcc.address, supplierId);
 
       expect(unRegisterUser).to.emit(register, 'UserUnregistered');
       expect(unRegisterUser).to.changeTokenBalance(ecu, otherAcc, -1);
@@ -258,7 +258,7 @@ describe('Main', function () {
     expect(registerSupplier).to.changeTokenBalance(ecu, register, buildingNumber);
     expect(await stakingReward.totalSuppliers()).to.eq(1);
 
-    const registerUser = await main.connect(anotherAcc).registerElectricityUser(otherAcc.address, supplierId);
+    const registerUser = await main.connect(anotherAcc).registerElectricityConsumer(otherAcc.address, supplierId);
 
     expect(registerUser).to.emit(register, 'UserRegistered');
     expect(registerUser).to.changeTokenBalances(ecu, [register, otherAcc], [-1, 1]);
@@ -332,8 +332,8 @@ describe('Main', function () {
 
     const errorMsg = `ERC721: invalid token ID`;
 
-    await expect(main.connect(otherAcc).registerElectricityUser(otherAccAddress, 10)).to.revertedWith(errorMsg);
-    await expect(main.connect(otherAcc).unRegisterElectricityUser(otherAccAddress, 0)).to.revertedWith(errorMsg);
+    await expect(main.connect(otherAcc).registerElectricityConsumer(otherAccAddress, 10)).to.revertedWith(errorMsg);
+    await expect(main.connect(otherAcc).unRegisterElectricityConsumer(otherAccAddress, 0)).to.revertedWith(errorMsg);
     await expect(main.connect(otherAcc).getRewards(0)).to.revertedWith(errorMsg);
   });
 

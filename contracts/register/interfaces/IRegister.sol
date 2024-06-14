@@ -26,7 +26,7 @@ interface IRegister {
      * @param user The address of the user.
      * @param supplierId The ID of the supplier.
      */
-    function registerElectricityUser(address user, uint256 supplierId) external;
+    function registerElectricityConsumer(address user, uint256 supplierId) external;
 
     /**
      * @notice Unregisters an Energy supplier.
@@ -48,5 +48,5 @@ interface IRegister {
      * @param user The address of the user.
      * @param supplierId The ID of the supplier.
      */
-    function unRegisterElectricityUser(address user, uint256 supplierId) external;
+    function unRegisterElectricityConsumer(address user, uint256 supplierId) external;
 }

@@ -22,10 +22,10 @@ Requirements:
 | supplierId | uint256 | The ID of the supplier. |
 | amountOfUsers | uint256 | The amount of users for the supplier. |
 
-### registerElectricityUser
+### registerElectricityConsumer
 
 ```solidity
-function registerElectricityUser(address user, uint256 supplierId) external
+function registerElectricityConsumer(address user, uint256 supplierId) external
 ```
 
 Registers an Electricity consumer.
@@ -57,10 +57,10 @@ Requirements:
 | ---- | ---- | ----------- |
 | supplierId | uint256 | The ID of the supplier. |
 
-### unRegisterElectricityUser
+### unRegisterElectricityConsumer
 
 ```solidity
-function unRegisterElectricityUser(address user, uint256 supplierId) external
+function unRegisterElectricityConsumer(address user, uint256 supplierId) external
 ```
 
 Unregisters an Electricity consumer.
