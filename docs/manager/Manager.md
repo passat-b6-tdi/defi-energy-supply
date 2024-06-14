@@ -114,7 +114,7 @@ _Reward token_
 contract IECU ECU
 ```
 
-_Electricity Consumers SFT token_
+_Electricity Consumer User SFT token_
 
 ### NRGS
 

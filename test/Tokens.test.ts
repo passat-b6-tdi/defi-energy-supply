@@ -47,7 +47,7 @@ describe(`Tokens`, function () {
     expect(await mgt.name()).to.be.eq(`Mictrogrid Token`);
     expect(await mgt.symbol()).to.be.eq(`MGT`);
 
-    expect(await ecu.name()).to.be.eq(`Electricity Consumer Token`);
+    expect(await ecu.name()).to.be.eq(`Electricity Consumer User Token`);
     expect(await ecu.symbol()).to.be.eq(`ECU`);
 
     expect(await nrgs.name()).to.be.eq(`Energy Supplier Token`);

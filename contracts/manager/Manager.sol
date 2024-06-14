@@ -46,7 +46,7 @@ contract Manager is AccessControl, IManager {
     // Contracts
     /// @dev Microgrid token
     IMGT public MGT;
-    /// @dev Electricity Consumers SFT token
+    /// @dev Electricity Consumer User SFT token
     IECU public ECU;
     /// @dev Energy Supplier NFT token
     INRGS public NRGS;

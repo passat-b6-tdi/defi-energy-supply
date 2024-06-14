@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 /**
- * @title Interface for Electricity Consumers Token contract (ERC1155 standard).
+ * @title Interface for Electricity Consumer User Token contract (ERC1155 standard).
  * @author Bohdan
  */
 interface IECU {

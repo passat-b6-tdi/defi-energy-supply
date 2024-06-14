@@ -13,7 +13,7 @@ interface IManager {
     ///@dev Microgrid token
     function MGT() external view returns (IMGT);
 
-    ///@dev Electricity Consumers NFT token
+    ///@dev Electricity Consumer User NFT token
     function ECU() external view returns (IECU);
 
     ///@dev Energy Supplier NFT token
