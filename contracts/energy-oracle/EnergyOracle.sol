@@ -7,7 +7,7 @@ import "../Parent.sol";
 
 /**
  * @title Energy Oracle contract to record indicators of consumed energy from the source
- * @dev This contract allows recording and retrieving energy consumption data for users and tokens.
+ * @dev This contract allows recording and retrieving energy consumption data for consumers and tokens.
  * The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
  * who can retrieve the consumption data.
  * @author Bohdan
@@ -37,14 +37,14 @@ contract EnergyOracle is Parent, Pausable {
     bytes32 public constant ESCROW = keccak256(bytes("ESCROW"));
 
     /// @dev Mapping to store consumption
-    mapping(address => mapping(uint256 => uint256)) private _energyConsumptions; // user => supplierId => id => energy consumption
+    mapping(address => mapping(uint256 => uint256)) private _energyConsumptions; // consumer => supplierId => id => energy consumption
 
     /// @dev Mapping to store productions
-    mapping(address => mapping(uint256 => uint256)) private _energyProductions; // user => supplierId => id => energy production
+    mapping(address => mapping(uint256 => uint256)) private _energyProductions; // supplier => supplierId => id => energy production
 
     /// @dev Throws if passed address 0 as parameter
     modifier isCorrectUser(address account, uint256 supplierId) {
-        require(manager.ECU().balanceOf(account, supplierId) > 0, "EnergyOracle: user is not correct");
+        require(manager.ECU().balanceOf(account, supplierId) > 0, "EnergyOracle: consumer is not correct");
         _;
     }
 
@@ -90,7 +90,7 @@ contract EnergyOracle is Parent, Pausable {
      * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
      * - `consumer` must have supplier with `supplierId`
      *
-     * @param consumer The user address
+     * @param consumer The consumer address
      * @param supplierId The supplier ID
      * @param consumption The energy consumption value
      */

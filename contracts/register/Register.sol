@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "../Parent.sol";
 
 /**
- * @title Contract for registration of suppliers and users
+ * @title Contract for registration of suppliers and consumers
  * @author Bohdan
  */
 contract Register is Parent, ERC1155Holder {
@@ -17,7 +17,7 @@ contract Register is Parent, ERC1155Holder {
         uint256 indexed supplierId,
         uint256 timestamp
     );
-    ///@dev Emmited when a user unregisters as an Energy supplier
+    ///@dev Emmited when an Energy supplier unregisters
     event SupplierUnregistered(
         address indexed sender,
         address indexed supplier,
@@ -25,19 +25,19 @@ contract Register is Parent, ERC1155Holder {
         uint256 timestamp
     );
 
-    ///@dev Emmited when a user registers as an Electricity consumer
+    ///@dev Emmited when a supplier registers a user as Electricity consumer
     event UserRegistered(
         address indexed sender,
-        address indexed user,
-        uint256 indexed usersSupplierId,
+        address indexed consumer,
+        uint256 indexed supplierId,
         address supplierAddress,
         uint256 timestamp
     );
-    ///@dev Emmited when a user unregisters as an Electricity consumer
+    ///@dev Emmited when a supplier unregisters an Electricity consumer
     event UserUnregistered(
         address indexed sender,
-        address indexed user,
-        uint256 indexed usersSupplierId,
+        address indexed consumer,
+        uint256 indexed supplierId,
         address supplierAddress,
         uint256 timestamp
     );
@@ -79,25 +79,25 @@ contract Register is Parent, ERC1155Holder {
      * @notice Registers an Electricity consumer.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
-     * - `user` must not be address 0.
+     * - `consumer` must not be address 0.
      *
-     * @param user The address of the user.
-     * @param usersSupplierId The ID of the supplier for the user.
+     * @param consumer The address of the consumer.
+     * @param supplierId The ID of the supplier for the consumer.
      */
     function registerElectricityUser(
-        address user,
-        uint256 usersSupplierId
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
+        address consumer,
+        uint256 supplierId
+    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
         require(
-            manager.ECU().balanceOf(user, usersSupplierId) == 0,
-            "Register: can not register already registered user"
+            manager.ECU().balanceOf(consumer, supplierId) == 0,
+            "Register: can not register already registered consumer"
         );
 
-        address supplier = manager.NRGS().ownerOf(usersSupplierId);
+        address supplier = manager.NRGS().ownerOf(supplierId);
 
-        manager.ECU().mint(user, usersSupplierId, 1);
+        manager.ECU().mint(consumer, supplierId, 1);
 
-        emit UserRegistered(msg.sender, user, usersSupplierId, supplier, block.timestamp);
+        emit UserRegistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
     /**
@@ -122,22 +122,22 @@ contract Register is Parent, ERC1155Holder {
      * @notice Unregisters an Electricity consumer.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
-     * - `user` must not be address 0.
-     * - `user` must have ECU token.
+     * - `consumer` must not be address 0.
+     * - `consumer` must have ECU token.
      *
-     * @param user The address of the user.
-     * @param usersSupplierId The ID of the supplier for the user.
+     * @param consumer The address of the consumer.
+     * @param supplierId The ID of the supplier for the consumer.
      */
     function unRegisterElectricityUser(
-        address user,
-        uint256 usersSupplierId
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(user) {
-        require(manager.ECU().balanceOf(user, usersSupplierId) == 1, "Register: supplier is not correct");
-        address supplier = manager.NRGS().ownerOf(usersSupplierId);
+        address consumer,
+        uint256 supplierId
+    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
+        require(manager.ECU().balanceOf(consumer, supplierId) == 1, "Register: supplier is not correct");
+        address supplier = manager.NRGS().ownerOf(supplierId);
 
-        manager.ECU().burn(user, usersSupplierId, 1);
+        manager.ECU().burn(consumer, supplierId, 1);
 
-        emit UserUnregistered(msg.sender, user, usersSupplierId, supplier, block.timestamp);
+        emit UserUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
     /// @inheritdoc AccessControl

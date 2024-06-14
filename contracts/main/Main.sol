@@ -45,10 +45,10 @@ contract Main is Parent {
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a supplier.
      *
-     * @param usersSupplierId The ID of the supplier for the user.
+     * @param supplierId The ID of the supplier for the consumer.
      */
-    function registerElectricityUser(address user, uint256 usersSupplierId) external onlySupplier(usersSupplierId) {
-        manager.register().registerElectricityUser(user, usersSupplierId);
+    function registerElectricityUser(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
+        manager.register().registerElectricityUser(consumer, supplierId);
     }
 
     /**
@@ -69,10 +69,10 @@ contract Main is Parent {
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a supplier.
      *
-     * @param usersSupplierId The ID of the supplier for the user.
+     * @param supplierId The ID of the supplier for the consumer.
      */
-    function unRegisterElectricityUser(address user, uint256 usersSupplierId) external onlySupplier(usersSupplierId) {
-        manager.register().unRegisterElectricityUser(user, usersSupplierId);
+    function unRegisterElectricityUser(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
+        manager.register().unRegisterElectricityUser(consumer, supplierId);
     }
 
     /**
@@ -80,23 +80,20 @@ contract Main is Parent {
      * Requirements:
      * - `supplierId` must be greater than 0.
      * - `amountToPay` must be greater than 0.
-     * - `msg.sender` must be a user.
+     * - `msg.sender` must be a consumer.
      *
-     * @param usersSupplierId The ID of the supplier for the user.
+     * @param supplierId The ID of the supplier for the consumer.
      * @param amountToPay The amount to pay for electricity.
      */
-    function payForElectricity(uint256 usersSupplierId, uint256 amountToPay) external gtZero(amountToPay) {
-        require(
-            manager.ECU().balanceOf(msg.sender, usersSupplierId) > 0,
-            "Main: only Electricity Consumers to Supplier"
-        );
+    function payForElectricity(uint256 supplierId, uint256 amountToPay) external gtZero(amountToPay) {
+        require(manager.ECU().balanceOf(msg.sender, supplierId) > 0, "Main: only Electricity Consumers to Supplier");
 
         require(
             manager.MGT().transferFrom(msg.sender, address(manager.escrow()), amountToPay + manager.fees()),
             "Main: transfer to Escrow failed"
         );
 
-        manager.escrow().sendFundsToSupplier(msg.sender, usersSupplierId, amountToPay);
+        manager.escrow().sendFundsToSupplier(msg.sender, supplierId, amountToPay);
     }
 
     /**

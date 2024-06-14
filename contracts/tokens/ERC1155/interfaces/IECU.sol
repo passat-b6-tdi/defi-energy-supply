@@ -9,7 +9,7 @@ interface IECU {
     /// @dev Mints `to` address ECU token
     /// @param to The address to mint the token to
     /// @param tokenId The ID of the token to mint
-    /// @param amountOfUsers The amount of users for the token being minted
+    /// @param amountOfUsers The amount of consumers for the token being minted
     function mint(address to, uint256 tokenId, uint256 amountOfUsers) external;
 
     /// @dev Burns `from` address ECU token

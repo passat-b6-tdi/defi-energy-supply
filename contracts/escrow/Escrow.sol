@@ -5,12 +5,12 @@ import "../Parent.sol";
 
 /**
  * @title Escrow
- * @dev A contract for managing energy payments and transfers between users and suppliers.
+ * @dev A contract for managing energy payments and transfers between consumers and suppliers.
  * @author Bohdan
  */
 contract Escrow is Parent {
-    ///@dev Emmited when a user paid for energy
-    event PaidForEnergy(address indexed user, uint256 indexed tokenId, address indexed supplier, uint256 amount);
+    ///@dev Emmited when a consumer paid for energy
+    event PaidForEnergy(address indexed consumer, uint256 indexed tokenId, address indexed supplier, uint256 amount);
 
     /// @dev Keccak256 hashed `ESCROW_MANAGER_ROLE` string
     bytes32 public constant ESCROW_MANAGER_ROLE = keccak256(bytes("ESCROW_MANAGER_ROLE"));
@@ -25,26 +25,26 @@ contract Escrow is Parent {
     }
 
     /**
-     * @dev Sends funds to the supplier for the energy consumed by a user.
+     * @dev Sends funds to the supplier for the energy consumed by a consumer.
      * Requirements:
      * - `msg.sender` must have `ESCROW_MANAGER_ROLE`
      * - `paidAmount` must be > 0
-     * - `user` must be not address 0
+     * - `consumer` must be not address 0
      *
-     * @param user The address of the user.
+     * @param consumer The address of the consumer.
      * @param supplierId The ID of the token.
-     * @param paidAmount The amount of funds sent by the user.
+     * @param paidAmount The amount of funds sent by the consumer.
      */
     function sendFundsToSupplier(
-        address user,
+        address consumer,
         uint256 supplierId,
         uint256 paidAmount
-    ) public onlyRole(ESCROW_MANAGER_ROLE) zeroAddressCheck(user) gtZero(paidAmount) {
+    ) public onlyRole(ESCROW_MANAGER_ROLE) zeroAddressCheck(consumer) gtZero(paidAmount) {
         address supplier = manager.NRGS().ownerOf(supplierId);
 
-        require(manager.ECU().balanceOf(user, supplierId) > 0, "Escrow: user connected to another supplier");
+        require(manager.ECU().balanceOf(consumer, supplierId) > 0, "Escrow: consumer connected to another supplier");
 
-        uint256 consumption = manager.energyOracle().energyConsumptions(user, supplierId);
+        uint256 consumption = manager.energyOracle().energyConsumptions(consumer, supplierId);
         uint256 needToBePaid = consumption + manager.fees();
 
         require(paidAmount >= needToBePaid, "Escrow: not enough funds sent");
@@ -59,11 +59,11 @@ contract Escrow is Parent {
         );
 
         if (amountRemaining > 0) {
-            require(manager.MGT().transfer(user, amountRemaining), "Escrow: transfer to user failed");
+            require(manager.MGT().transfer(consumer, amountRemaining), "Escrow: transfer to consumer failed");
         }
 
-        manager.energyOracle().updateEnergyConsumptions(user, supplierId);
+        manager.energyOracle().updateEnergyConsumptions(consumer, supplierId);
 
-        emit PaidForEnergy(user, supplierId, supplier, consumption);
+        emit PaidForEnergy(consumer, supplierId, supplier, consumption);
     }
 }

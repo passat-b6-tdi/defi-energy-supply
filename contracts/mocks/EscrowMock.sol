@@ -11,7 +11,7 @@ contract EscrowMock {
     constructor(IEnergyOracle _energyOracle) {
         energyOracle = _energyOracle;
     }
-    function read(address user, uint256 tokenId) public {
-        consumption = energyOracle.energyConsumptions(user, tokenId);
+    function read(address consumer, uint256 tokenId) public {
+        consumption = energyOracle.energyConsumptions(consumer, tokenId);
     }
 }
