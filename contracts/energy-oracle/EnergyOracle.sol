@@ -39,8 +39,11 @@ contract EnergyOracle is Parent, Pausable {
     /// @dev Mapping to store consumption
     mapping(address => mapping(uint256 => uint256)) private _energyConsumptions; // user => supplierId => id => energy consumption
 
+    /// @dev Mapping to store productions
+    mapping(address => mapping(uint256 => uint256)) private _energyProductions; // user => supplierId => id => energy production
+
     /// @dev Throws if passed address 0 as parameter
-    modifier isCorrectUser(address account, uint supplierId) {
+    modifier isCorrectUser(address account, uint256 supplierId) {
         require(manager.ELU().balanceOf(account, supplierId) > 0, "EnergyOracle: user is not correct");
         _;
     }
@@ -54,45 +57,72 @@ contract EnergyOracle is Parent, Pausable {
     }
 
     /**
-     * @notice Records the energy consumption for a user and supplier at a specific timestamp.
+     * @notice Records the energy production by the supplier at a specific timestamp.
      * @dev
      * Requirements:
      * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-     * - `user` must have supplier with `supplierId`
+     * - `supplier` must have `supplierId`
      *
-     * @param user The user address
+     * @param supplier The supplier address
+     * @param supplierId The supplier ID
+     * @param production The energy production value
+     */
+    function recordEnergyProduction(
+        address supplier,
+        uint256 supplierId,
+        uint256 production
+    )
+        external
+        onlyRole(ENERGY_ORACLE_PROVIDER_ROLE)
+        whenNotPaused
+        zeroAddressCheck(supplier)
+        isCorrectUser(supplier, supplierId)
+    {
+        _energyProductions[supplier][supplierId] = production;
+
+        emit EnergyConsumptionRecorded(msg.sender, supplier, supplierId, production, block.timestamp);
+    }
+
+    /**
+     * @notice Records the energy consumption for a consumer and supplier at a specific timestamp.
+     * @dev
+     * Requirements:
+     * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
+     * - `consumer` must have supplier with `supplierId`
+     *
+     * @param consumer The user address
      * @param supplierId The supplier ID
      * @param consumption The energy consumption value
      */
     function recordEnergyConsumption(
-        address user,
-        uint supplierId,
+        address consumer,
+        uint256 supplierId,
         uint256 consumption
     )
         external
         onlyRole(ENERGY_ORACLE_PROVIDER_ROLE)
         whenNotPaused
-        zeroAddressCheck(user)
-        isCorrectUser(user, supplierId)
+        zeroAddressCheck(consumer)
+        isCorrectUser(consumer, supplierId)
     {
-        _energyConsumptions[user][supplierId] = consumption;
+        _energyConsumptions[consumer][supplierId] = consumption;
 
         manager.MGT().mint(msg.sender, manager.rewardAmount() * 2);
 
-        emit EnergyConsumptionRecorded(msg.sender, user, supplierId, consumption, block.timestamp);
+        emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
 
-    /// @notice Updates the energy consumption for a user, supplier
+    /// @notice Updates the energy consumption for a consumer, supplier
     /// Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-    /// @param user The user address
+    /// @param consumer The consumer address
     /// @param supplierId The supplier ID
     function updateEnergyConsumptions(
-        address user,
+        address consumer,
         uint256 supplierId
-    ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(user) isCorrectUser(user, supplierId) {
-        _energyConsumptions[user][supplierId] = 0;
+    ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) isCorrectUser(consumer, supplierId) {
+        _energyConsumptions[consumer][supplierId] = 0;
 
-        emit EnergyConsumptionPaid(msg.sender, user, supplierId, block.timestamp);
+        emit EnergyConsumptionPaid(msg.sender, consumer, supplierId, block.timestamp);
     }
 
     /**
@@ -114,12 +144,22 @@ contract EnergyOracle is Parent, Pausable {
     }
 
     /**
-     * @dev Retrieves the timestamp and consumption value for a specific energy consumption record.
-     * @param user The address of the user.
-     * @param supplierId The ID of the token.
+     * @dev Retrieves the consumption value for a specific energy consumption record.
+     * @param consumer The address of the consumer.
+     * @param supplierId The ID of the supplier.
      * @return consumption The consumption value of the energy consumption record.
      */
-    function energyConsumptions(address user, uint256 supplierId) public view returns (uint consumption) {
-        consumption = _energyConsumptions[user][supplierId];
+    function energyConsumptions(address consumer, uint256 supplierId) public view returns (uint256 consumption) {
+        consumption = _energyConsumptions[consumer][supplierId];
+    }
+
+    /**
+     * @dev Retrieves the production value for a specific energy production record.
+     * @param supplier The address of the supplier.
+     * @param supplierId The ID of the supplier.
+     * @return production The production value of the energy production record.
+     */
+    function energyProductions(address supplier, uint256 supplierId) public view returns (uint256 production) {
+        production = _energyProductions[supplier][supplierId];
     }
 }
