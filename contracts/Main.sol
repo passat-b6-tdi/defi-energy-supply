@@ -6,6 +6,7 @@ import { Manager } from "./Manager.sol";
 
 error ZeroAddressPassed();
 error OnlyEnergySupplier();
+error OnlyEnergyOracleProvider();
 
 /**
  * @title Main
@@ -22,6 +23,14 @@ contract Main is AccessControl {
     modifier onlySupplier(uint256 supplierId) {
         if (manager.tokens().nrgs.ownerOf(supplierId) != msg.sender) {
             revert OnlyEnergySupplier();
+        }
+
+        _;
+    }
+
+    modifier onlyOracleProvider() {
+        if (manager.tokens().nrgop.balanceOf(msg.sender) > 0) {
+            revert OnlyEnergyOracleProvider();
         }
 
         _;
@@ -52,7 +61,6 @@ contract Main is AccessControl {
     /**
      * @notice Registers an Energy supplier.
      * Requirements:
-     * - `supplierId` must be greater than 0.
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
      *
      * @param supplier The address of the supplier.
@@ -71,6 +79,17 @@ contract Main is AccessControl {
      */
     function registerElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
         manager.contracts().register.registerElectricityConsumer(consumer, supplierId);
+    }
+
+    /**
+     * @notice Registers an Energy oracle provider.
+     * Requirements:
+     * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
+     *
+     * @param oracleProvider The address of the oracle provider.
+     */
+    function registerOracleProvider(address oracleProvider) external onlyRole(MAIN_MANAGER_ROLE) {
+        manager.contracts().register.registerOracleProvider(oracleProvider);
     }
 
     /**
@@ -95,6 +114,56 @@ contract Main is AccessControl {
      */
     function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
         manager.contracts().register.unRegisterElectricityConsumer(consumer, supplierId);
+    }
+
+    /**
+     * @notice Unregisters an Energy oracle provider.
+     * Requirements:
+     * - `oracleProviderId` must be greater than 0.
+     * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
+     *
+     * @param oracleProviderId The ID of the oracle provider.
+     */
+    function unRegisterOracleProvider(uint256 oracleProviderId) external onlyRole(MAIN_MANAGER_ROLE) {
+        manager.contracts().register.unRegisterOracleProvider(oracleProviderId);
+    }
+
+    /**
+     * @notice Records the energy production by the supplier at a specific timestamp.
+     * @dev
+     * Requirements:
+     * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
+     * - `supplier` must have `supplierId`
+     *
+     * @param supplier The supplier address
+     * @param supplierId The supplier ID
+     * @param production The energy production value
+     */
+    function recordEnergyProductions(
+        address supplier,
+        uint256 supplierId,
+        uint256 production
+    ) external onlyOracleProvider {
+        manager.contracts().oracle.recordEnergyProductions(supplier, supplierId, production);
+    }
+
+    /**
+     * @notice Records the energy consumption for a consumer and supplier at a specific timestamp.
+     * @dev
+     * Requirements:
+     * - `msg.sender` must be the Energy oracle provider
+     * - `consumer` must have supplier with `supplierId`
+     *
+     * @param consumer The consumer address
+     * @param supplierId The supplier ID
+     * @param consumption The energy consumption value
+     */
+    function recordConsumerConsumptions(
+        address consumer,
+        uint256 supplierId,
+        uint256 consumption
+    ) external onlyOracleProvider {
+        manager.contracts().oracle.recordConsumerConsumptions(consumer, supplierId, consumption);
     }
 
     /**

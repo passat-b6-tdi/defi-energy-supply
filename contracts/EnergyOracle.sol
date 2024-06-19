@@ -88,7 +88,7 @@ contract EnergyOracle is AccessControl, Pausable {
      * @param supplierId The supplier ID
      * @param production The energy production value
      */
-    function recordEnergyProduction(
+    function recordEnergyProductions(
         address supplier,
         uint256 supplierId,
         uint256 production
@@ -113,7 +113,7 @@ contract EnergyOracle is AccessControl, Pausable {
      * @param supplierId The supplier ID
      * @param consumption The energy consumption value
      */
-    function recordEnergyConsumption(
+    function recordConsumerConsumptions(
         address consumer,
         uint256 supplierId,
         uint256 consumption

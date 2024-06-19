@@ -45,6 +45,21 @@ contract Register is AccessControl, ERC1155Holder {
         uint256 timestamp
     );
 
+    ///@dev Emmited when a user registers as an Energy oracle provider
+    event OracleProviderRegistered(
+        address indexed sender,
+        address indexed oracleProvider,
+        uint256 indexed oracleProviderId,
+        uint256 timestamp
+    );
+    ///@dev Emmited when an Energy oracle provider unregisters
+    event OracleProviderUnregistered(
+        address indexed sender,
+        address indexed oracleProvider,
+        uint256 indexed oracleProviderId,
+        uint256 timestamp
+    );
+
     /// @dev Keccak256 hashed `REGISTER_MANAGER_ROLE` string
     bytes32 public constant REGISTER_MANAGER_ROLE = keccak256(bytes("REGISTER_MANAGER_ROLE"));
 
@@ -53,6 +68,8 @@ contract Register is AccessControl, ERC1155Holder {
 
     /// @dev Counter of suppliers Ids
     uint256 public currentSupplierId = 1;
+    /// @dev Counter of oracle providers Ids
+    uint256 public currentOracleProviderId = 1;
 
     /// @dev Throws if passed address 0 as parameter
     modifier zeroAddressCheck(address account) {
@@ -126,6 +143,26 @@ contract Register is AccessControl, ERC1155Holder {
     }
 
     /**
+     * @notice Registers an Energy oracle provider.
+     * Requirements:
+     * - `msg.sender` must have REGISTER_MANAGER_ROLE.
+     * - `oracleProvider` must not be address 0.
+     *
+     * @param oracleProvider The address of the oracle provider.
+     */
+    function registerOracleProvider(
+        address oracleProvider
+    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(oracleProvider) {
+        uint256 oracleProviderId = currentOracleProviderId;
+
+        currentOracleProviderId++;
+
+        manager.tokens().nrgop.mint(oracleProvider, oracleProviderId);
+
+        emit OracleProviderRegistered(msg.sender, oracleProvider, oracleProviderId, block.timestamp);
+    }
+
+    /**
      * @notice Unregisters an Energy supplier.
      * Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE.
@@ -166,6 +203,22 @@ contract Register is AccessControl, ERC1155Holder {
         manager.tokens().ecu.burn(consumer, supplierId, 1);
 
         emit ConsumerUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
+    }
+
+    /**
+     * @notice Unregisters an Energy oracle provider.
+     * Requirements:
+     * - `msg.sender` must have REGISTER_MANAGER_ROLE.
+     * - `oracleProvider` must have NRGS token.
+     *
+     * @param oracleProviderId The ID of the oracle provider.
+     */
+    function unRegisterOracleProvider(uint256 oracleProviderId) external onlyRole(REGISTER_MANAGER_ROLE) {
+        address oracleProvider = manager.tokens().nrgop.ownerOf(oracleProviderId);
+
+        manager.tokens().nrgop.burn(oracleProviderId);
+
+        emit OracleProviderUnregistered(msg.sender, oracleProvider, oracleProviderId, block.timestamp);
     }
 
     /// @inheritdoc AccessControl

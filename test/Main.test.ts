@@ -284,7 +284,7 @@ describe('Main', function () {
     const now = await time.latest();
     const consumption = 20;
 
-    const recordConsumption = await energyOracle.recordEnergyConsumption(
+    const recordConsumption = await energyOracle.recordConsumerConsumptions(
       otherAcc.address,
       supplierId,
       consumption,
