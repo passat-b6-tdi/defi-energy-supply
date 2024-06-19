@@ -2,7 +2,7 @@ import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MGT } from '../typechain';
+import { MGT, NRGOP } from '../typechain';
 import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
@@ -29,20 +29,25 @@ describe(`Tokens`, function () {
     const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
     await nrgs.deployed();
 
+    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory(`NRGOP`);
+    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
+    await nrgop.deployed();
+
     admin_role = await mgt.DEFAULT_ADMIN_ROLE();
     minter_role = await mgt.MINTER_BURNER_ROLE();
 
     register_role = await nrgs.REGISTER_ROLE();
 
-    return { mgt, ecu, nrgs, deployer, otherAcc };
+    return { mgt, ecu, nrgs, nrgop, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
-    const { mgt, ecu, nrgs, deployer } = await loadFixture(deployFixture);
+    const { mgt, ecu, nrgs, nrgop, deployer } = await loadFixture(deployFixture);
 
     expect(mgt.address).to.be.properAddress;
     expect(ecu.address).to.be.properAddress;
     expect(nrgs.address).to.be.properAddress;
+    expect(nrgop.address).to.be.properAddress;
 
     expect(await mgt.name()).to.be.eq(`Mictrogrid Token`);
     expect(await mgt.symbol()).to.be.eq(`MGT`);
@@ -53,6 +58,9 @@ describe(`Tokens`, function () {
     expect(await nrgs.name()).to.be.eq(`Energy Supplier Token`);
     expect(await nrgs.symbol()).to.be.eq(`NRGS`);
 
+    expect(await nrgop.name()).to.be.eq(`Energy Oracle Provider Token`);
+    expect(await nrgop.symbol()).to.be.eq(`NRGOP`);
+
     expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
 
@@ -61,6 +69,9 @@ describe(`Tokens`, function () {
 
     expect(await nrgs.hasRole(admin_role, deployer.address)).to.be.true;
     expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
+
+    expect(await nrgop.hasRole(admin_role, deployer.address)).to.be.true;
+    expect(await nrgop.hasRole(register_role, deployer.address)).to.be.true;
   });
 
   describe(`MGT`, function () {
@@ -98,6 +109,28 @@ describe(`Tokens`, function () {
         `AccessControl: account ${otherAccAddress} is missing role ${register_role}`,
       );
       expect(await nrgs.burn(0)).to.changeTokenBalance(nrgs, otherAcc, -1);
+    });
+  });
+
+  describe(`NRGOP`, function () {
+    it('NRGOP can be minted only by register manager', async () => {
+      const { nrgop, otherAcc } = await loadFixture(deployFixture);
+
+      await expect(nrgop.connect(otherAcc).mint(otherAcc.address, 0)).to.be.revertedWith(
+        `AccessControl: account ${otherAccAddress} is missing role ${register_role}`,
+      );
+      expect(await nrgop.mint(otherAcc.address, 0)).to.changeTokenBalance(nrgop, otherAcc, 1);
+    });
+
+    it('NRGOP can be burned only by register manager', async () => {
+      const { nrgop, otherAcc } = await loadFixture(deployFixture);
+
+      await nrgop.mint(otherAcc.address, 0);
+
+      await expect(nrgop.connect(otherAcc).burn(0)).to.be.revertedWith(
+        `AccessControl: account ${otherAccAddress} is missing role ${register_role}`,
+      );
+      expect(await nrgop.burn(0)).to.changeTokenBalance(nrgop, otherAcc, -1);
     });
   });
 

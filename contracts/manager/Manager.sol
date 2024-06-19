@@ -1,32 +1,62 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "./interfaces/IManager.sol";
+import { MGT } from "../tokens/ERC20/MGT.sol";
+import { ECU } from "../tokens/ERC1155/ECU.sol";
+import { NRGS } from "../tokens/ERC721/NRGS.sol";
+import { NRGOP } from "../tokens/ERC721/NRGOP.sol";
+
+import { StakingReward } from "../staking/StakingReward.sol";
+import { EnergyOracle } from "../energy-oracle/EnergyOracle.sol";
+import { Register } from "../register/Register.sol";
+import { Escrow } from "../escrow/Escrow.sol";
+
+error ZeroAddressPassed();
 
 /**
  * @title Manager contract for contracts management
  * @dev This contract manages the links to various contracts and stores configuration values for the system.
  * @author Bohdan
  */
-contract Manager is AccessControl, IManager {
+contract Manager is AccessControl {
+    struct Tokens {
+        MGT mgt;
+        ECU ecu;
+        NRGS nrgs;
+        NRGOP nrgop;
+    }
+
+    struct Contracts {
+        StakingReward staking;
+        EnergyOracle oracle;
+        Register register;
+        Escrow escrow;
+    }
+
+    struct Values {
+        uint256 rewardAmount;
+        uint256 fees;
+    }
+
     // Contracts
     /// @dev Emitted when a manager has changed the `MGT` link to another contract
-    event MGTchanged(address indexed sender, IMGT newMGT);
-    // NFTs
+    event MGTchanged(address indexed sender, MGT newMGT);
     /// @dev Emitted when a manager has changed the `ECU` link to another contract
-    event ECUchanged(address indexed sender, IECU newECU);
+    event ECUchanged(address indexed sender, ECU newECU);
     /// @dev Emitted when a manager has changed the `NRGS` link to another contract
-    event NRGSchanged(address indexed sender, INRGS newNRGS);
+    event NRGSchanged(address indexed sender, NRGS newNRGS);
+    /// @dev Emitted when a manager has changed the `NRGOP` link to another contract
+    event NRGOPchanged(address indexed sender, NRGOP newNRGOP);
     /// @dev Emitted when a manager has changed the `staking` link to another contract
-    event StakingChanged(address indexed sender, IStakingReward staking);
+    event StakingChanged(address indexed sender, StakingReward staking);
     /// @dev Emitted when a manager has changed the `energyOracle` link to another contract
-    event OracleChanged(address indexed sender, IEnergyOracle energyOracle);
+    event OracleChanged(address indexed sender, EnergyOracle energyOracle);
     /// @dev Emitted when a manager has changed the `register` link to another contract
-    event RegisterChanged(address indexed sender, IRegister register);
+    event RegisterChanged(address indexed sender, Register register);
     /// @dev Emitted when a manager has changed the `escrow` link to another contract
-    event EscrowChanged(address indexed sender, IEscrow escrow);
+    event EscrowChanged(address indexed sender, Escrow escrow);
 
     // Address
     /// @dev Emitted when a manager has changed the `feeReceiver` link to another address
@@ -35,186 +65,105 @@ contract Manager is AccessControl, IManager {
     // Amount
     /// @dev Emitted when a manager has changed the `rewardAmount`
     event RewardAmountChanged(address indexed sender, uint256 newRewardAmount);
-    /// @dev Emitted when a manager has changed the `tolerance`
-    event ToleranceChanged(address indexed sender, uint256 newTolerance);
     /// @dev Emitted when a manager has changed the `fees`
     event FeesChanged(address indexed sender, uint256 newFees);
 
     /// @dev Keccak256 hashed `MANAGER_ROLE` string
     bytes32 public constant MANAGER_ROLE = keccak256(bytes("MANAGER_ROLE"));
 
-    // Contracts
-    /// @dev Microgrid token
-    IMGT public MGT;
-    /// @dev Electricity Consumer User SFT token
-    IECU public ECU;
-    /// @dev Energy Supplier NFT token
-    INRGS public NRGS;
+    /// @dev Tokens struct
+    Tokens private _tokens;
 
-    /// @dev Staking contract
-    IStakingReward public staking;
-    /// @dev EnergyOracle contract
-    IEnergyOracle public energyOracle;
-    /// @dev Register contract
-    IRegister public register;
-    /// @dev Escrow contract
-    IEscrow public escrow;
+    /// @dev Contracts struct
+    Contracts public _contracts;
 
     /// @dev Address where fees will be paid
     address public feeReceiver;
 
-    // Values
-    /// @dev Amount of rewards to suppliers
-    uint256 public rewardAmount;
-    /// @dev Tolerance for equality
-    uint256 public tolerance;
-    /// @dev Fees for payments to creators
-    uint256 public fees;
-
-    /// @dev Throws if passed address 0 as parameter
-    modifier zeroAddressCheck(address supplier) {
-        require(supplier != address(0), "Manager: passed address is address 0");
-        _;
-    }
-
-    /// @dev Throws if passed value is <=0
-    modifier gtZero(uint256 value) {
-        require(value > 0, "Manager: passed value is <= 0");
-        _;
-    }
+    /// @dev Values struct
+    Values public _values;
 
     /**
      * @notice Constructor to initialize the Manager contract
      * @dev Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender`
-     * Sets `MGT` token address, `ECU` and `NRGS` tokens addresses, `staking` address
+     * Sets `MGT` token address, `ECU`, `NRGS` and `NRGOP` tokens addresses
      * Sets `feeReceiver` address
-     * Sets `rewardAmount`, `tolerance`, and `fees`
+     * Sets `rewardAmount` and `fees`
      */
-    constructor(
-        IMGT _MGT,
-        IECU _ECU,
-        INRGS _NRGS,
-        address _feeReceiver,
-        uint256 _rewardAmount,
-        uint256 _tolerance,
-        uint256 _fees
-    ) {
+    constructor(Tokens memory tokens_, address _feeReceiver, Values memory values_) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MANAGER_ROLE, msg.sender);
 
-        MGT = _MGT;
-        ECU = _ECU;
-        NRGS = _NRGS;
+        _tokens = tokens_;
+        _values = values_;
 
         feeReceiver = _feeReceiver;
-
-        rewardAmount = _rewardAmount;
-        tolerance = _tolerance;
-        fees = _fees;
     }
 
     /**
-     * @notice Changes MGT link to another contract.
+     * @notice Changes tokens links to others.
      * Requirements:
      * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_MGT` must be not address 0
      *
-     * @param _MGT IMGT
+     * @param tokens_ Tokens
      */
-    function changeMGT(IMGT _MGT) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_MGT)) {
-        emit MGTchanged(msg.sender, _MGT);
+    function changeTokensAddresses(Tokens calldata tokens_) external onlyRole(MANAGER_ROLE) {
+        if (address(tokens_.mgt) != address(0)) {
+            emit MGTchanged(msg.sender, tokens_.mgt);
 
-        MGT = _MGT;
+            _tokens.mgt = tokens_.mgt;
+        }
+
+        if (address(tokens_.ecu) != address(0)) {
+            emit ECUchanged(msg.sender, tokens_.ecu);
+
+            _tokens.ecu = tokens_.ecu;
+        }
+
+        if (address(tokens_.nrgs) != address(0)) {
+            emit NRGSchanged(msg.sender, tokens_.nrgs);
+
+            _tokens.nrgs = tokens_.nrgs;
+        }
+
+        if (address(tokens_.nrgop) != address(0)) {
+            emit NRGOPchanged(msg.sender, tokens_.nrgop);
+
+            _tokens.nrgop = tokens_.nrgop;
+        }
     }
 
     /**
-     * @notice Changes NRGS link to another contract.
+     * @notice Changes contracts links to others.
      * Requirements:
      * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_NRGS` must be not address 0
      *
-     * @param _NRGS INRGS
-
+     * @param contracts_ Contracts
      */
-    function changeNRGS(INRGS _NRGS) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_NRGS)) {
-        emit NRGSchanged(msg.sender, _NRGS);
+    function changeContracts(Contracts calldata contracts_) external onlyRole(MANAGER_ROLE) {
+        if (address(contracts_.staking) != address(0)) {
+            emit StakingChanged(msg.sender, contracts_.staking);
 
-        NRGS = _NRGS;
-    }
+            _contracts.staking = contracts_.staking;
+        }
 
-    /**
-     * @notice Changes ECU link to another contract.
-     * Requirements:
-     * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_ECU` must be not address 0
-     *
-     * @param _ECU IECU
+        if (address(contracts_.oracle) != address(0)) {
+            emit OracleChanged(msg.sender, contracts_.oracle);
 
-     */
-    function changeECU(IECU _ECU) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_ECU)) {
-        emit ECUchanged(msg.sender, _ECU);
+            _contracts.oracle = contracts_.oracle;
+        }
 
-        ECU = _ECU;
-    }
+        if (address(contracts_.register) != address(0)) {
+            emit RegisterChanged(msg.sender, contracts_.register);
 
-    /**
-     * @notice Changes `staking` link to another contract.
-     * Requirements:
-     * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_staking` must be not address 0
-     *
-     * @param _staking IStakingReward
-     */
-    function changeStakingContract(
-        IStakingReward _staking
-    ) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_staking)) {
-        emit StakingChanged(msg.sender, _staking);
+            _contracts.register = contracts_.register;
+        }
 
-        staking = _staking;
-    }
+        if (address(contracts_.escrow) != address(0)) {
+            emit EscrowChanged(msg.sender, contracts_.escrow);
 
-    /**
-     * @notice Changes `energyOracle` link to another contract.
-     * Requirements:
-     * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_energyOracle` must be not address 0
-     *
-     * @param _energyOracle IEnergyOracle
-     */
-    function changeEnergyOracle(
-        IEnergyOracle _energyOracle
-    ) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_energyOracle)) {
-        emit OracleChanged(msg.sender, _energyOracle);
-
-        energyOracle = _energyOracle;
-    }
-
-    /**
-     * @notice Changes `register` link to another contract.
-     * Requirements:
-     * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_register` must be not address 0
-     *
-     * @param _register IRegister
-     */
-    function changeRegister(IRegister _register) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_register)) {
-        emit RegisterChanged(msg.sender, _register);
-
-        register = _register;
-    }
-
-    /**
-     * @notice Changes `escrow` link to another contract.
-     * Requirements:
-     * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_escrow` must be not address 0
-     *
-     * @param _escrow IEscrow
-     */
-    function changeEscrow(IEscrow _escrow) external onlyRole(MANAGER_ROLE) zeroAddressCheck(address(_escrow)) {
-        emit EscrowChanged(msg.sender, _escrow);
-
-        escrow = _escrow;
+            _contracts.escrow = contracts_.escrow;
+        }
     }
 
     /**
@@ -225,53 +174,45 @@ contract Manager is AccessControl, IManager {
      *
      * @param _newFeeReceiver address
      */
-    function changeFeeReceiver(
-        address _newFeeReceiver
-    ) external onlyRole(MANAGER_ROLE) zeroAddressCheck(_newFeeReceiver) {
+    function changeFeeReceiver(address _newFeeReceiver) external onlyRole(MANAGER_ROLE) {
+        if (_newFeeReceiver == address(0)) {
+            revert ZeroAddressPassed();
+        }
+
         emit FeeReceiverChanged(msg.sender, _newFeeReceiver);
 
         feeReceiver = _newFeeReceiver;
     }
 
     /**
-     * @notice Changes reward amount to another amount.
+     * @notice Changes values.
      * Requirements:
      * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_newRewardAmount` must be > 0
      *
-     * @param _newRewardAmount uint256
+     * @param values_ Values
      */
-    function changeRewardAmount(uint256 _newRewardAmount) external onlyRole(MANAGER_ROLE) gtZero(_newRewardAmount) {
-        emit RewardAmountChanged(msg.sender, _newRewardAmount);
+    function changeValues(Values calldata values_) external onlyRole(MANAGER_ROLE) {
+        if (values_.rewardAmount > 0) {
+            emit RewardAmountChanged(msg.sender, values_.rewardAmount);
 
-        rewardAmount = _newRewardAmount;
+            _values.rewardAmount = values_.rewardAmount;
+        }
+
+        if (values_.fees > 0) {
+            emit FeesChanged(msg.sender, values_.fees);
+
+            _values.fees = values_.fees;
+        }
     }
 
-    /**
-     * @notice Changes tolerance amount to another amount.
-     * Requirements:
-     * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_newTolerance` must be > 0
-     *
-     * @param _newTolerance uint256
-     */
-    function changeTolerance(uint256 _newTolerance) external onlyRole(MANAGER_ROLE) gtZero(_newTolerance) {
-        emit ToleranceChanged(msg.sender, _newTolerance);
-
-        tolerance = _newTolerance;
+    function tokens() external view returns (Tokens memory) {
+        return _tokens;
     }
 
-    /**
-     * @notice Changes fees amount to another amount.
-     * Requirements:
-     * - `msg.sender` must have `MANAGER_ROLE`
-     * - `_newFees` must be > 0
-     *
-     * @param _newFees uint256
-     */
-    function changeFees(uint256 _newFees) external onlyRole(MANAGER_ROLE) gtZero(_newFees) {
-        emit FeesChanged(msg.sender, _newFees);
-
-        fees = _newFees;
+    function contracts() external view returns (Contracts memory) {
+        return _contracts;
+    }
+    function values() external view returns (Values memory) {
+        return _values;
     }
 }

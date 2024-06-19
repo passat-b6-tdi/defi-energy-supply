@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MGT, Manager, StakingReward, Register } from '../typechain';
+import { MGT, Manager, StakingReward, Register, NRGOP } from '../typechain';
 import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
@@ -29,15 +29,27 @@ describe('Staking', function () {
     const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
     await ecu.deployed();
 
+    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory('NRGOP');
+    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
+    await nrgop.deployed();
+
+    const Tokens: Manager.TokensStruct = {
+      mgt: mgt.address,
+      ecu: ecu.address,
+      nrgs: nrgs.address,
+      nrgop: nrgop.address,
+    }
+
+    const Values: Manager.ValuesStruct = {
+      rewardAmount: 10,
+      fees: 10,
+    }
+
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      mgt.address,
-      ecu.address,
-      nrgs.address,
+      Tokens,
       deployer.address,
-      10,
-      5,
-      10,
+      Values,
     )) as Manager;
     await manager.deployed();
 
@@ -137,7 +149,7 @@ describe('Staking', function () {
 
       now = await time.latest();
       const totalSuppliers = await stakingReward.totalSuppliers();
-      const rewardAmount = await manager.rewardAmount();
+      const rewardAmount = (await manager.values()).rewardAmount;
       const timePassed = BigNumber.from(now).sub(sup.updatedAt);
       const rewardToUser = rewardAmount.mul(timePassed).div(totalSuppliers);
 
@@ -171,7 +183,7 @@ describe('Staking', function () {
 
       now = await time.latest();
       const totalSuppliers = await stakingReward.totalSuppliers();
-      const rewardAmount = await manager.rewardAmount();
+      const rewardAmount = (await manager.values()).rewardAmount;
       const timePassed = BigNumber.from(now).sub(sup.updatedAt);
       const rewardToUser = rewardAmount.mul(timePassed).div(totalSuppliers);
 
@@ -199,34 +211,33 @@ describe('Staking', function () {
     it('Zero Address Check', async () => {
       const { stakingReward } = await loadFixture(deployFixture);
       const addressZero = ethers.constants.AddressZero;
-      const errorMsg = 'Parent: account is address 0';
+      const errorMsg = 'ZeroAddressPassed';
 
-      await expect(stakingReward.enterStaking(addressZero, 10)).to.be.revertedWith(errorMsg);
-      await expect(stakingReward.sendRewards(addressZero, 10)).to.be.revertedWith(errorMsg);
-      await expect(stakingReward.exitStaking(addressZero, 10)).to.be.revertedWith(errorMsg);
-      await expect(stakingReward.updateRewards(addressZero, 10)).to.be.revertedWith(errorMsg);
+      await expect(stakingReward.enterStaking(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
+      await expect(stakingReward.sendRewards(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
+      await expect(stakingReward.exitStaking(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
+      await expect(stakingReward.updateRewards(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
     });
 
     it('Is Correct Owner', async () => {
       const { stakingReward, otherAcc, deployer, nrgs } = await loadFixture(deployFixture);
       await nrgs.mint(deployer.address, 10);
-      const errorMsg1 = 'StakingReward: supplier is not the owner of this token';
-      const errorMsg2 = 'StakingReward: supplier is not entered with this token';
+      const errorMsg1 = 'IncorrectSupplier';
+      const errorMsg2 = 'SupplierNotEnteredStaking';
 
-      await expect(stakingReward.enterStaking(otherAcc.address, 10)).to.be.revertedWith(errorMsg1);
-      await expect(stakingReward.sendRewards(otherAcc.address, 10)).to.be.revertedWith(errorMsg1);
-      await expect(stakingReward.exitStaking(otherAcc.address, 10)).to.be.revertedWith(errorMsg2);
-      await expect(stakingReward.updateRewards(otherAcc.address, 10)).to.be.revertedWith(errorMsg1);
+      await expect(stakingReward.enterStaking(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
+      await expect(stakingReward.sendRewards(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
+      await expect(stakingReward.exitStaking(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg2);
+      await expect(stakingReward.updateRewards(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
     });
 
     it('updateRewards requires', async () => {
       const { stakingReward, otherAcc, deployer, nrgs } = await loadFixture(deployFixture);
       await nrgs.mint(otherAcc.address, 10);
 
-      const errorMsg1 = 'StakingReward: supplier is not entered with this token';
-      const errorMsg2 = 'StakingReward: updatedAt error';
+      const errorMsg1 = 'SupplierNotEnteredStaking';
 
-      await expect(stakingReward.updateRewards(otherAcc.address, 10)).to.be.revertedWith(errorMsg1);
+      await expect(stakingReward.updateRewards(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
     });
   });
 });

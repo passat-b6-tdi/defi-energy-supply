@@ -1,19 +1,29 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
-import "../Parent.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { Manager } from "../manager/Manager.sol";
+
+error ZeroAddressPassed();
+error OnlyEnergySupplier();
 
 /**
  * @title Main
  * @dev A main contract for managing Microgrid ecosystem.
  * @author Bohdan
  */
-contract Main is Parent {
+contract Main is AccessControl {
     /// @dev Keccak256 hashed `MAIN_MANAGER_ROLE` string
     bytes32 public constant MAIN_MANAGER_ROLE = keccak256(bytes("MAIN_MANAGER_ROLE"));
 
+    /// @dev Manager contract
+    Manager public manager;
+
     modifier onlySupplier(uint256 supplierId) {
-        require(manager.NRGS().ownerOf(supplierId) == msg.sender, "Main: only Energy Supplier");
+        if (manager.tokens().nrgs.ownerOf(supplierId) != msg.sender) {
+            revert OnlyEnergySupplier();
+        }
+
         _;
     }
 
@@ -22,21 +32,33 @@ contract Main is Parent {
      * @param _manager The address of the Manager contract.
      * @dev Grants `DEFAULT_ADMIN_ROLE`, `MAIN_MANAGER_ROLE`,`SUPPLIER_ROLE` and `USER_ROLE` roles to the contract deployer.
      */
-    constructor(IManager _manager) Parent(_manager) {
+    constructor(Manager _manager) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MAIN_MANAGER_ROLE, msg.sender);
+
+        manager = _manager;
+    }
+
+    /// @dev Changes `manager` address to the `_newManager` address.
+    /// @param _newManager The address of the new manger contract
+    function changeManager(Manager _newManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(_newManager) == address(0)) {
+            revert ZeroAddressPassed();
+        }
+
+        manager = _newManager;
     }
 
     /**
      * @notice Registers an Energy supplier.
      * Requirements:
      * - `supplierId` must be greater than 0.
-     * - `buildingsNumber` must be greater than 0.
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
      *
      * @param supplier The address of the supplier.
      */
     function registerSupplier(address supplier) external onlyRole(MAIN_MANAGER_ROLE) {
-        manager.register().registerSupplier(supplier);
+        manager.contracts().register.registerSupplier(supplier);
     }
 
     /**
@@ -48,7 +70,7 @@ contract Main is Parent {
      * @param supplierId The ID of the supplier for the consumer.
      */
     function registerElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
-        manager.register().registerElectricityConsumer(consumer, supplierId);
+        manager.contracts().register.registerElectricityConsumer(consumer, supplierId);
     }
 
     /**
@@ -60,7 +82,7 @@ contract Main is Parent {
      * @param supplierId The ID of the supplier.
      */
     function unRegisterSupplier(uint256 supplierId) external onlyRole(MAIN_MANAGER_ROLE) {
-        manager.register().unRegisterSupplier(supplierId);
+        manager.contracts().register.unRegisterSupplier(supplierId);
     }
 
     /**
@@ -72,28 +94,19 @@ contract Main is Parent {
      * @param supplierId The ID of the supplier for the consumer.
      */
     function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
-        manager.register().unRegisterElectricityConsumer(consumer, supplierId);
+        manager.contracts().register.unRegisterElectricityConsumer(consumer, supplierId);
     }
 
     /**
      * @notice Pays for electricity.
      * Requirements:
      * - `supplierId` must be greater than 0.
-     * - `amountToPay` must be greater than 0.
      * - `msg.sender` must be a consumer.
      *
      * @param supplierId The ID of the supplier for the consumer.
-     * @param amountToPay The amount to pay for electricity.
      */
-    function payForElectricity(uint256 supplierId, uint256 amountToPay) external gtZero(amountToPay) {
-        require(manager.ECU().balanceOf(msg.sender, supplierId) > 0, "Main: only Electricity Consumers to Supplier");
-
-        require(
-            manager.MGT().transferFrom(msg.sender, address(manager.escrow()), amountToPay + manager.fees()),
-            "Main: transfer to Escrow failed"
-        );
-
-        manager.escrow().sendFundsToSupplier(msg.sender, supplierId, amountToPay);
+    function payForElectricity(uint256 supplierId) external {
+        manager.contracts().escrow.sendFundsToSupplier(msg.sender, supplierId);
     }
 
     /**
@@ -105,6 +118,6 @@ contract Main is Parent {
      * @param supplierId The ID of the supplier.
      */
     function getRewards(uint256 supplierId) external onlySupplier(supplierId) {
-        manager.staking().sendRewards(msg.sender, supplierId);
+        manager.contracts().staking.sendRewards(msg.sender, supplierId);
     }
 }

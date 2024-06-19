@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import { ERC1155Holder, ERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { Manager } from "../manager/Manager.sol";
 
-import "../Parent.sol";
+error ZeroAddressPassed();
+error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
 
 /**
  * @title Contract for registration of suppliers and consumers
  * @author Bohdan
  */
-contract Register is Parent, ERC1155Holder {
+contract Register is AccessControl, ERC1155Holder {
     ///@dev Emmited when a user registers as an Energy supplier
     event SupplierRegistered(
         address indexed sender,
@@ -45,13 +48,36 @@ contract Register is Parent, ERC1155Holder {
     /// @dev Keccak256 hashed `REGISTER_MANAGER_ROLE` string
     bytes32 public constant REGISTER_MANAGER_ROLE = keccak256(bytes("REGISTER_MANAGER_ROLE"));
 
+    /// @dev Manager contract
+    Manager public manager;
+
     /// @dev Counter of suppliers Ids
     uint256 public currentSupplierId = 1;
 
+    /// @dev Throws if passed address 0 as parameter
+    modifier zeroAddressCheck(address account) {
+        if (account == address(0)) {
+            revert ZeroAddressPassed();
+        }
+
+        _;
+    }
+
     /// @notice Constructor to initialize Register contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`
-    constructor(IManager _manager) Parent(_manager) {
+    constructor(Manager _manager) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTER_MANAGER_ROLE, msg.sender);
+
+        manager = _manager;
+    }
+
+    /// @dev Changes `manager` address to the `_newManager` address.
+    /// @param _newManager The address of the new manger contract
+    function changeManager(
+        Manager _newManager
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
+        manager = _newManager;
     }
 
     /**
@@ -68,9 +94,9 @@ contract Register is Parent, ERC1155Holder {
 
         currentSupplierId++;
 
-        manager.NRGS().mint(supplier, supplierId);
+        manager.tokens().nrgs.mint(supplier, supplierId);
 
-        manager.staking().enterStaking(supplier, supplierId);
+        manager.contracts().staking.enterStaking(supplier, supplierId);
 
         emit SupplierRegistered(msg.sender, supplier, supplierId, block.timestamp);
     }
@@ -88,14 +114,13 @@ contract Register is Parent, ERC1155Holder {
         address consumer,
         uint256 supplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
-        require(
-            manager.ECU().balanceOf(consumer, supplierId) == 0,
-            "Register: can not register already registered consumer"
-        );
+        if (manager.tokens().ecu.balanceOf(msg.sender, supplierId) != 0) {
+            revert IncorrectConsumer(msg.sender, supplierId);
+        }
 
-        address supplier = manager.NRGS().ownerOf(supplierId);
+        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
 
-        manager.ECU().mint(consumer, supplierId, 1);
+        manager.tokens().ecu.mint(consumer, supplierId, 1);
 
         emit ConsumerRegistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
@@ -109,11 +134,11 @@ contract Register is Parent, ERC1155Holder {
      * @param supplierId The ID of the supplier.
      */
     function unRegisterSupplier(uint256 supplierId) external onlyRole(REGISTER_MANAGER_ROLE) {
-        address supplier = manager.NRGS().ownerOf(supplierId);
+        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
 
-        manager.NRGS().burn(supplierId);
+        manager.tokens().nrgs.burn(supplierId);
 
-        manager.staking().exitStaking(supplier, supplierId);
+        manager.contracts().staking.exitStaking(supplier, supplierId);
 
         emit SupplierUnregistered(msg.sender, supplier, supplierId, block.timestamp);
     }
@@ -132,10 +157,13 @@ contract Register is Parent, ERC1155Holder {
         address consumer,
         uint256 supplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
-        require(manager.ECU().balanceOf(consumer, supplierId) == 1, "Register: supplier is not correct");
-        address supplier = manager.NRGS().ownerOf(supplierId);
+        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+            revert IncorrectConsumer(consumer, supplierId);
+        }
 
-        manager.ECU().burn(consumer, supplierId, 1);
+        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
+
+        manager.tokens().ecu.burn(consumer, supplierId, 1);
 
         emit ConsumerUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }

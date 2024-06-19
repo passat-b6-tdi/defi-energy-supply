@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
-import "../Parent.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { Manager } from "../manager/Manager.sol";
+
+error ZeroAddressPassed();
+error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
+error SupplierNotEnteredStaking(address supplier);
 
 /**
  * @title StakingReward contract for rewards management
  * @author Bohdan
  */
-contract StakingReward is Parent {
+contract StakingReward is AccessControl {
     ///@dev Emmited when a user registers as an Energy supplier
     event EnterStaking(address indexed sender, address indexed supplier, uint256 timestamp);
     ///@dev Emmited when a user unregisters as an Energy supplier
@@ -24,6 +29,9 @@ contract StakingReward is Parent {
     /// @dev Keccak256 hashed `STAKING_MANAGER_ROLE` string
     bytes32 public constant STAKING_MANAGER_ROLE = keccak256(bytes("STAKING_MANAGER_ROLE"));
 
+    /// @dev Manager contract
+    Manager public manager;
+
     /// @dev Total suppliers
     uint256 public totalSuppliers;
 
@@ -32,14 +40,37 @@ contract StakingReward is Parent {
 
     /// @dev Throws if passed not correct owner of tokenId
     modifier isCorrectOwner(address supplier, uint256 tokenId) {
-        require(manager.NRGS().ownerOf(tokenId) == supplier, "StakingReward: supplier is not the owner of this token");
+        if (manager.tokens().nrgs.ownerOf(tokenId) != supplier) {
+            revert IncorrectSupplier(supplier, tokenId);
+        }
+
+        _;
+    }
+
+    /// @dev Throws if passed address 0 as parameter
+    modifier zeroAddressCheck(address account) {
+        if (account == address(0)) {
+            revert ZeroAddressPassed();
+        }
+
         _;
     }
 
     /// @notice Constructor to initialize StakingReward contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE` and `STAKING_MANAGER_ROLE` roles to `msg.sender`
-    constructor(IManager _manager) Parent(_manager) {
+    constructor(Manager _manager) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(STAKING_MANAGER_ROLE, msg.sender);
+
+        manager = _manager;
+    }
+
+    /// @dev Changes `manager` address to the `_newManager` address.
+    /// @param _newManager The address of the new manger contract
+    function changeManager(
+        Manager _newManager
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
+        manager = _newManager;
     }
 
     /**
@@ -122,7 +153,10 @@ contract StakingReward is Parent {
     function _updateRewards(address supplier, uint256 tokenId) private returns (Supplier memory) {
         Supplier storage _supplier = suppliers[supplier][tokenId];
 
-        require(_supplier.updatedAt > 0, "StakingReward: supplier is not entered with this token");
+        if (_supplier.updatedAt == 0) {
+            revert SupplierNotEnteredStaking(supplier);
+        }
+
         assert(_supplier.updatedAt <= block.timestamp);
 
         _supplier.pendingReward = _updateRewardRate(_supplier.updatedAt);
@@ -137,12 +171,12 @@ contract StakingReward is Parent {
         suppliers[supplier][tokenId].pendingReward = 0;
         suppliers[supplier][tokenId].updatedAt = block.timestamp;
 
-        manager.MGT().mint(supplier, _supplier.pendingReward);
+        manager.tokens().mgt.mint(supplier, _supplier.pendingReward);
     }
 
     function _updateRewardRate(uint256 _updatedAt) private view returns (uint256 rewardToUser) {
         uint256 timePassed = block.timestamp - _updatedAt;
 
-        rewardToUser = (manager.rewardAmount() * timePassed) / totalSuppliers;
+        rewardToUser = (manager.values().rewardAmount * timePassed) / totalSuppliers;
     }
 }

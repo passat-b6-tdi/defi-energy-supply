@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { Escrow, MGT, Manager, OracleMock, MainMock } from '../typechain';
+import { Escrow, MGT, Manager, OracleMock, MainMock, NRGOP } from '../typechain';
 import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
@@ -33,19 +33,38 @@ describe('Escrow', function () {
     const energyOracle: OracleMock = (await OracleMock.deploy()) as OracleMock;
     await energyOracle.deployed();
 
+    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory('NRGOP');
+    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
+    await nrgop.deployed();
+
+    const Tokens: Manager.TokensStruct = {
+      mgt: mgt.address,
+      ecu: ecu.address,
+      nrgs: nrgs.address,
+      nrgop: nrgop.address,
+    }
+
+    const Values: Manager.ValuesStruct = {
+      rewardAmount: 10,
+      fees: 10,
+    }
+
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      mgt.address,
-      ecu.address,
-      nrgs.address,
+      Tokens,
       deployer.address,
-      10,
-      5,
-      10,
+      Values,
     )) as Manager;
     await manager.deployed();
 
-    await manager.changeEnergyOracle(energyOracle.address);
+    const Contracts: Manager.ContractsStruct = {
+      oracle: energyOracle.address,
+      staking: ethers.constants.AddressZero,
+      register: ethers.constants.AddressZero,
+      escrow: ethers.constants.AddressZero,
+    }
+
+    await manager.changeContracts(Contracts);
 
     const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
     const escrow: Escrow = (await Escrow.deploy(manager.address)) as Escrow;
@@ -86,7 +105,7 @@ describe('Escrow', function () {
     await nrgs.mint(deployer.address, 10);
 
     await mgt.mint(otherAcc.address, 1000);
-    await mgt.connect(otherAcc).approve(main.address, 1000);
+    await mgt.connect(otherAcc).approve(escrow.address, 1000);
 
     const balBefore = await mgt.balanceOf(otherAcc.address);
     expect(balBefore).to.eq(1000);
@@ -111,7 +130,7 @@ describe('Escrow', function () {
 
     await nrgs.mint(deployer.address, 10);
     await mgt.mint(otherAcc.address, 1000);
-    await mgt.connect(otherAcc).approve(main.address, 1000);
+    await mgt.connect(otherAcc).approve(escrow.address, 1000);
 
     const balBefore = await mgt.balanceOf(otherAcc.address);
     expect(balBefore).to.eq(1000);
@@ -136,42 +155,24 @@ describe('Escrow', function () {
       const { escrow, deployer, otherAcc } = await loadFixture(deployFixture);
 
       const error = `AccessControl: account ${otherAccAddress} is missing role ${escrow_manager}`;
-      await expect(escrow.connect(otherAcc).sendFundsToSupplier(otherAcc.address, 10, 5)).to.be.revertedWith(error);
+      await expect(escrow.connect(otherAcc).sendFundsToSupplier(otherAcc.address, 10)).to.be.revertedWith(error);
     });
 
     it('Zero address checks', async () => {
       const { escrow, deployer } = await loadFixture(deployFixture);
-      const error = 'Parent: account is address 0';
+      const error = 'ERC1155: address zero is not a valid owner';
       const address0 = ethers.constants.AddressZero;
 
-      await expect(escrow.sendFundsToSupplier(address0, 10, 5)).to.be.revertedWith(error);
-    });
-
-    it('Greater than zero Check', async () => {
-      const { escrow, deployer } = await loadFixture(deployFixture);
-      const error = 'Parent: passed value is <= 0';
-
-      await expect(escrow.sendFundsToSupplier(deployer.address, 10, 0)).to.be.revertedWith(error);
+      await expect(escrow.sendFundsToSupplier(address0, 10)).to.be.revertedWith(error);
     });
 
     it('User needs to be correctly connected to supplier', async () => {
       const { escrow, deployer, otherAcc, nrgs } = await loadFixture(deployFixture);
-      const error = 'Escrow: consumer connected to another supplier';
+      const error = 'IncorrectConsumer';
 
       await nrgs.mint(deployer.address, 10);
 
-      await expect(escrow.sendFundsToSupplier(deployer.address, 10, 5)).to.be.revertedWith(error);
-    });
-
-    it('Escrow must be properly paid', async () => {
-      const { escrow, deployer, otherAcc, ecu, nrgs } = await loadFixture(deployFixture);
-      const error = 'Escrow: not enough funds sent';
-
-      await nrgs.mint(deployer.address, 10);
-
-      await ecu.mint(deployer.address, 10, otherAcc.address);
-
-      await expect(escrow.sendFundsToSupplier(deployer.address, 10, 5)).to.be.revertedWith(error);
+      await expect(escrow.sendFundsToSupplier(deployer.address, 10)).to.be.revertedWithCustomError(escrow, error);
     });
   });
 });

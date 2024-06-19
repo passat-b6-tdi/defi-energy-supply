@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MGT, Manager, Register, StakingReward } from '../typechain';
+import { MGT, Manager, NRGOP, Register, StakingReward } from '../typechain';
 import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 import { staking } from '../typechain/contracts';
@@ -34,15 +34,27 @@ describe('Register', function () {
     const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
     await ecu.deployed();
 
+    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory('NRGOP');
+    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
+    await nrgop.deployed();
+
+    const Tokens: Manager.TokensStruct = {
+      mgt: mgt.address,
+      ecu: ecu.address,
+      nrgs: nrgs.address,
+      nrgop: nrgop.address,
+    }
+
+    const Values: Manager.ValuesStruct = {
+      rewardAmount: 10,
+      fees: 10,
+    }
+
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      mgt.address,
-      ecu.address,
-      nrgs.address,
+      Tokens,
       deployer.address,
-      10,
-      5,
-      10,
+      Values,
     )) as Manager;
     await manager.deployed();
 
@@ -61,8 +73,14 @@ describe('Register', function () {
     register_role = await nrgs.REGISTER_ROLE();
     register_manager_role = await register.REGISTER_MANAGER_ROLE();
 
-    await manager.changeRewardAmount(10);
-    await manager.changeStakingContract(stakingReward.address);
+    const Contracts: Manager.ContractsStruct = {
+      oracle: ethers.constants.AddressZero,
+      staking: stakingReward.address,
+      register: register.address,
+      escrow: ethers.constants.AddressZero,
+    }
+
+    await manager.changeContracts(Contracts);
 
     await mgt.grantRole(minter_role, stakingReward.address);
 
@@ -206,21 +224,21 @@ describe('Register', function () {
     it('Zero Address Check', async () => {
       const { register } = await loadFixture(deployFixture);
       const addressZero = ethers.constants.AddressZero;
-      const errorMsg = 'Parent: account is address 0';
+      const errorMsg = 'ZeroAddressPassed';
 
-      await expect(register.registerSupplier(addressZero)).to.be.revertedWith(errorMsg);
-      await expect(register.registerElectricityConsumer(addressZero, 10)).to.be.revertedWith(errorMsg);
+      await expect(register.registerSupplier(addressZero)).to.be.revertedWithCustomError(register, errorMsg);
+      await expect(register.registerElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(register, errorMsg);
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith('ERC721: invalid token ID');
-      await expect(register.unRegisterElectricityConsumer(addressZero, 10)).to.be.revertedWith(errorMsg);
+      await expect(register.unRegisterElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(register, errorMsg);
     });
 
     it('Requires valid token id', async () => {
       const { register, deployer } = await loadFixture(deployFixture);
       const errorMsgForSupplier = 'ERC721: invalid token ID';
-      const errorMsgForUser = 'Register: supplier is not correct';
+      const errorMsgForUser = 'IncorrectConsumer';
 
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith(errorMsgForSupplier);
-      await expect(register.unRegisterElectricityConsumer(deployer.address, 10)).to.be.revertedWith(errorMsgForUser);
+      await expect(register.unRegisterElectricityConsumer(deployer.address, 10)).to.be.revertedWithCustomError(register, errorMsgForUser);
     });
   });
 });

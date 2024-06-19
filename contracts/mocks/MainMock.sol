@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
-import "../escrow/interfaces/IEscrow.sol";
-import "../tokens/ERC20/interfaces/IMGT.sol";
+import { Escrow } from "../escrow/Escrow.sol";
+import { MGT } from "../tokens/ERC20/MGT.sol";
 
 contract MainMock {
-    IEscrow public escrow;
-    IMGT public MGT;
-    constructor(IEscrow _escrow, IMGT _MGT) {
+    Escrow public escrow;
+    MGT public mgt;
+    constructor(Escrow _escrow, MGT _MGT) {
         escrow = _escrow;
-        MGT = _MGT;
+        mgt = _MGT;
     }
 
     function send(address user, uint256 tokenId, uint256 paidAmount) public {
-        MGT.transferFrom(user, address(escrow), paidAmount);
-        escrow.sendFundsToSupplier(user, tokenId, paidAmount);
+        escrow.sendFundsToSupplier(user, tokenId);
     }
 }

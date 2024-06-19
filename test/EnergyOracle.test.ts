@@ -2,7 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { EnergyOracle, EscrowMock, MGT, Manager, Register, StakingReward } from '../typechain';
+import { EnergyOracle, EscrowMock, MGT, Manager, NRGOP, Register, StakingReward } from '../typechain';
 import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
 
@@ -34,15 +34,27 @@ describe('EnergyOracle', function () {
     const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
     await ecu.deployed();
 
+    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory('NRGOP');
+    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
+    await nrgop.deployed();
+
+    const Tokens: Manager.TokensStruct = {
+      mgt: mgt.address,
+      ecu: ecu.address,
+      nrgs: nrgs.address,
+      nrgop: nrgop.address,
+    }
+
+    const Values: Manager.ValuesStruct = {
+      rewardAmount: 10,
+      fees: 10,
+    }
+
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      mgt.address,
-      ecu.address,
-      nrgs.address,
+      Tokens,
       deployer.address,
-      10,
-      5,
-      10,
+      Values,
     )) as Manager;
     await manager.deployed();
 
@@ -229,11 +241,11 @@ describe('EnergyOracle', function () {
 
     it('Zero address checks', async () => {
       const { energyOracle } = await loadFixture(deployFixture);
-      const error = 'Parent: account is address 0';
+      const error = 'ZeroAddressPassed';
       const address0 = ethers.constants.AddressZero;
 
-      await expect(energyOracle.recordEnergyConsumption(address0, 1, 10)).to.be.revertedWith(error);
-      await expect(energyOracle.updateEnergyConsumptions(address0, 1)).to.be.revertedWith(error);
+      await expect(energyOracle.recordEnergyConsumption(address0, 1, 10)).to.be.revertedWithCustomError(energyOracle, error);
+      await expect(energyOracle.updateEnergyConsumptions(address0, 1)).to.be.revertedWithCustomError(energyOracle, error);
     });
 
     it('Pausable', async () => {
@@ -262,10 +274,10 @@ describe('EnergyOracle', function () {
 
       await ecu.mint(otherAccAddress, 1, otherAccAddress);
 
-      const error = 'EnergyOracle: consumer is not correct';
+      const error = 'IncorrectConsumer';
 
-      await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 2, 10)).to.be.revertedWith(error);
-      await expect(energyOracle.updateEnergyConsumptions(otherAccAddress, 2)).to.be.revertedWith(error);
+      await expect(energyOracle.recordEnergyConsumption(otherAccAddress, 2, 10)).to.be.revertedWithCustomError(energyOracle, error);
+      await expect(energyOracle.updateEnergyConsumptions(otherAccAddress, 2)).to.be.revertedWithCustomError(energyOracle, error);
     });
   });
 });

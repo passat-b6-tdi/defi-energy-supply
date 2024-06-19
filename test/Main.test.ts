@@ -2,9 +2,10 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { Escrow, MGT, Manager, EnergyOracle, StakingReward, Register, Main } from '../typechain';
+import { Escrow, MGT, Manager, EnergyOracle, StakingReward, Register, Main, NRGOP } from '../typechain';
 import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
 import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
+import { escrow, manager } from '../typechain/contracts';
 
 describe('Main', function () {
   let otherAccAddress: string;
@@ -38,15 +39,27 @@ describe('Main', function () {
     const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
     await ecu.deployed();
 
+    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory('NRGOP');
+    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
+    await nrgop.deployed();
+
+    const Tokens: Manager.TokensStruct = {
+      mgt: mgt.address,
+      ecu: ecu.address,
+      nrgs: nrgs.address,
+      nrgop: nrgop.address,
+    }
+
+    const Values: Manager.ValuesStruct = {
+      rewardAmount: 10,
+      fees: 10,
+    }
+
     const Manager: ContractFactory = await ethers.getContractFactory('Manager');
     const manager: Manager = (await Manager.deploy(
-      mgt.address,
-      ecu.address,
-      nrgs.address,
+      Tokens,
       deployer.address,
-      10,
-      5,
-      10,
+      Values,
     )) as Manager;
     await manager.deployed();
 
@@ -70,10 +83,14 @@ describe('Main', function () {
     const main: Main = (await Main.deploy(manager.address)) as Main;
     await main.deployed();
 
-    await manager.changeEnergyOracle(energyOracle.address);
-    await manager.changeRegister(register.address);
-    await manager.changeEscrow(escrow.address);
-    await manager.changeStakingContract(stakingReward.address);
+    const Contracts: Manager.ContractsStruct = {
+      oracle: energyOracle.address,
+      staking: stakingReward.address,
+      register: register.address,
+      escrow: escrow.address,
+    }
+
+    await manager.changeContracts(Contracts);
 
     admin_role = await mgt.DEFAULT_ADMIN_ROLE();
     minter_role = await mgt.MINTER_BURNER_ROLE();
@@ -104,7 +121,7 @@ describe('Main', function () {
     await mgt.grantRole(minter_role, stakingReward.address);
     await mgt.grantRole(minter_role, energyOracle.address);
 
-    await mgt.connect(otherAcc).approve(main.address, ethers.constants.MaxUint256);
+    await mgt.connect(otherAcc).approve(escrow.address, ethers.constants.MaxUint256);
     await ecu.connect(otherAcc).setApprovalForAll(register.address, true);
 
     return {
@@ -281,11 +298,11 @@ describe('Main', function () {
 
     const amountToPay = recordedConsumption.add(10);
 
-    const pay = await main.connect(otherAcc).payForElectricity(supplierId, amountToPay);
+    const pay = await main.connect(otherAcc).payForElectricity(supplierId);
     expect(pay).to.emit(escrow, 'PaidForEnergy');
     expect(pay).to.changeTokenBalances(mgt, [otherAcc, anotherAcc], [-amountToPay, amountToPay]);
     expect(await mgt.balanceOf(anotherAcc.address)).to.eq(recordedConsumption);
-    expect(await mgt.balanceOf(otherAcc.address)).to.eq(BigNumber.from(10000).sub(amountToPay.add(10)));
+    expect(await mgt.balanceOf(otherAcc.address)).to.eq(BigNumber.from(10000).sub(amountToPay));
   });
 
   it('Can get rewards from staking to supplier', async () => {
@@ -311,13 +328,6 @@ describe('Main', function () {
     expect(await mgt.balanceOf(anotherAcc.address)).to.be.approximately(seconds * 10, 10);
   });
 
-  it('Greater than zero modifier', async () => {
-    const { main, anotherAcc } = await loadFixture(deployFixture);
-
-    const errorMsg = 'Parent: passed value is <= 0';
-    await expect(main.payForElectricity(10, 0)).to.revertedWith(errorMsg);
-  });
-
   it('OnlyRole MAIN_MANAGER_ROLE modifier', async () => {
     const { main, otherAcc } = await loadFixture(deployFixture);
 
@@ -338,10 +348,10 @@ describe('Main', function () {
   });
 
   it('OnlyRole USER_ROLE modifier', async () => {
-    const { main, otherAcc } = await loadFixture(deployFixture);
+    const { main, escrow, otherAcc } = await loadFixture(deployFixture);
 
-    const errorMsg = `Main: only Electricity Consumers to Supplier`;
+    const errorMsg = `IncorrectConsumer`;
 
-    await expect(main.connect(otherAcc).payForElectricity(10, 10)).to.revertedWith(errorMsg);
+    await expect(main.connect(otherAcc).payForElectricity(10)).to.revertedWithCustomError(escrow, errorMsg);
   });
 });

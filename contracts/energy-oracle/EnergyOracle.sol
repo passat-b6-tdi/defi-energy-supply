@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/security/Pausable.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { Manager } from "../manager/Manager.sol";
 
-import "../Parent.sol";
+error ZeroAddressPassed();
+error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
+error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
 
 /**
  * @title Energy Oracle contract to record indicators of consumed energy from the source
@@ -12,7 +16,7 @@ import "../Parent.sol";
  * who can retrieve the consumption data.
  * @author Bohdan
  */
-contract EnergyOracle is Parent, Pausable {
+contract EnergyOracle is AccessControl, Pausable {
     ///@dev Emmited when an Energy Oracle provider
     event EnergyConsumptionRecorded(
         address indexed sender,
@@ -36,6 +40,9 @@ contract EnergyOracle is Parent, Pausable {
     /// @dev Keccak256 hashed `ESCROW` string
     bytes32 public constant ESCROW = keccak256(bytes("ESCROW"));
 
+    /// @dev Manager contract
+    Manager public manager;
+
     /// @dev Mapping to store consumption
     mapping(address => mapping(uint256 => uint256)) private _energyConsumptions; // consumer => supplierId => id => energy consumption
 
@@ -43,17 +50,31 @@ contract EnergyOracle is Parent, Pausable {
     mapping(address => mapping(uint256 => uint256)) private _energyProductions; // supplier => supplierId => id => energy production
 
     /// @dev Throws if passed address 0 as parameter
-    modifier isCorrectUser(address account, uint256 supplierId) {
-        require(manager.ECU().balanceOf(account, supplierId) > 0, "EnergyOracle: consumer is not correct");
+    modifier zeroAddressCheck(address account) {
+        if (account == address(0)) {
+            revert ZeroAddressPassed();
+        }
+
         _;
     }
 
     /// @notice Constructor to initialize StakingManagement contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`
-    constructor(IManager _manager) Parent(_manager) {
+    constructor(Manager _manager) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ENERGY_ORACLE_MANAGER_ROLE, msg.sender);
         _grantRole(ENERGY_ORACLE_PROVIDER_ROLE, msg.sender);
         _grantRole(ESCROW, msg.sender);
+
+        manager = _manager;
+    }
+
+    /// @dev Changes `manager` address to the `_newManager` address.
+    /// @param _newManager The address of the new manger contract
+    function changeManager(
+        Manager _newManager
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
+        manager = _newManager;
     }
 
     /**
@@ -71,13 +92,11 @@ contract EnergyOracle is Parent, Pausable {
         address supplier,
         uint256 supplierId,
         uint256 production
-    )
-        external
-        onlyRole(ENERGY_ORACLE_PROVIDER_ROLE)
-        whenNotPaused
-        zeroAddressCheck(supplier)
-        isCorrectUser(supplier, supplierId)
-    {
+    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(supplier) {
+        if (manager.tokens().nrgs.ownerOf(supplierId) != supplier) {
+            revert IncorrectSupplier(supplier, supplierId);
+        }
+
         _energyProductions[supplier][supplierId] = production;
 
         emit EnergyConsumptionRecorded(msg.sender, supplier, supplierId, production, block.timestamp);
@@ -98,16 +117,14 @@ contract EnergyOracle is Parent, Pausable {
         address consumer,
         uint256 supplierId,
         uint256 consumption
-    )
-        external
-        onlyRole(ENERGY_ORACLE_PROVIDER_ROLE)
-        whenNotPaused
-        zeroAddressCheck(consumer)
-        isCorrectUser(consumer, supplierId)
-    {
+    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(consumer) {
+        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+            revert IncorrectConsumer(consumer, supplierId);
+        }
+
         _energyConsumptions[consumer][supplierId] = consumption;
 
-        manager.MGT().mint(msg.sender, manager.rewardAmount() * 2);
+        manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
 
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
@@ -119,7 +136,11 @@ contract EnergyOracle is Parent, Pausable {
     function updateEnergyConsumptions(
         address consumer,
         uint256 supplierId
-    ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) isCorrectUser(consumer, supplierId) {
+    ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) {
+        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+            revert IncorrectConsumer(consumer, supplierId);
+        }
+
         _energyConsumptions[consumer][supplierId] = 0;
 
         emit EnergyConsumptionPaid(msg.sender, consumer, supplierId, block.timestamp);
