@@ -3,8 +3,8 @@ pragma solidity ^0.8.24;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "../manager/Manager.sol";
-import { MGT } from "../tokens/ERC20/MGT.sol";
+import { Manager } from "./Manager.sol";
+import { MGT } from "./tokens/ERC20/MGT.sol";
 
 error ZeroAddressPassed();
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "../manager/Manager.sol";
+import { Manager } from "./Manager.sol";
 
 error ZeroAddressPassed();
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);

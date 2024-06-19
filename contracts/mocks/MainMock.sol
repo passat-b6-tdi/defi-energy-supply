@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { Escrow } from "../escrow/Escrow.sol";
+import { Escrow } from "../Escrow.sol";
 import { MGT } from "../tokens/ERC20/MGT.sol";
 
 contract MainMock {

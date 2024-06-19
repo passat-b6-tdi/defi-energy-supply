@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "../manager/Manager.sol";
+import { Manager } from "./Manager.sol";
 
 error ZeroAddressPassed();
 error OnlyEnergySupplier();

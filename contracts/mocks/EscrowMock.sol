@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { EnergyOracle } from "../energy-oracle/EnergyOracle.sol";
+import { EnergyOracle } from "../EnergyOracle.sol";
 
 contract EscrowMock {
     EnergyOracle public energyOracle;

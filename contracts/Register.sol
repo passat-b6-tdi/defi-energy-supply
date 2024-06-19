@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { ERC1155Holder, ERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "../manager/Manager.sol";
+import { Manager } from "./Manager.sol";
 
 error ZeroAddressPassed();
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
