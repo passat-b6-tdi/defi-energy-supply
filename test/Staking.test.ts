@@ -2,9 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MGT, Manager, StakingReward, Register, NRGOP } from '../typechain';
-import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
-import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
+import { MGT, Manager, StakingReward, Register, NRGOP, ECU, NRGS } from '../typechain';
 
 describe('Staking', function () {
   let otherAccAddress: string;

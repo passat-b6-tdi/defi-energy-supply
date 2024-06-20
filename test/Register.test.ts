@@ -2,10 +2,7 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MGT, Manager, NRGOP, Register, StakingReward } from '../typechain';
-import { ECU } from '../typechain/contracts/tokens/ERC1155/ECU';
-import { NRGS } from '../typechain/contracts/tokens/ERC721/NRGS';
-import { staking } from '../typechain/contracts';
+import { MGT, Manager, NRGOP, Register, StakingReward, ECU, NRGS } from '../typechain';
 
 describe('Register', function () {
   let otherAccAddress: string;
@@ -85,13 +82,14 @@ describe('Register', function () {
     await mgt.grantRole(minter_role, stakingReward.address);
 
     await nrgs.grantRole(register_role, register.address);
+    await nrgop.grantRole(register_role, register.address);
     await ecu.grantRole(register_role, register.address);
 
     await stakingReward.grantRole(staking_role, register.address);
 
     await ecu.connect(otherAcc).setApprovalForAll(register.address, true);
 
-    return { mgt, ecu, ECU_Factory, nrgs, NRGS_Factory, manager, stakingReward, StakingReward, register, deployer, otherAcc };
+    return { mgt, ecu, ECU_Factory, nrgs, NRGS_Factory, nrgop, NRGOP_Factory, manager, stakingReward, StakingReward, register, deployer, otherAcc };
   }
 
   it('Deployed correctly', async () => {
@@ -147,7 +145,7 @@ describe('Register', function () {
       expect(sup.pendingReward).to.be.eq(0);
     });
 
-    it('Manager can un register supllier', async () => {
+    it('Manager can unregister supllier', async () => {
       const { register, stakingReward, nrgs, ecu, deployer } = await loadFixture(deployFixture);
       const registration = await register.registerSupplier(deployer.address);
 
@@ -176,6 +174,33 @@ describe('Register', function () {
       expect(sup.pendingReward).to.be.eq(0);
     });
 
+    it('Manager can register oracle provider', async () => {
+      const { register, nrgop, deployer } = await loadFixture(deployFixture);
+      const registration = await register.registerOracleProvider(deployer.address);
+
+      const ownerOf = await nrgop.ownerOf(1);
+
+      expect(registration).to.emit(register, 'OracleProviderRegistered');
+      expect(registration).to.emit(nrgop, 'Transfer');
+      expect(ownerOf).to.be.eq(deployer.address);
+    });
+
+    it('Manager can unregister oracle provider', async () => {
+      const { register, nrgop, deployer } = await loadFixture(deployFixture);
+      const registration = await register.registerOracleProvider(deployer.address);
+
+      const ownerOf = await nrgop.ownerOf(1);
+
+      expect(registration).to.emit(register, 'OracleProviderRegistered');
+      expect(registration).to.emit(nrgop, 'Transfer');
+      expect(ownerOf).to.be.eq(deployer.address);
+
+      const unRegistration = await register.unRegisterOracleProvider(1);
+
+      expect(unRegistration).to.emit(register, 'OracleProviderUnregistered');
+      expect(unRegistration).to.emit(nrgop, 'Transfer');
+    });
+
     it('Manager can register users', async () => {
       const { register, ecu, deployer, otherAcc } = await loadFixture(deployFixture);
       const registrationSupplier = await register.registerSupplier(deployer.address);
@@ -187,7 +212,7 @@ describe('Register', function () {
       expect(await ecu.balanceOf(otherAcc.address, 1)).to.be.eq(1);
     });
 
-    it('Manager can un register users', async () => {
+    it('Manager can unregister users', async () => {
       const { register, ecu, deployer, otherAcc } = await loadFixture(deployFixture);
       const registrationSupplier = await register.registerSupplier(deployer.address);
 
@@ -212,10 +237,12 @@ describe('Register', function () {
       const errorMsg = `AccessControl: account ${otherAccAddress} is missing role ${register_manager_role}`;
 
       await expect(register.connect(otherAcc).registerSupplier(deployer.address)).to.be.revertedWith(errorMsg);
+      await expect(register.connect(otherAcc).registerOracleProvider(deployer.address)).to.be.revertedWith(errorMsg);
       await expect(register.connect(otherAcc).registerElectricityConsumer(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,
       );
       await expect(register.connect(otherAcc).unRegisterSupplier(10)).to.be.revertedWith(errorMsg);
+      await expect(register.connect(otherAcc).unRegisterOracleProvider(10)).to.be.revertedWith(errorMsg);
       await expect(register.connect(otherAcc).unRegisterElectricityConsumer(otherAcc.address, 10)).to.be.revertedWith(
         errorMsg,
       );
@@ -227,17 +254,20 @@ describe('Register', function () {
       const errorMsg = 'ZeroAddressPassed';
 
       await expect(register.registerSupplier(addressZero)).to.be.revertedWithCustomError(register, errorMsg);
+      await expect(register.registerOracleProvider(addressZero)).to.be.revertedWithCustomError(register, errorMsg);
       await expect(register.registerElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(register, errorMsg);
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith('ERC721: invalid token ID');
+      await expect(register.unRegisterOracleProvider(10)).to.be.revertedWith('ERC721: invalid token ID');
       await expect(register.unRegisterElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(register, errorMsg);
     });
 
     it('Requires valid token id', async () => {
       const { register, deployer } = await loadFixture(deployFixture);
-      const errorMsgForSupplier = 'ERC721: invalid token ID';
+      const errorMsg = 'ERC721: invalid token ID';
       const errorMsgForUser = 'IncorrectConsumer';
 
-      await expect(register.unRegisterSupplier(10)).to.be.revertedWith(errorMsgForSupplier);
+      await expect(register.unRegisterSupplier(10)).to.be.revertedWith(errorMsg);
+      await expect(register.unRegisterOracleProvider(10)).to.be.revertedWith(errorMsg);
       await expect(register.unRegisterElectricityConsumer(deployer.address, 10)).to.be.revertedWithCustomError(register, errorMsgForUser);
     });
   });
