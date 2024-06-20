@@ -6,11 +6,11 @@ export async function deployMGT(): Promise<MGT> {
   console.log(`MGT deployment`);
 
   const MGT: ContractFactory = await ethers.getContractFactory('MGT');
-  const MGT = (await MGT.deploy()) as MGT;
-  await MGT.deployed();
+  const mgt = (await MGT.deploy()) as MGT;
+  await mgt.deployed();
 
-  console.log(`MGT deployed to ${MGT.address}`);
-  return MGT;
+  console.log(`MGT deployed to ${mgt.address}`);
+  return mgt;
 }
 
 async function main() {

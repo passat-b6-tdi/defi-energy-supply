@@ -1,5 +1,5 @@
 import hre, { ethers } from 'hardhat';
-import { ECU, EnergyOracle, Escrow, MGT, Main, Manager, NRGS, Register, StakingReward } from '../../typechain';
+import { ECU, EnergyOracle, Escrow, MGT, Main, Manager, NRGS, NRGOP, Register, StakingReward } from '../../typechain';
 import {
   deployMGT,
   deployECU,
@@ -35,9 +35,9 @@ async function main() {
 
   console.log(`MGT deployment`);
   const MGT: ContractFactory = await ethers.getContractFactory('MGT');
-  const MGT = (await MGT.deploy()) as MGT;
-  await MGT.deployed();
-  console.log(`MGT deployed to ${MGT.address}`);
+  const mgt = (await MGT.deploy()) as MGT;
+  await mgt.deployed();
+  console.log(`MGT deployed to ${mgt.address}`);
 
   console.log(`NRGS deployment`);
   const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
@@ -45,21 +45,32 @@ async function main() {
   await nrgs.deployed();
   console.log(`NRGS deployed to ${nrgs.address}`);
 
+  console.log(`NRGS deployment`);
+  const NRGOP: ContractFactory = await ethers.getContractFactory('NRGOP');
+  const nrgop = (await NRGOP.deploy()) as NRGOP;
+  await nrgop.deployed();
+  console.log(`NRGOP deployed to ${nrgop.address}`);
+
   console.log(`Manager deployment`);
+  const Tokens: Manager.TokensStruct = {
+    mgt: mgt.address,
+    ecu: ecu.address,
+    nrgs: nrgs.address,
+    nrgop: nrgop.address,
+  }
+
   const feeReceiver = deployer.address;
-  const reward = 10;
-  const tolerance = 5;
-  const fees = 10;
+
+  const Values: Manager.ValuesStruct = {
+    rewardAmount: 10,
+    fees: 10,
+  }
 
   const Manager: ContractFactory = await ethers.getContractFactory('Manager');
   const manager = (await Manager.deploy(
-    MGT.address,
-    ecu.address,
-    nrgs.address,
+    Tokens,
     feeReceiver,
-    reward,
-    tolerance,
-    fees,
+    Values,
   )) as Manager;
   await manager.deployed();
   console.log(`Manager deployed to ${manager.address}`);
@@ -97,14 +108,18 @@ async function main() {
   console.log('Deployment process - end');
 
   console.log('Manager set up - start');
-  await manager.changeEnergyOracle(energyOracle.address);
-  await manager.changeRegister(register.address);
-  await manager.changeEscrow(escrow.address);
-  await manager.changeStakingContract(stakingReward.address);
+  const Contracts: Manager.ContractsStruct = {
+    oracle: energyOracle.address,
+    staking: stakingReward.address,
+    register: register.address,
+    escrow: escrow.address,
+  }
+
+  await manager.changeContracts(Contracts);
   console.log('Manager set up - end');
 
   // Roles definition
-  minter_role = await MGT.MINTER_BURNER_ROLE();
+  minter_role = await mgt.MINTER_BURNER_ROLE();
 
   register_role = await nrgs.REGISTER_ROLE();
 
@@ -127,8 +142,9 @@ async function main() {
 
   await ecu.grantRole(register_role, register.address);
   await nrgs.grantRole(register_role, register.address);
-  await MGT.grantRole(minter_role, stakingReward.address);
-  await MGT.grantRole(minter_role, energyOracle.address);
+  await nrgop.grantRole(register_role, register.address);
+  await mgt.grantRole(minter_role, stakingReward.address);
+  await mgt.grantRole(minter_role, energyOracle.address);
   console.log('Granting roles - end');
 }
 
