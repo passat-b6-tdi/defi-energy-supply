@@ -5,7 +5,7 @@
 ### energyOracle
 
 ```solidity
-contract IEnergyOracle energyOracle
+contract EnergyOracle energyOracle
 ```
 
 ### consumption
@@ -17,7 +17,7 @@ uint256 consumption
 ### constructor
 
 ```solidity
-constructor(contract IEnergyOracle _energyOracle) public
+constructor(contract EnergyOracle _energyOracle) public
 ```
 
 ### read

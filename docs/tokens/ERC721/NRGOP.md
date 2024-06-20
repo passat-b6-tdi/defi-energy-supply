@@ -1,6 +1,6 @@
 # Solidity API
 
-## NRGS
+## NRGOP
 
 ### constructor
 

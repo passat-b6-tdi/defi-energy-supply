@@ -5,19 +5,19 @@
 ### escrow
 
 ```solidity
-contract IEscrow escrow
+contract Escrow escrow
 ```
 
-### MGT
+### mgt
 
 ```solidity
-contract IMGT MGT
+contract MGT mgt
 ```
 
 ### constructor
 
 ```solidity
-constructor(contract IEscrow _escrow, contract IMGT _MGT) public
+constructor(contract Escrow _escrow, contract MGT _MGT) public
 ```
 
 ### send
