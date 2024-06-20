@@ -1,97 +1,172 @@
+import fs from 'fs';
+import path from 'path';
+import hre from 'hardhat';
 import { BytesLike } from 'ethers';
 import { verifyContract } from './helpers/verify-contract';
 import { ethers } from 'hardhat';
-
-const ECU = '0x700959F95fCd583C01b8Da2239ED9c2858dCBEce';
-const MGT = '0x273d2c9e4A4F90DBfF3B40feefE088ee786f8FD2';
-const NRGS = '0xb5a4F41c70D25191Df4cE4b0fCABD9d335e044c7';
-
-const reward = 10;
-const tolerance = 5;
-const fees = 10;
-const Manager = '0x1CeE6B7C0648D0f4f6012b4bD599E64d07d8dC24';
-
-const Escrow = '0xE487fD39214AF84039FE3b3cc3Ca1183612D19b5';
-const EnergyOracle = '0x22Ab3c7Bc02695D3B119A6cf0224f00354E2Ee7f';
-const Register = '0xf646325Eb8E44Ed8Dfc07074ea1667455521C4f7';
-const StakingReward = '0x98C5cC1025A4f949f945C40e5E5F9BA1af684D34';
-const Main = '0x6Afde766802B7E7989A54B64FA8AB7efDa6F7f0A';
-
+import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
+import { Manager } from '../../typechain';
 
 async function main(): Promise<void> {
+  const networkName = hre.network.name;
+  const filePath = path.join(`${process.cwd()}/deployed`, `deployed_addresses_${hre.network.name}.json`);
+  const rawData = fs.readFileSync(filePath, 'utf8');
+  const addresses = JSON.parse(rawData);
+
   const [deployer] = await ethers.getSigners();
 
-  await verifyECU();
-  await verifyMGT();
-  await verifyNRGS();
+  await verifyECU(addresses.ECU);
+  await verifyMGT(addresses.MGT);
+  await verifyNRGS(addresses.NRGS);
+  await verifyNRGOP(addresses.NRGOP);
+  await verifyManager(addresses.Manager, addresses, deployer.address);
 
-  await verifyManager(deployer.address);
+  if (addresses.Manager) {
+    await verifyEscrow(addresses.Escrow, addresses.Manager);
+    await verifyEnergyOracle(addresses.EnergyOracle, addresses.Manager);
+    await verifyRegister(addresses.Register, addresses.Manager);
+    await verifyStaking(addresses.StakingReward, addresses.Manager);
+    await verifyMain(addresses.Main, addresses.Manager);
+  }
 
-  if (Manager != undefined && Manager != '') {
-    await verifyEscrow(Manager);
-    await verifyEnergyOracle(Manager);
-    await verifyRegister(Manager);
-    await verifyStaking(Manager);
-    await verifyMain(Manager);
+  // Dynamically generate the records array
+  const records = Object.entries(addresses).map(([contract, address]) => ({
+    contract,
+    address,
+    link: `https://sepolia.arbiscan.io/address/${address}#code`,
+  }));
+
+  // Write the verified addresses to a CSV file
+  const csvWriter = createCsvWriter({
+    path: path.join(`${process.cwd()}/deployed-addresses-csv`, `deployed_addresses_${networkName}.csv`),
+    header: [
+      { id: 'contract', title: 'Contract' },
+      { id: 'address', title: 'Address' },
+      { id: 'link', title: 'Link' },
+    ],
+  });
+
+  await csvWriter.writeRecords(records);
+
+  console.log(`Verified addresses written to deployed_addresses_${networkName}.csv`);
+}
+
+async function verifyECU(address: string): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [],
+      "contracts/tokens/ERC721/ECU.sol:ECU"
+    );
   }
 }
 
-async function verifyECU(): Promise<void> {
-  if (ECU != undefined && ECU != '') {
-    await verifyContract(ECU);
+async function verifyMGT(address: string): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [],
+      "contracts/tokens/ERC721/MGT.sol:MGT"
+    );
   }
 }
 
-async function verifyMGT(): Promise<void> {
-  if (MGT != undefined && MGT != '') {
-    await verifyContract(MGT);
+async function verifyNRGS(address: string): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [],
+      "contracts/tokens/ERC721/NRGS.sol:NRGS"
+    );
   }
 }
 
-async function verifyNRGS(): Promise<void> {
-  if (NRGS != undefined && NRGS != '') {
-    await verifyContract(NRGS);
+async function verifyNRGOP(address: string): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [],
+      "contracts/tokens/ERC721/NRGOP.sol:NRGOP"
+    );
   }
 }
 
-async function verifyManager(feeReceiver: BytesLike): Promise<void> {
-  if (ECU != undefined && ECU != '' && NRGS != undefined && NRGS != '' && MGT != undefined && MGT != '') {
-    await verifyContract(Manager, [MGT, ECU, NRGS, feeReceiver, reward, tolerance, fees]);
+async function verifyManager(address: string, addresses: any, feeReceiver: BytesLike): Promise<void> {
+  const Tokens: Manager.TokensStruct = {
+    mgt: addresses.MGT,
+    ecu: addresses.ECU,
+    nrgs: addresses.NRGS,
+    nrgop: addresses.NRGOP,
+  }
+
+  const Values: Manager.ValuesStruct = {
+    rewardAmount: 10,
+    fees: 10,
+  }
+
+  if (address) {
+    await verifyContract(
+      address,
+      [
+        Tokens,
+        feeReceiver,
+        Values
+      ],
+      "contracts/Manager.sol:Manager",
+    );
   }
 }
 
-async function verifyEscrow(manager_address: BytesLike): Promise<void> {
-  if (Escrow != undefined && Escrow != '') {
-    await verifyContract(Escrow, [manager_address]);
+async function verifyEscrow(address: string, manager_address: BytesLike): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [manager_address],
+      "contracts/Escrow.sol:Escrow",
+    );
   }
 }
 
-async function verifyEnergyOracle(manager_address: BytesLike): Promise<void> {
-  if (EnergyOracle != undefined && EnergyOracle != '') {
-    await verifyContract(EnergyOracle, [manager_address]);
+async function verifyEnergyOracle(address: string, manager_address: BytesLike): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [manager_address],
+      "contracts/EnergyOracle.sol:EnergyOracle",
+    );
   }
 }
 
-async function verifyRegister(manager_address: BytesLike): Promise<void> {
-  if (Register != undefined && Register != '') {
-    await verifyContract(Register, [manager_address]);
+async function verifyRegister(address: string, manager_address: BytesLike): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [manager_address],
+      "contracts/Register.sol:Register",
+    );
   }
 }
 
-async function verifyStaking(manager_address: BytesLike): Promise<void> {
-  if (StakingReward != undefined && StakingReward != '') {
-    await verifyContract(StakingReward, [manager_address]);
+async function verifyStaking(address: string, manager_address: BytesLike): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [manager_address],
+      "contracts/StakingReward.sol:StakingReward",
+    );
   }
 }
 
-async function verifyMain(manager_address: BytesLike): Promise<void> {
-  if (Main != undefined && Main != '') {
-    await verifyContract(Main, [manager_address]);
+async function verifyMain(address: string, manager_address: BytesLike): Promise<void> {
+  if (address) {
+    await verifyContract(
+      address,
+      [manager_address],
+      "contracts/Main.sol:Main",
+    );
   }
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main()
   .then(() => process.exit(0))
   .catch((error: Error) => {

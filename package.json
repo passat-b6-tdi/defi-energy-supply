@@ -18,6 +18,7 @@
     "@types/mocha": ">=9.1.0",
     "@types/node": "^20.3.1",
     "chai": "^4.2.0",
+    "csv-writer": "^1.6.0",
     "docgen": "^0.0.1",
     "ethers": "^5.4.7",
     "fs-extra": "^11.1.1",

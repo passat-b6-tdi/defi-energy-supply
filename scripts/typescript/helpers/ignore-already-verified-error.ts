@@ -1,9 +1,8 @@
-export const ignoreAlreadyVerifiedError = (err: Error): void => {
-  if (err.message.includes('Already Verified')) {
-    console.log('Contract already verified, skipping');
-
-    return;
+export const ignoreAlreadyVerifiedError = (err: any): void => {
+  if (err.message.includes('Reason: Already Verified')) {
+    console.log('Contract is already verified');
   } else {
+    console.error(err);
     throw err;
   }
 };

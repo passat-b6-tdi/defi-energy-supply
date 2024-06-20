@@ -1,16 +1,7 @@
 import hre, { ethers } from 'hardhat';
+import fs from 'fs';
+import path from 'path';
 import { ECU, EnergyOracle, Escrow, MGT, Main, Manager, NRGS, NRGOP, Register, StakingReward } from '../../typechain';
-import {
-  deployMGT,
-  deployECU,
-  deployNRGS,
-  deployManager,
-  deployEscrow,
-  deployRegister,
-  deployStaking,
-  deployMain,
-  deployEnergyOracle,
-} from './index';
 import { ContractFactory } from 'ethers';
 
 let
@@ -45,7 +36,7 @@ async function main() {
   await nrgs.deployed();
   console.log(`NRGS deployed to ${nrgs.address}`);
 
-  console.log(`NRGS deployment`);
+  console.log(`NRGOP deployment`);
   const NRGOP: ContractFactory = await ethers.getContractFactory('NRGOP');
   const nrgop = (await NRGOP.deploy()) as NRGOP;
   await nrgop.deployed();
@@ -120,16 +111,11 @@ async function main() {
 
   // Roles definition
   minter_role = await mgt.MINTER_BURNER_ROLE();
-
   register_role = await nrgs.REGISTER_ROLE();
-
   escrow_manager = await escrow.ESCROW_MANAGER_ROLE();
-
   energy_oracle_provider_role = await energyOracle.ENERGY_ORACLE_PROVIDER_ROLE();
   _escrow_ = await energyOracle.ESCROW();
-
   register_manger_role = await register.REGISTER_MANAGER_ROLE();
-
   staking_manager_role = await stakingReward.STAKING_MANAGER_ROLE();
 
   console.log('Granting roles - start');
@@ -139,13 +125,31 @@ async function main() {
   await stakingReward.grantRole(staking_manager_role, register.address);
   await energyOracle.grantRole(energy_oracle_provider_role, main.address);
   await energyOracle.grantRole(_escrow_, escrow.address);
-
   await ecu.grantRole(register_role, register.address);
   await nrgs.grantRole(register_role, register.address);
   await nrgop.grantRole(register_role, register.address);
   await mgt.grantRole(minter_role, stakingReward.address);
   await mgt.grantRole(minter_role, energyOracle.address);
   console.log('Granting roles - end');
+
+  console.log(`Write deployed addresses to JSON file`);
+  const addresses = {
+    ECU: ecu.address,
+    MGT: mgt.address,
+    NRGS: nrgs.address,
+    NRGOP: nrgop.address,
+    Manager: manager.address,
+    Escrow: escrow.address,
+    EnergyOracle: energyOracle.address,
+    Register: register.address,
+    StakingReward: stakingReward.address,
+    Main: main.address,
+  };
+
+  const filePath = path.join(`${process.cwd()}/deployed`, `deployed_addresses_${hre.network.name}.json`);
+  fs.writeFileSync(filePath, JSON.stringify(addresses, null, 2));
+
+  console.log(`Deployed addresses written to ${filePath}`);
 }
 
 main()
