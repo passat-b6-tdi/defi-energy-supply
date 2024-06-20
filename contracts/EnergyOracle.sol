@@ -18,6 +18,14 @@ error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
  */
 contract EnergyOracle is AccessControl, Pausable {
     ///@dev Emmited when an Energy Oracle provider
+    event EnergyProductionRecorded(
+        address indexed sender,
+        address indexed supplier,
+        uint256 indexed supplierId,
+        uint256 production,
+        uint256 timestamp
+    );
+    ///@dev Emmited when an Energy Oracle provider
     event EnergyConsumptionRecorded(
         address indexed sender,
         address indexed whoseConsumption,
@@ -99,7 +107,10 @@ contract EnergyOracle is AccessControl, Pausable {
 
         _energyProductions[supplier][supplierId] = production;
 
-        emit EnergyConsumptionRecorded(msg.sender, supplier, supplierId, production, block.timestamp);
+        // When smart meter is using comment the line
+        // manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
+
+        emit EnergyProductionRecorded(msg.sender, supplier, supplierId, production, block.timestamp);
     }
 
     /**
@@ -124,7 +135,8 @@ contract EnergyOracle is AccessControl, Pausable {
 
         _energyConsumptions[consumer][supplierId] = consumption;
 
-        manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
+        // When smart meter is using comment the line
+        // manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
 
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }

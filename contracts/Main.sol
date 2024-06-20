@@ -29,7 +29,7 @@ contract Main is AccessControl {
     }
 
     modifier onlyOracleProvider() {
-        if (manager.tokens().nrgop.balanceOf(msg.sender) > 0) {
+        if (manager.tokens().nrgop.balanceOf(msg.sender) == 0) {
             revert OnlyEnergyOracleProvider();
         }
 
