@@ -4,13 +4,20 @@ pragma solidity ^0.8.24;
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { Manager } from "./Manager.sol";
 
+/// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
+
+/// @dev Error to indicate that the caller is not an energy supplier
 error OnlyEnergySupplier();
+
+/// @dev Error to indicate that the caller is not an energy oracle provider
 error OnlyEnergyOracleProvider();
 
 /**
  * @title Main
  * @dev A main contract for managing Microgrid ecosystem.
+ * @notice This contract allows managing energy suppliers, consumers, and oracle providers.
+ * It also allows recording energy production and consumption, and handling payments.
  * @author Bohdan
  */
 contract Main is AccessControl {
@@ -20,26 +27,31 @@ contract Main is AccessControl {
     /// @dev Manager contract
     Manager public manager;
 
+    /**
+     * @dev Modifier to check if the caller is the owner of the supplierId
+     * @param supplierId The ID of the supplier
+     */
     modifier onlySupplier(uint256 supplierId) {
         if (manager.tokens().nrgs.ownerOf(supplierId) != msg.sender) {
             revert OnlyEnergySupplier();
         }
-
         _;
     }
 
+    /**
+     * @dev Modifier to check if the caller is an energy oracle provider
+     */
     modifier onlyOracleProvider() {
         if (manager.tokens().nrgop.balanceOf(msg.sender) == 0) {
             revert OnlyEnergyOracleProvider();
         }
-
         _;
     }
 
     /**
      * @notice Constructor to initialize the Main contract.
      * @param _manager The address of the Manager contract.
-     * @dev Grants `DEFAULT_ADMIN_ROLE`, `MAIN_MANAGER_ROLE`,`SUPPLIER_ROLE` and `USER_ROLE` roles to the contract deployer.
+     * @dev Grants `DEFAULT_ADMIN_ROLE` and `MAIN_MANAGER_ROLE` roles to the contract deployer.
      */
     constructor(Manager _manager) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -48,8 +60,10 @@ contract Main is AccessControl {
         manager = _manager;
     }
 
-    /// @dev Changes `manager` address to the `_newManager` address.
-    /// @param _newManager The address of the new manger contract
+    /**
+     * @dev Changes `manager` address to the `_newManager` address.
+     * @param _newManager The address of the new manger contract
+     */
     function changeManager(Manager _newManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (address(_newManager) == address(0)) {
             revert ZeroAddressPassed();
@@ -60,9 +74,8 @@ contract Main is AccessControl {
 
     /**
      * @notice Registers an Energy supplier.
-     * Requirements:
+     * @dev Requirements:
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
-     *
      * @param supplier The address of the supplier.
      */
     function registerSupplier(address supplier) external onlyRole(MAIN_MANAGER_ROLE) {
@@ -71,10 +84,10 @@ contract Main is AccessControl {
 
     /**
      * @notice Registers an Electricity consumer.
-     * Requirements:
+     * @dev Requirements:
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a supplier.
-     *
+     * @param consumer The address of the consumer.
      * @param supplierId The ID of the supplier for the consumer.
      */
     function registerElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
@@ -83,9 +96,8 @@ contract Main is AccessControl {
 
     /**
      * @notice Registers an Energy oracle provider.
-     * Requirements:
+     * @dev Requirements:
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
-     *
      * @param oracleProvider The address of the oracle provider.
      */
     function registerOracleProvider(address oracleProvider) external onlyRole(MAIN_MANAGER_ROLE) {
@@ -94,10 +106,9 @@ contract Main is AccessControl {
 
     /**
      * @notice Unregisters an Energy supplier.
-     * Requirements:
+     * @dev Requirements:
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
-     *
      * @param supplierId The ID of the supplier.
      */
     function unRegisterSupplier(uint256 supplierId) external onlyRole(MAIN_MANAGER_ROLE) {
@@ -106,10 +117,10 @@ contract Main is AccessControl {
 
     /**
      * @notice Unregisters an Electricity consumer.
-     * Requirements:
+     * @dev Requirements:
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a supplier.
-     *
+     * @param consumer The address of the consumer.
      * @param supplierId The ID of the supplier for the consumer.
      */
     function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
@@ -118,10 +129,9 @@ contract Main is AccessControl {
 
     /**
      * @notice Unregisters an Energy oracle provider.
-     * Requirements:
+     * @dev Requirements:
      * - `oracleProviderId` must be greater than 0.
      * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
-     *
      * @param oracleProviderId The ID of the oracle provider.
      */
     function unRegisterOracleProvider(uint256 oracleProviderId) external onlyRole(MAIN_MANAGER_ROLE) {
@@ -130,14 +140,12 @@ contract Main is AccessControl {
 
     /**
      * @notice Records the energy production by the supplier at a specific timestamp.
-     * @dev
-     * Requirements:
-     * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-     * - `supplier` must have `supplierId`
-     *
-     * @param supplier The supplier address
-     * @param supplierId The supplier ID
-     * @param production The energy production value
+     * @dev Requirements:
+     * - `msg.sender` must be an energy oracle provider.
+     * - `supplier` must have `supplierId`.
+     * @param supplier The supplier address.
+     * @param supplierId The supplier ID.
+     * @param production The energy production value.
      */
     function recordEnergyProductions(
         address supplier,
@@ -149,14 +157,12 @@ contract Main is AccessControl {
 
     /**
      * @notice Records the energy consumption for a consumer and supplier at a specific timestamp.
-     * @dev
-     * Requirements:
-     * - `msg.sender` must be the Energy oracle provider
-     * - `consumer` must have supplier with `supplierId`
-     *
-     * @param consumer The consumer address
-     * @param supplierId The supplier ID
-     * @param consumption The energy consumption value
+     * @dev Requirements:
+     * - `msg.sender` must be an energy oracle provider.
+     * - `consumer` must have a supplier with `supplierId`.
+     * @param consumer The consumer address.
+     * @param supplierId The supplier ID.
+     * @param consumption The energy consumption value.
      */
     function recordConsumerConsumptions(
         address consumer,
@@ -168,10 +174,9 @@ contract Main is AccessControl {
 
     /**
      * @notice Pays for electricity.
-     * Requirements:
+     * @dev Requirements:
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a consumer.
-     *
      * @param supplierId The ID of the supplier for the consumer.
      */
     function payForElectricity(uint256 supplierId) external {
@@ -180,10 +185,9 @@ contract Main is AccessControl {
 
     /**
      * @notice Gets the rewards for a supplier.
-     * Requirements:
+     * @dev Requirements:
      * - `supplierId` must be greater than 0.
      * - `msg.sender` must be a supplier.
-     *
      * @param supplierId The ID of the supplier.
      */
     function getRewards(uint256 supplierId) external onlySupplier(supplierId) {

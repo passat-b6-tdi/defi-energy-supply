@@ -5,8 +5,17 @@ import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { Manager } from "./Manager.sol";
 
+/// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
+
+/// @dev Error to indicate that the consumer address is incorrect
+/// @param incorrectConsumer The incorrect consumer address
+/// @param supplierId The ID of the supplier
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
+
+/// @dev Error to indicate that the supplier address is incorrect
+/// @param incorrectSupplier The incorrect supplier address
+/// @param supplierId The ID of the supplier
 error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
 
 /**
@@ -17,7 +26,12 @@ error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
  * @author Bohdan
  */
 contract EnergyOracle is AccessControl, Pausable {
-    ///@dev Emmited when an Energy Oracle provider
+    /// @dev Emmited when an Energy Oracle provider records energy production
+    /// @param sender The address of the sender who recorded the energy production
+    /// @param supplier The address of the supplier
+    /// @param supplierId The ID of the supplier
+    /// @param production The amount of energy produced
+    /// @param timestamp The timestamp when the energy production was recorded
     event EnergyProductionRecorded(
         address indexed sender,
         address indexed supplier,
@@ -25,7 +39,13 @@ contract EnergyOracle is AccessControl, Pausable {
         uint256 production,
         uint256 timestamp
     );
-    ///@dev Emmited when an Energy Oracle provider
+
+    /// @dev Emmited when an Energy Oracle provider records energy consumption
+    /// @param sender The address of the sender who recorded the energy consumption
+    /// @param whoseConsumption The address of the consumer
+    /// @param supplierId The ID of the supplier
+    /// @param consumption The amount of energy consumed
+    /// @param timestamp The timestamp when the energy consumption was recorded
     event EnergyConsumptionRecorded(
         address indexed sender,
         address indexed whoseConsumption,
@@ -33,7 +53,12 @@ contract EnergyOracle is AccessControl, Pausable {
         uint256 consumption,
         uint256 timestamp
     );
-    ///@dev Emmited when called updateEnergyConsumptionsAndGetResult()
+
+    /// @dev Emmited when called updateEnergyConsumptionsAndGetResult()
+    /// @param sender The address of the sender who updated the energy consumption
+    /// @param whoseConsumption The address of the consumer
+    /// @param supplierId The ID of the supplier
+    /// @param timestamp The timestamp when the energy consumption was updated
     event EnergyConsumptionPaid(
         address indexed sender,
         address indexed whoseConsumption,
@@ -58,6 +83,7 @@ contract EnergyOracle is AccessControl, Pausable {
     mapping(address => mapping(uint256 => uint256)) private _energyProductions; // supplier => supplierId => id => energy production
 
     /// @dev Throws if passed address 0 as parameter
+    /// @param account The address to check
     modifier zeroAddressCheck(address account) {
         if (account == address(0)) {
             revert ZeroAddressPassed();
@@ -68,6 +94,7 @@ contract EnergyOracle is AccessControl, Pausable {
 
     /// @notice Constructor to initialize StakingManagement contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`
+    /// @param _manager The address of the manager contract
     constructor(Manager _manager) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ENERGY_ORACLE_MANAGER_ROLE, msg.sender);
@@ -87,8 +114,7 @@ contract EnergyOracle is AccessControl, Pausable {
 
     /**
      * @notice Records the energy production by the supplier at a specific timestamp.
-     * @dev
-     * Requirements:
+     * @dev Requirements:
      * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
      * - `supplier` must have `supplierId`
      *
@@ -115,8 +141,7 @@ contract EnergyOracle is AccessControl, Pausable {
 
     /**
      * @notice Records the energy consumption for a consumer and supplier at a specific timestamp.
-     * @dev
-     * Requirements:
+     * @dev Requirements:
      * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
      * - `consumer` must have supplier with `supplierId`
      *
@@ -141,10 +166,13 @@ contract EnergyOracle is AccessControl, Pausable {
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
 
-    /// @notice Updates the energy consumption for a consumer, supplier
-    /// Requirements: `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-    /// @param consumer The consumer address
-    /// @param supplierId The supplier ID
+    /**
+     * @notice Updates the energy consumption for a consumer, supplier
+     * @dev Retrieves the production value for a specific energy production record.
+     * Requirements: `msg.sender` must have ESCROW role
+     * @param consumer The consumer address
+     * @param supplierId The ID of the supplier.
+     */
     function updateEnergyConsumptions(
         address consumer,
         uint256 supplierId
