@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 
-import { MGT } from "./tokens/ERC20/MGT.sol";
-import { ECU } from "./tokens/ERC1155/ECU.sol";
 import { NRGS } from "./tokens/ERC721/NRGS.sol";
 import { NRGOP } from "./tokens/ERC721/NRGOP.sol";
+import { MGT } from "./tokens/MGT.sol";
+import { ECU } from "./tokens/ECU.sol";
 
 import { StakingReward } from "./StakingReward.sol";
 import { EnergyOracle } from "./EnergyOracle.sol";
