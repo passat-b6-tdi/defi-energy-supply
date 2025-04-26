@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { ERC1155Holder, ERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "./Manager.sol";
+import { Ownable } from "solady/src/auth/Ownable.sol";
+import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
+import { Receiver } from "solady/src/accounts/Receiver.sol";
+
+import { IToken } from "./interfaces/IToken.sol";
+import { IContract } from "./interfaces/IContract.sol";
+import { Main } from "./Main.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -20,7 +24,7 @@ error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
  * It ensures that only authorized roles can perform these operations and emits events for tracking.
  * @custom:security-contact security@example.com
  */
-contract Register is AccessControl, ERC1155Holder {
+contract Register is Ownable, EnumerableRoles, Receiver {
     /// @dev Emitted when a user registers as an Energy supplier
     /// @param sender The address of the sender
     /// @param supplier The address of the supplier
@@ -98,10 +102,10 @@ contract Register is AccessControl, ERC1155Holder {
     );
 
     /// @dev Keccak256 hashed `REGISTER_MANAGER_ROLE` string
-    bytes32 public constant REGISTER_MANAGER_ROLE = keccak256(bytes("REGISTER_MANAGER_ROLE"));
+    uint256 public constant REGISTER_MANAGER_ROLE = uint256(keccak256(bytes("REGISTER_MANAGER_ROLE")));
 
-    /// @dev Manager contract
-    Manager public manager;
+    /// @dev Main contract
+    Main public main;
 
     /// @dev Counter of suppliers Ids
     uint256 public currentSupplierId = 1;
@@ -119,20 +123,18 @@ contract Register is AccessControl, ERC1155Holder {
     }
 
     /// @notice Constructor to initialize Register contract
-    /// @param _manager The address of the Manager contract
+    /// @param _main The address of the Main contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`
-    constructor(Manager _manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(REGISTER_MANAGER_ROLE, msg.sender);
-        manager = _manager;
+    constructor(Main _main) {
+        _setOwner(msg.sender);
+
+        main = _main;
     }
 
-    /// @dev Changes `manager` address to the `_newManager` address.
-    /// @param _newManager The address of the new manger contract
-    function changeManager(
-        Manager _newManager
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
-        manager = _newManager;
+    /// @dev Changes `main` address to the `_main` address.
+    /// @param _main The address of the new main contract
+    function changeManager(Main _main) external onlyOwner zeroAddressCheck(address(_main)) {
+        main = _main;
     }
 
     /**
@@ -144,10 +146,12 @@ contract Register is AccessControl, ERC1155Holder {
      * @param supplier The address of the supplier
      */
     function registerSupplier(address supplier) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(supplier) {
+        Main _main = main;
+
         uint256 supplierId = currentSupplierId;
         currentSupplierId++;
-        manager.tokens().nrgs.mint(supplier, supplierId);
-        manager.contracts().staking.enterStaking(supplier, supplierId);
+        IToken(_main.tokens().nrgs).mint(supplier, supplierId);
+        IContract(_main.contracts().staking).enterStaking(supplier, supplierId);
         emit SupplierRegistered(msg.sender, supplier, supplierId, block.timestamp);
     }
 
@@ -163,11 +167,13 @@ contract Register is AccessControl, ERC1155Holder {
         address consumer,
         uint256 supplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(msg.sender, supplierId) != 0) {
+        Main.Tokens memory tokens = main.tokens();
+
+        if (IToken(tokens.ecu).balanceOf(msg.sender, supplierId) != 0) {
             revert IncorrectConsumer(msg.sender, supplierId);
         }
-        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
-        manager.tokens().ecu.mint(consumer, supplierId, 1);
+        address supplier = IToken(tokens.nrgs).ownerOf(supplierId);
+        IToken(tokens.ecu).mint(consumer, supplierId, 1);
         emit ConsumerRegistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
@@ -183,7 +189,7 @@ contract Register is AccessControl, ERC1155Holder {
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(oracleProvider) {
         uint256 oracleProviderId = currentOracleProviderId;
         currentOracleProviderId++;
-        manager.tokens().nrgop.mint(oracleProvider, oracleProviderId);
+        IToken(main.tokens().nrgop).mint(oracleProvider, oracleProviderId);
         emit OracleProviderRegistered(msg.sender, oracleProvider, oracleProviderId, block.timestamp);
     }
 
@@ -195,9 +201,11 @@ contract Register is AccessControl, ERC1155Holder {
      * @param supplierId The ID of the supplier
      */
     function unRegisterSupplier(uint256 supplierId) external onlyRole(REGISTER_MANAGER_ROLE) {
-        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
-        manager.tokens().nrgs.burn(supplierId);
-        manager.contracts().staking.exitStaking(supplier, supplierId);
+        Main _main = main;
+        IToken nrgs = IToken(_main.tokens().nrgs);
+        address supplier = nrgs.ownerOf(supplierId);
+        nrgs.burn(supplierId);
+        IContract(_main.contracts().staking).exitStaking(supplier, supplierId);
         emit SupplierUnregistered(msg.sender, supplier, supplierId, block.timestamp);
     }
 
@@ -214,11 +222,12 @@ contract Register is AccessControl, ERC1155Holder {
         address consumer,
         uint256 supplierId
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+        Main.Tokens memory tokens = main.tokens();
+        if (IToken(tokens.ecu).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
-        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
-        manager.tokens().ecu.burn(consumer, supplierId, 1);
+        address supplier = IToken(tokens.nrgs).ownerOf(supplierId);
+        IToken(tokens.ecu).burn(consumer, supplierId, 1);
         emit ConsumerUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
@@ -230,18 +239,9 @@ contract Register is AccessControl, ERC1155Holder {
      * @param oracleProviderId The ID of the oracle provider
      */
     function unRegisterOracleProvider(uint256 oracleProviderId) external onlyRole(REGISTER_MANAGER_ROLE) {
-        address oracleProvider = manager.tokens().nrgop.ownerOf(oracleProviderId);
-        manager.tokens().nrgop.burn(oracleProviderId);
+        IToken nrgop = IToken(main.tokens().nrgop);
+        address oracleProvider = nrgop.ownerOf(oracleProviderId);
+        nrgop.burn(oracleProviderId);
         emit OracleProviderUnregistered(msg.sender, oracleProvider, oracleProviderId, block.timestamp);
-    }
-
-    /**
-     * @inheritdoc AccessControl
-     * @notice Supports interface for ERC1155Receiver and AccessControl
-     * @param interfaceId The interface ID to check
-     * @return True if the interface is supported, false otherwise
-     */
-    function supportsInterface(bytes4 interfaceId) public view override(ERC1155Receiver, AccessControl) returns (bool) {
-        return super.supportsInterface(interfaceId);
     }
 }

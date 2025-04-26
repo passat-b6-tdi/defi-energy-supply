@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { Ownable } from "solady/src/auth/Ownable.sol";
+import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "./Manager.sol";
+
+import { IToken } from "./interfaces/IToken.sol";
+import { Main } from "./Main.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -25,7 +28,7 @@ error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
  * who can retrieve the consumption data.
  * @author Bohdan
  */
-contract EnergyOracle is AccessControl, Pausable {
+contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     /// @dev Emmited when an Energy Oracle provider records energy production
     /// @param sender The address of the sender who recorded the energy production
     /// @param supplier The address of the supplier
@@ -67,14 +70,14 @@ contract EnergyOracle is AccessControl, Pausable {
     );
 
     /// @dev Keccak256 hashed `ENERGY_ORACLE_MANAGER_ROLE` string
-    bytes32 public constant ENERGY_ORACLE_MANAGER_ROLE = keccak256(bytes("ENERGY_ORACLE_MANAGER_ROLE"));
+    uint256 public constant ENERGY_ORACLE_MANAGER_ROLE = uint256(keccak256(bytes("ENERGY_ORACLE_MANAGER_ROLE")));
     /// @dev Keccak256 hashed `ENERGY_ORACLE_PROVIDER_ROLE` string
-    bytes32 public constant ENERGY_ORACLE_PROVIDER_ROLE = keccak256(bytes("ENERGY_ORACLE_PROVIDER_ROLE"));
+    uint256 public constant ENERGY_ORACLE_PROVIDER_ROLE = uint256(keccak256(bytes("ENERGY_ORACLE_PROVIDER_ROLE")));
     /// @dev Keccak256 hashed `ESCROW` string
-    bytes32 public constant ESCROW = keccak256(bytes("ESCROW"));
+    uint256 public constant ESCROW = uint256(keccak256(bytes("ESCROW")));
 
-    /// @dev Manager contract
-    Manager public manager;
+    /// @dev Main contract
+    Main public main;
 
     /// @dev Mapping to store consumption
     mapping(address => mapping(uint256 => uint256)) private _energyConsumptions; // consumer => supplierId => id => energy consumption
@@ -94,22 +97,17 @@ contract EnergyOracle is AccessControl, Pausable {
 
     /// @notice Constructor to initialize StakingManagement contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`
-    /// @param _manager The address of the manager contract
-    constructor(Manager _manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ENERGY_ORACLE_MANAGER_ROLE, msg.sender);
-        _grantRole(ENERGY_ORACLE_PROVIDER_ROLE, msg.sender);
-        _grantRole(ESCROW, msg.sender);
+    /// @param _main The address of the main contract
+    constructor(Main _main) {
+        _setOwner(msg.sender);
 
-        manager = _manager;
+        main = _main;
     }
 
-    /// @dev Changes `manager` address to the `_newManager` address.
-    /// @param _newManager The address of the new manger contract
-    function changeManager(
-        Manager _newManager
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
-        manager = _newManager;
+    /// @dev Changes `main` address to the `_main` address.
+    /// @param _main The address of the new main contract
+    function changeMain(Main _main) external onlyOwner zeroAddressCheck(address(_main)) {
+        main = _main;
     }
 
     /**
@@ -127,14 +125,14 @@ contract EnergyOracle is AccessControl, Pausable {
         uint256 supplierId,
         uint256 production
     ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(supplier) {
-        if (manager.tokens().nrgs.ownerOf(supplierId) != supplier) {
+        if (IToken(main.tokens().nrgs).ownerOf(supplierId) != supplier) {
             revert IncorrectSupplier(supplier, supplierId);
         }
 
         _energyProductions[supplier][supplierId] = production;
 
         // When smart meter is using comment the line
-        // manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
+        // main.tokens().mgt.mint(msg.sender, main.values().rewardAmount * 2);
 
         emit EnergyProductionRecorded(msg.sender, supplier, supplierId, production, block.timestamp);
     }
@@ -154,14 +152,14 @@ contract EnergyOracle is AccessControl, Pausable {
         uint256 supplierId,
         uint256 consumption
     ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+        if (IToken(main.tokens().ecu).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
         _energyConsumptions[consumer][supplierId] = consumption;
 
         // When smart meter is using comment the line
-        // manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
+        // main.tokens().mgt.mint(msg.sender, main.values().rewardAmount * 2);
 
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
@@ -177,7 +175,7 @@ contract EnergyOracle is AccessControl, Pausable {
         address consumer,
         uint256 supplierId
     ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+        if (IToken(main.tokens().ecu).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 

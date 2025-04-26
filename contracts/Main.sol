@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "./Manager.sol";
+import { Ownable } from "solady/src/auth/Ownable.sol";
+import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
+
+import { IToken } from "./interfaces/IToken.sol";
+import { IContract } from "./interfaces/IContract.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -14,25 +17,70 @@ error OnlyEnergySupplier();
 error OnlyEnergyOracleProvider();
 
 /**
- * @title Main
- * @dev A main contract for managing Microgrid ecosystem.
- * @notice This contract allows managing energy suppliers, consumers, and oracle providers.
- * It also allows recording energy production and consumption, and handling payments.
+ * @title Manager contract for contracts management
+ * @dev This contract manages the links to various contracts and stores configuration values for the system.
+ * @notice This contract allows for managing and updating the addresses of token and functional contracts in the ecosystem.
+ * It also manages configuration values like reward amounts and fees.
  * @author Bohdan
  */
-contract Main is AccessControl {
-    /// @dev Keccak256 hashed `MAIN_MANAGER_ROLE` string
-    bytes32 public constant MAIN_MANAGER_ROLE = keccak256(bytes("MAIN_MANAGER_ROLE"));
+contract Main is Ownable, EnumerableRoles {
+    /// @dev Structure to hold references to token contracts
+    struct Tokens {
+        address mgt;
+        address ecu;
+        address nrgs;
+        address nrgop;
+    }
 
-    /// @dev Manager contract
-    Manager public manager;
+    /// @dev Structure to hold references to functional contracts
+    struct Contracts {
+        address staking;
+        address oracle;
+        address register;
+        address escrow;
+    }
+
+    /// @dev Structure to hold configuration values
+    struct Values {
+        uint256 rewardAmount;
+        uint256 fees;
+    }
+
+    // Events for contract address changes
+    /// @dev Emitted when a manager changes the `Tokens _tokens`
+    event TokensUpdated(address indexed sender, Tokens tokens);
+    /// @dev Emitted when a manager changes the `Contracts _contracts`
+    event ContractsUpdated(address indexed sender, Contracts staking);
+
+    // Event for fee receiver address change
+    /// @dev Emitted when a manager changes the `feeReceiver` link to another address
+    event FeeReceiverChanged(address indexed sender, address newReceiver);
+
+    // Events for configuration value changes
+    /// @dev Emitted when a manager changes the `Values _values`
+    event ValuesUpdated(address indexed sender, Values values);
+
+    /// @dev Keccak256 hashed `MANAGER_ROLE` string
+    uint256 public constant MANAGER_ROLE = uint256(keccak256(bytes("MANAGER_ROLE")));
+
+    /// @dev Tokens struct
+    Tokens private _tokens;
+
+    /// @dev Contracts struct
+    Contracts public _contracts;
+
+    /// @dev Address where fees will be paid
+    address public feeReceiver;
+
+    /// @dev Values struct
+    Values public _values;
 
     /**
      * @dev Modifier to check if the caller is the owner of the supplierId
      * @param supplierId The ID of the supplier
      */
     modifier onlySupplier(uint256 supplierId) {
-        if (manager.tokens().nrgs.ownerOf(supplierId) != msg.sender) {
+        if (IToken(_tokens.nrgs).ownerOf(supplierId) != msg.sender) {
             revert OnlyEnergySupplier();
         }
         _;
@@ -42,44 +90,85 @@ contract Main is AccessControl {
      * @dev Modifier to check if the caller is an energy oracle provider
      */
     modifier onlyOracleProvider() {
-        if (manager.tokens().nrgop.balanceOf(msg.sender) == 0) {
+        if (IToken(_tokens.nrgop).balanceOf(msg.sender) == 0) {
             revert OnlyEnergyOracleProvider();
         }
         _;
     }
 
     /**
-     * @notice Constructor to initialize the Main contract.
-     * @param _manager The address of the Manager contract.
-     * @dev Grants `DEFAULT_ADMIN_ROLE` and `MAIN_MANAGER_ROLE` roles to the contract deployer.
+     * @notice Constructor to initialize the Manager contract
+     * @param tokens_ The initial addresses of the token contracts
+     * @param _feeReceiver The address of the fee receiver
+     * @param values_ The initial values for reward amount and fees
+     * @dev Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender`
      */
-    constructor(Manager _manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MAIN_MANAGER_ROLE, msg.sender);
+    constructor(Tokens memory tokens_, address _feeReceiver, Values memory values_) {
+        _setOwner(msg.sender);
 
-        manager = _manager;
+        _tokens = tokens_;
+        _values = values_;
+
+        feeReceiver = _feeReceiver;
     }
 
     /**
-     * @dev Changes `manager` address to the `_newManager` address.
-     * @param _newManager The address of the new manger contract
+     * @notice Changes tokens links to others.
+     * @dev Requirements:
+     * - `msg.sender` must have `MANAGER_ROLE`
+     * @param tokens_ The new addresses of the token contracts
      */
-    function changeManager(Manager _newManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (address(_newManager) == address(0)) {
+    function changeTokensAddresses(Tokens calldata tokens_) external onlyRole(MANAGER_ROLE) {
+        emit TokensUpdated(msg.sender, tokens_);
+        _tokens = tokens_;
+    }
+
+    /**
+     * @notice Changes contracts links to others.
+     * @dev Requirements:
+     * - `msg.sender` must have `MANAGER_ROLE`
+     * @param contracts_ The new addresses of the functional contracts
+     */
+    function changeContracts(Contracts calldata contracts_) external onlyRole(MANAGER_ROLE) {
+        emit ContractsUpdated(msg.sender, contracts_);
+        _contracts = contracts_;
+    }
+
+    /**
+     * @notice Changes `feeReceiver` link to another address.
+     * @dev Requirements:
+     * - `msg.sender` must have `MANAGER_ROLE`
+     * - `_newFeeReceiver` must be not address 0
+     * @param _newFeeReceiver The new address of the fee receiver
+     */
+    function changeFeeReceiver(address _newFeeReceiver) external onlyRole(MANAGER_ROLE) {
+        if (_newFeeReceiver == address(0)) {
             revert ZeroAddressPassed();
         }
 
-        manager = _newManager;
+        emit FeeReceiverChanged(msg.sender, _newFeeReceiver);
+        feeReceiver = _newFeeReceiver;
+    }
+
+    /**
+     * @notice Changes configuration values.
+     * @dev Requirements:
+     * - `msg.sender` must have `MANAGER_ROLE`
+     * @param values_ The new configuration values
+     */
+    function changeValues(Values calldata values_) external onlyRole(MANAGER_ROLE) {
+        emit ValuesUpdated(msg.sender, values_);
+        _values = values_;
     }
 
     /**
      * @notice Registers an Energy supplier.
      * @dev Requirements:
-     * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
+     * - `msg.sender` must have `MANAGER_ROLE`.
      * @param supplier The address of the supplier.
      */
-    function registerSupplier(address supplier) external onlyRole(MAIN_MANAGER_ROLE) {
-        manager.contracts().register.registerSupplier(supplier);
+    function registerSupplier(address supplier) external onlyRole(MANAGER_ROLE) {
+        IContract(_contracts.register).registerSupplier(supplier);
     }
 
     /**
@@ -91,28 +180,28 @@ contract Main is AccessControl {
      * @param supplierId The ID of the supplier for the consumer.
      */
     function registerElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
-        manager.contracts().register.registerElectricityConsumer(consumer, supplierId);
+        IContract(_contracts.register).registerElectricityConsumer(consumer, supplierId);
     }
 
     /**
      * @notice Registers an Energy oracle provider.
      * @dev Requirements:
-     * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
+     * - `msg.sender` must have `MANAGER_ROLE`.
      * @param oracleProvider The address of the oracle provider.
      */
-    function registerOracleProvider(address oracleProvider) external onlyRole(MAIN_MANAGER_ROLE) {
-        manager.contracts().register.registerOracleProvider(oracleProvider);
+    function registerOracleProvider(address oracleProvider) external onlyRole(MANAGER_ROLE) {
+        IContract(_contracts.register).registerOracleProvider(oracleProvider);
     }
 
     /**
      * @notice Unregisters an Energy supplier.
      * @dev Requirements:
      * - `supplierId` must be greater than 0.
-     * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
+     * - `msg.sender` must have `MANAGER_ROLE`.
      * @param supplierId The ID of the supplier.
      */
-    function unRegisterSupplier(uint256 supplierId) external onlyRole(MAIN_MANAGER_ROLE) {
-        manager.contracts().register.unRegisterSupplier(supplierId);
+    function unRegisterSupplier(uint256 supplierId) external onlyRole(MANAGER_ROLE) {
+        IContract(_contracts.register).unRegisterSupplier(supplierId);
     }
 
     /**
@@ -124,18 +213,18 @@ contract Main is AccessControl {
      * @param supplierId The ID of the supplier for the consumer.
      */
     function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external onlySupplier(supplierId) {
-        manager.contracts().register.unRegisterElectricityConsumer(consumer, supplierId);
+        IContract(_contracts.register).unRegisterElectricityConsumer(consumer, supplierId);
     }
 
     /**
      * @notice Unregisters an Energy oracle provider.
      * @dev Requirements:
      * - `oracleProviderId` must be greater than 0.
-     * - `msg.sender` must have `MAIN_MANAGER_ROLE`.
+     * - `msg.sender` must have `MANAGER_ROLE`.
      * @param oracleProviderId The ID of the oracle provider.
      */
-    function unRegisterOracleProvider(uint256 oracleProviderId) external onlyRole(MAIN_MANAGER_ROLE) {
-        manager.contracts().register.unRegisterOracleProvider(oracleProviderId);
+    function unRegisterOracleProvider(uint256 oracleProviderId) external onlyRole(MANAGER_ROLE) {
+        IContract(_contracts.register).unRegisterOracleProvider(oracleProviderId);
     }
 
     /**
@@ -152,7 +241,7 @@ contract Main is AccessControl {
         uint256 supplierId,
         uint256 production
     ) external onlyOracleProvider {
-        manager.contracts().oracle.recordEnergyProductions(supplier, supplierId, production);
+        IContract(_contracts.oracle).recordEnergyProductions(supplier, supplierId, production);
     }
 
     /**
@@ -169,7 +258,7 @@ contract Main is AccessControl {
         uint256 supplierId,
         uint256 consumption
     ) external onlyOracleProvider {
-        manager.contracts().oracle.recordConsumerConsumptions(consumer, supplierId, consumption);
+        IContract(_contracts.oracle).recordConsumerConsumptions(consumer, supplierId, consumption);
     }
 
     /**
@@ -180,7 +269,7 @@ contract Main is AccessControl {
      * @param supplierId The ID of the supplier for the consumer.
      */
     function payForElectricity(uint256 supplierId) external {
-        manager.contracts().escrow.sendFundsToSupplier(msg.sender, supplierId);
+        IContract(_contracts.escrow).sendFundsToSupplier(msg.sender, supplierId);
     }
 
     /**
@@ -191,6 +280,30 @@ contract Main is AccessControl {
      * @param supplierId The ID of the supplier.
      */
     function getRewards(uint256 supplierId) external onlySupplier(supplierId) {
-        manager.contracts().staking.sendRewards(msg.sender, supplierId);
+        IContract(_contracts.staking).sendRewards(msg.sender, supplierId);
+    }
+
+    /**
+     * @notice Gets the current token contract addresses
+     * @return The current token contract addresses
+     */
+    function tokens() external view returns (Tokens memory) {
+        return _tokens;
+    }
+
+    /**
+     * @notice Gets the current functional contract addresses
+     * @return The current functional contract addresses
+     */
+    function contracts() external view returns (Contracts memory) {
+        return _contracts;
+    }
+
+    /**
+     * @notice Gets the current configuration values
+     * @return The current configuration values
+     */
+    function values() external view returns (Values memory) {
+        return _values;
     }
 }

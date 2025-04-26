@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "./Manager.sol";
+import { Ownable } from "solady/src/auth/Ownable.sol";
+import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
+
+import { IToken } from "./interfaces/IToken.sol";
+import { Main } from "./Main.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -22,7 +25,7 @@ error SupplierNotEnteredStaking(address supplier);
  * @notice This contract allows for entering and exiting staking, updating rewards, and sending rewards to suppliers.
  * @custom:security-contact security@example.com
  */
-contract StakingReward is AccessControl {
+contract StakingReward is Ownable, EnumerableRoles {
     /// @dev Emitted when a user registers as an Energy supplier
     /// @param sender The address of the sender
     /// @param supplier The address of the supplier
@@ -48,10 +51,10 @@ contract StakingReward is AccessControl {
     }
 
     /// @dev Keccak256 hashed `STAKING_MANAGER_ROLE` string
-    bytes32 public constant STAKING_MANAGER_ROLE = keccak256(bytes("STAKING_MANAGER_ROLE"));
+    uint256 public constant STAKING_MANAGER_ROLE = uint256(keccak256(bytes("STAKING_MANAGER_ROLE")));
 
-    /// @dev Manager contract
-    Manager public manager;
+    /// @dev Main contract
+    Main public main;
 
     /// @dev Total suppliers
     uint256 public totalSuppliers;
@@ -63,7 +66,7 @@ contract StakingReward is AccessControl {
     /// @param supplier The address of the supplier
     /// @param tokenId The ID of the supplier
     modifier isCorrectOwner(address supplier, uint256 tokenId) {
-        if (manager.tokens().nrgs.ownerOf(tokenId) != supplier) {
+        if (IToken(main.tokens().nrgs).ownerOf(tokenId) != supplier) {
             revert IncorrectSupplier(supplier, tokenId);
         }
         _;
@@ -80,21 +83,19 @@ contract StakingReward is AccessControl {
 
     /**
      * @notice Constructor to initialize StakingReward contract
-     * @param _manager The address of the Manager contract
+     * @param _main The address of the Main contract
      * @dev Grants `DEFAULT_ADMIN_ROLE` and `STAKING_MANAGER_ROLE` roles to `msg.sender`
      */
-    constructor(Manager _manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(STAKING_MANAGER_ROLE, msg.sender);
-        manager = _manager;
+    constructor(Main _main) {
+        _setOwner(msg.sender);
+
+        main = _main;
     }
 
-    /// @dev Changes `manager` address to the `_newManager` address
-    /// @param _newManager The address of the new manager contract
-    function changeManager(
-        Manager _newManager
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
-        manager = _newManager;
+    /// @dev Changes `main` address to the `_main` address
+    /// @param _main The address of the new main contract
+    function changeMain(Main _main) external onlyOwner zeroAddressCheck(address(_main)) {
+        main = _main;
     }
 
     /**
@@ -147,7 +148,7 @@ contract StakingReward is AccessControl {
         uint256 tokenId
     ) external onlyRole(STAKING_MANAGER_ROLE) zeroAddressCheck(supplier) {
         _sendRewards(supplier, tokenId);
-        totalSuppliers--;
+        --totalSuppliers;
         delete suppliers[supplier][tokenId];
         emit ExitStaking(msg.sender, supplier, block.timestamp);
     }
@@ -189,7 +190,7 @@ contract StakingReward is AccessControl {
         Supplier memory _supplier = _updateRewards(supplier, tokenId);
         suppliers[supplier][tokenId].pendingReward = 0;
         suppliers[supplier][tokenId].updatedAt = block.timestamp;
-        manager.tokens().mgt.mint(supplier, _supplier.pendingReward);
+        IToken(main.tokens().mgt).mint(supplier, _supplier.pendingReward);
     }
 
     /// @dev Internal function to update reward rate
@@ -197,6 +198,6 @@ contract StakingReward is AccessControl {
     /// @return rewardToUser The calculated reward for the user
     function _updateRewardRate(uint256 _updatedAt) private view returns (uint256 rewardToUser) {
         uint256 timePassed = block.timestamp - _updatedAt;
-        rewardToUser = (manager.values().rewardAmount * timePassed) / totalSuppliers;
+        rewardToUser = (main.values().rewardAmount * timePassed) / totalSuppliers;
     }
 }

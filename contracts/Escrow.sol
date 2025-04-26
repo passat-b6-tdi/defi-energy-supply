@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "./Manager.sol";
-import { MGT } from "./tokens/MGT.sol";
+import { Ownable } from "solady/src/auth/Ownable.sol";
+import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
+import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
+
+import { Main } from "./Main.sol";
+import { IToken } from "./interfaces/IToken.sol";
+import { IContract } from "./interfaces/IContract.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -22,8 +25,8 @@ error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
  * The contract is managed by an Escrow Manager who can send funds to suppliers.
  * @author Bohdan
  */
-contract Escrow is AccessControl {
-    using SafeERC20 for MGT;
+contract Escrow is Ownable, EnumerableRoles {
+    using SafeTransferLib for address;
 
     /// @dev Emmited when a consumer paid for energy
     /// @param consumer The address of the consumer
@@ -33,31 +36,30 @@ contract Escrow is AccessControl {
     event PaidForEnergy(address indexed consumer, uint256 indexed tokenId, address indexed supplier, uint256 amount);
 
     /// @dev Keccak256 hashed `ESCROW_MANAGER_ROLE` string
-    bytes32 public constant ESCROW_MANAGER_ROLE = keccak256(bytes("ESCROW_MANAGER_ROLE"));
+    uint256 public constant ESCROW_MANAGER_ROLE = uint256(keccak256(bytes("ESCROW_MANAGER_ROLE")));
 
-    /// @dev Manager contract
-    Manager public manager;
+    /// @dev Main contract
+    Main public main;
 
     /**
      * @notice Constructor to initialize the Escrow contract
-     * @param _manager The address of the Manager contract.
-     * @dev Grants `DEFAULT_ADMIN_ROLE` and `ESCROW_MANAGER_ROLE` roles to the contract deployer.
+     * @param _main The address of the Main contract.
+     * @dev Grants `owner` and `ESCROW_MANAGER_ROLE` roles to the contract deployer.
      */
-    constructor(Manager _manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ESCROW_MANAGER_ROLE, msg.sender);
+    constructor(Main _main) {
+        _setOwner(msg.sender);
 
-        manager = _manager;
+        main = _main;
     }
 
-    /// @dev Changes `manager` address to the `_newManager` address.
-    /// @param _newManager The address of the new manger contract
-    function changeManager(Manager _newManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (address(_newManager) == address(0)) {
+    /// @dev Changes `main` address to the `_main` address.
+    /// @param _main The address of the new manger contract
+    function changeMain(Main _main) external onlyOwner {
+        if (address(_main) == address(0)) {
             revert ZeroAddressPassed();
         }
 
-        manager = _newManager;
+        main = _main;
     }
 
     /**
@@ -73,25 +75,30 @@ contract Escrow is AccessControl {
      * @param supplierId The ID of the token representing the supplier.
      */
     function sendFundsToSupplier(address consumer, uint256 supplierId) public onlyRole(ESCROW_MANAGER_ROLE) {
-        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+        Main _main = main;
+        Main.Tokens memory tokens = _main.tokens();
+        if (IToken(tokens.ecu).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
+        address supplier = IToken(tokens.nrgs).ownerOf(supplierId);
 
-        uint256 consumption = manager.contracts().oracle.energyConsumptions(consumer, supplierId);
-        uint256 needToBePaid = consumption + manager.values().fees;
+        address oracle = _main.contracts().oracle;
+        uint256 consumption = IContract(oracle).energyConsumptions(consumer, supplierId);
+
+        uint256 fees = _main.values().fees;
+        uint256 needToBePaid = consumption + fees;
 
         // Transferring MGT from the `consumer` to the `Escrow`
-        manager.tokens().mgt.safeTransferFrom(consumer, address(this), needToBePaid);
+        tokens.mgt.safeTransferFrom(consumer, address(this), needToBePaid);
 
         // Transferring `consumption` amount of MGT from the `Escrow` to the `supplier`
-        manager.tokens().mgt.safeTransfer(supplier, consumption);
+        tokens.mgt.safeTransfer(supplier, consumption);
 
         // Transferring `fees` amount of MGT from the `Escrow` to the `feeReceiver`
-        manager.tokens().mgt.safeTransfer(manager.feeReceiver(), manager.values().fees);
+        tokens.mgt.safeTransfer(_main.feeReceiver(), fees);
 
-        manager.contracts().oracle.updateEnergyConsumptions(consumer, supplierId);
+        IContract(oracle).updateEnergyConsumptions(consumer, supplierId);
 
         emit PaidForEnergy(consumer, supplierId, supplier, consumption);
     }
