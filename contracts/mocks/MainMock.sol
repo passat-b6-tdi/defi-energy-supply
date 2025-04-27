@@ -2,12 +2,11 @@
 pragma solidity ^0.8.24;
 
 import { Escrow } from "../Escrow.sol";
-import { MGT } from "../tokens/MGT.sol";
 
 contract MainMock {
     Escrow public escrow;
-    MGT public mgt;
-    constructor(Escrow _escrow, MGT _MGT) {
+    address public mgt;
+    constructor(Escrow _escrow, address _MGT) {
         escrow = _escrow;
         mgt = _MGT;
     }
