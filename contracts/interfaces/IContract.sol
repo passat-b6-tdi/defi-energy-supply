@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 interface IContract {
     function energyConsumptions(address consumer, uint256 supplierId) external view returns (uint256 consumption);
@@ -8,10 +8,10 @@ interface IContract {
     function registerSupplier(address supplier) external;
     function registerElectricityConsumer(address consumer, uint256 supplierId) external;
     function registerOracleProvider(address oracleProvider) external;
-    function unRegisterSupplier(uint256 supplierId) external;
-    function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external;
-    function unRegisterOracleProvider(uint256 oracleProviderId) external;
-    function recordEnergyProductions(address supplier, uint256 supplierId, uint256 production) external;
+    function unregisterSupplier(uint256 supplierId) external;
+    function unregisterElectricityConsumer(address consumer, uint256 supplierId) external;
+    function unregisterOracleProvider(uint256 oracleProviderId) external;
+    function recordEnergyProductions(uint256 producerId, uint256 production) external;
     function recordConsumerConsumptions(address consumer, uint256 supplierId, uint256 consumption) external;
     function sendFundsToSupplier(address from, uint256 supplierId) external;
     function sendRewards(address supplier, uint256 tokenId) external;
