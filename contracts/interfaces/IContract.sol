@@ -16,5 +16,10 @@ interface IContract {
     function sendFundsToSupplier(address from, uint256 supplierId) external;
     function sendRewards(address supplier, uint256 tokenId) external;
     function payForElectricity(uint256 supplierId) external;
-    function updateEnergyConsumptions(address consumer, uint256 supplierId) external;
+    function updateEnergyConsumptions(
+        address consumer,
+        uint256 supplierId,
+        uint256 consumptionToAdd,
+        uint256 consumptionToRemove
+    ) external;
 }
