@@ -17,89 +17,70 @@ error ZeroAddressPassed();
 /// @param supplierId The ID of the supplier
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
 
-/**
- * @title Escrow
- * @dev A contract for managing energy payments and transfers between consumers and suppliers.
- * @notice This contract allows consumers to pay for energy consumed from suppliers using ERC20 tokens.
- * It also allows the distribution of fees to the fee receiver.
- * The contract is managed by an Escrow Manager who can send funds to suppliers.
- * @author Bohdan
- */
+/// @dev Error when a payment token is not supported
+/// @param token The token address provided
+error TokenNotWhitelisted(address token);
+
+/// @title Escrow
+/// @notice Manages payments from consumers to suppliers using whitelisted stablecoins
+/// @dev Uses Main for configuration; only ESCROW_MANAGER_ROLE can call `sendFundsToSupplier`
 contract Escrow is Ownable, EnumerableRoles {
     using SafeTransferLib for address;
 
-    /// @dev Emmited when a consumer paid for energy
+    /// @dev Emitted when a consumer pays for energy
     /// @param consumer The address of the consumer
-    /// @param tokenId The ID of the token representing the supplier
+    /// @param supplierId The ID of the supplier token
     /// @param supplier The address of the supplier
-    /// @param amount The amount paid for energy
-    event PaidForEnergy(address indexed consumer, uint256 indexed tokenId, address indexed supplier, uint256 amount);
+    /// @param amount The amount paid for energy (excluding fees)
+    event PaidForEnergy(address indexed consumer, uint256 indexed supplierId, address indexed supplier, uint256 amount);
 
     /// @dev Keccak256 hashed `ESCROW_MANAGER_ROLE` string
-    uint256 public constant ESCROW_MANAGER_ROLE = uint256(keccak256(bytes("ESCROW_MANAGER_ROLE")));
+    uint256 public constant ESCROW_MANAGER_ROLE = uint256(keccak256("ESCROW_MANAGER_ROLE"));
 
-    /// @dev Main contract
+    /// @notice Reference to Main contract for parameters and contract addresses
     Main public main;
 
-    /**
-     * @notice Constructor to initialize the Escrow contract
-     * @param _main The address of the Main contract.
-     * @dev Grants `owner` and `ESCROW_MANAGER_ROLE` roles to the contract deployer.
-     */
+    /// @notice Constructor sets Main reference and grants roles
+    /// @param _main Address of the Main contract
     constructor(Main _main) {
         _setOwner(msg.sender);
-
         main = _main;
     }
 
-    /// @dev Changes `main` address to the `_main` address.
-    /// @param _main The address of the new manger contract
+    /// @notice Update Main contract address
+    /// @param _main New Main contract address
     function changeMain(Main _main) external onlyOwner {
-        if (address(_main) == address(0)) {
-            revert ZeroAddressPassed();
-        }
-
+        if (address(_main) == address(0)) revert ZeroAddressPassed();
         main = _main;
     }
 
-    /**
-     * @notice Sends funds to the supplier for the energy consumed by a consumer.
-     * @dev
-     * Requirements:
-     * - `msg.sender` must have `ESCROW_MANAGER_ROLE`
-     * - `consumer` must not be the zero address
-     * - `consumer` must have consumed energy
-     * - Transfers the required amount of tokens from the consumer to the escrow contract,
-     * and then distributes the tokens to the supplier and fee receiver.
-     * @param consumer The address of the consumer.
-     * @param supplierId The ID of the token representing the supplier.
-     */
-    function sendFundsToSupplier(address consumer, uint256 supplierId) public onlyRole(ESCROW_MANAGER_ROLE) {
-        Main _main = main;
-        Main.Tokens memory tokens = _main.tokens();
-        if (IToken(tokens.electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
-            revert IncorrectConsumer(consumer, supplierId);
+    /// @notice Consumer pays for energy and fees in a whitelisted stablecoin
+    /// @dev Pulls total (consumption + fee), forwards to supplier and fee receiver, then clears debt
+    /// @param supplierId ID of the supplier (tokenId)
+    /// @param paymentToken ERC20 token address (must be USDC, DAI or USDT)
+    function payForElectricity(uint256 supplierId, address paymentToken) external onlyRole(ESCROW_MANAGER_ROLE) {
+        if (paymentToken != main.USDC() && paymentToken != main.DAI() && paymentToken != main.USDT()) {
+            revert TokenNotWhitelisted(paymentToken);
         }
 
+        Main.Tokens memory tokens = main.tokens();
+        if (IToken(tokens.electricityConsumerToken).balanceOf(msg.sender, supplierId) == 0) {
+            revert IncorrectConsumer(msg.sender, supplierId);
+        }
+
+        address oracle = main.contracts().oracle;
+        uint256 consumption = IContract(oracle).energyConsumptions(msg.sender, supplierId);
+        uint256 fee = main.fees().amount;
         address supplier = IToken(tokens.energySupplierToken).ownerOf(supplierId);
 
-        address oracle = _main.contracts().oracle;
-        uint256 consumption = IContract(oracle).energyConsumptions(consumer, supplierId);
+        paymentToken.safeTransferFrom(msg.sender, address(this), consumption + fee);
 
-        uint256 fees = _main.fees().amount;
-        uint256 needToBePaid = consumption + fees;
+        paymentToken.safeTransfer(supplier, consumption);
 
-        // Transferring MGT from the `consumer` to the `Escrow`
-        tokens.mgt.safeTransferFrom(consumer, address(this), needToBePaid);
+        paymentToken.safeTransfer(main.fees().receiver, fee);
 
-        // Transferring `consumption` amount of MGT from the `Escrow` to the `supplier`
-        tokens.mgt.safeTransfer(supplier, consumption);
+        IContract(oracle).updateEnergyConsumptions(msg.sender, supplierId, 0, consumption);
 
-        // Transferring `fees` amount of MGT from the `Escrow` to the `feeReceiver`
-        tokens.mgt.safeTransfer(_main.feeReceiver(), fees);
-
-        IContract(oracle).updateEnergyConsumptions(consumer, supplierId);
-
-        emit PaidForEnergy(consumer, supplierId, supplier, consumption);
+        emit PaidForEnergy(msg.sender, supplierId, supplier, consumption);
     }
 }
