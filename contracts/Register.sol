@@ -176,6 +176,7 @@ contract Register is Ownable, EnumerableRoles, Receiver {
     /// @dev Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`
     constructor(Main _main) {
         _setOwner(msg.sender);
+        _setRole(msg.sender, REGISTER_MANAGER_ROLE, true);
 
         main = _main;
     }

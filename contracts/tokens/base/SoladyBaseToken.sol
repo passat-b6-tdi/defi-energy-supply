@@ -9,6 +9,11 @@ import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
  * @author Bohdan
  */
 contract SoladyBaseToken is Ownable, EnumerableRoles {
+    /// @dev Keccak256 hashed `MINTER_ROLE` string
+    uint256 public constant MINTER_ROLE = uint256(keccak256(bytes("MINTER_ROLE")));
+    /// @dev Keccak256 hashed `BURNER_ROLE` string
+    uint256 public constant BURNER_ROLE = uint256(keccak256(bytes("BURNER_ROLE")));
+
     string internal NAME;
     string internal SYMBOL;
 
@@ -17,6 +22,8 @@ contract SoladyBaseToken is Ownable, EnumerableRoles {
     /// @dev Sets `name` and `symbol` of the token
     constructor(string memory _name, string memory _symbol) {
         _setOwner(msg.sender);
+        _setRole(msg.sender, MINTER_ROLE, true);
+        _setRole(msg.sender, BURNER_ROLE, true);
 
         NAME = _name;
         SYMBOL = _symbol;

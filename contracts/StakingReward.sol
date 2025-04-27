@@ -81,6 +81,8 @@ contract StakingReward is Ownable, EnumerableRoles {
      */
     constructor(Main _main) {
         _setOwner(msg.sender);
+        _setRole(msg.sender, STAKING_MANAGER_ROLE, true);
+
         main = _main;
     }
 

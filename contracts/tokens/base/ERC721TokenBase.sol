@@ -9,16 +9,12 @@ import { SoladyBaseToken } from "./SoladyBaseToken.sol";
  * @author Bohdan
  */
 abstract contract ERC721TokenBase is ERC721, SoladyBaseToken {
-    /// @dev Keccak256 hashed `REGISTER_ROLE` string
-    uint256 public constant REGISTER_ROLE = uint256(keccak256(bytes("REGISTER_ROLE")));
-
     string internal _uri;
 
     /// @notice Constructor to initialize NFT token contract
     /// @dev Grants each roles to `msg.sender`
     /// @dev Sets `name` and `symbol` of ERC721 token
     constructor(string memory _name, string memory _symbol, string memory uri) SoladyBaseToken(_name, _symbol) {
-        _setRole(msg.sender, REGISTER_ROLE, true);
         _uri = uri;
     }
 
@@ -38,13 +34,13 @@ abstract contract ERC721TokenBase is ERC721, SoladyBaseToken {
 
     /// @dev Mints `to` address NRGOP token
     /// @param to address to mint
-    function mint(address to, uint256 tokenId) external onlyRole(REGISTER_ROLE) {
+    function mint(address to, uint256 tokenId) external onlyRole(MINTER_ROLE) {
         _safeMint(to, tokenId);
     }
 
     /// @dev Burns `from` address NRGOP token
     /// @param tokenId uint256
-    function burn(uint256 tokenId) public onlyRole(REGISTER_ROLE) {
+    function burn(uint256 tokenId) public onlyRole(BURNER_ROLE) {
         _burn(tokenId);
     }
 }

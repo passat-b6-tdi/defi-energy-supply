@@ -62,8 +62,8 @@ contract Main is Ownable, EnumerableRoles {
     /// @dev Keccak256 hashed `MANAGER_ROLE` string
     uint256 public constant MANAGER_ROLE = uint256(keccak256(bytes("MANAGER_ROLE")));
 
-    uint256 public constant MGT_TO_ORACLE_PROVIDER = 0.05e18;
-    uint256 public constant MGT_PER_ECT_CONSUMED = 0.05e18;
+    uint256 public constant MGT_TO_ORACLE_PROVIDER = 5e16;
+    uint256 public constant MGT_PER_ECT_CONSUMED = 5e14;
 
     /// @dev Tokens struct storage
     Tokens private _tokens;
@@ -90,7 +90,11 @@ contract Main is Ownable, EnumerableRoles {
      */
     constructor(Tokens memory tokens_, Fees memory fees_, address USDC_, address DAI_, address USDT_) {
         _setOwner(msg.sender);
-        if (USDC_ == address(0) || DAI_ == address(0) || USDT_ == address(0)) revert ZeroAddressPassed();
+        _setRole(msg.sender, MANAGER_ROLE, true);
+
+        if (USDC_ == address(0) || DAI_ == address(0) || USDT_ == address(0)) {
+            revert ZeroAddressPassed();
+        }
 
         _tokens = tokens_;
         _fees = fees_;

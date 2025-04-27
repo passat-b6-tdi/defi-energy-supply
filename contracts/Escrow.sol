@@ -44,6 +44,8 @@ contract Escrow is Ownable, EnumerableRoles {
     /// @param _main Address of the Main contract
     constructor(Main _main) {
         _setOwner(msg.sender);
+        _setRole(msg.sender, ESCROW_MANAGER_ROLE, true);
+
         main = _main;
     }
 

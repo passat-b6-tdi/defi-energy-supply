@@ -9,18 +9,10 @@ import { SoladyBaseToken } from "./SoladyBaseToken.sol";
  * @author Bohdan
  */
 contract ERC20BaseToken is ERC20, SoladyBaseToken {
-    /// @dev Keccak256 hashed `MINTER_ROLE` string
-    uint256 public constant MINTER_ROLE = uint256(keccak256(bytes("MINTER_ROLE")));
-    /// @dev Keccak256 hashed `BURNER_ROLE` string
-    uint256 public constant BURNER_ROLE = uint256(keccak256(bytes("BURNER_ROLE")));
-
     /// @notice Constructor to initialize ERC20 token contract
     /// @dev Grants each roles to `msg.sender`
     /// @dev Sets `name` and `symbol` of ERC20 token
-    constructor(string memory _name, string memory _symbol) SoladyBaseToken(_name, _symbol) {
-        _setRole(msg.sender, MINTER_ROLE, true);
-        _setRole(msg.sender, BURNER_ROLE, true);
-    }
+    constructor(string memory _name, string memory _symbol) SoladyBaseToken(_name, _symbol) {}
 
     /// @dev Returns the name of the token.
     function name() public view override(ERC20, SoladyBaseToken) returns (string memory) {
