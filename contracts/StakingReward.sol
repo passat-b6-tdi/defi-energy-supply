@@ -10,42 +10,39 @@ import { Main } from "./Main.sol";
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
 
-/// @dev Error to indicate that the supplier address is incorrect
-/// @param incorrectSupplier The incorrect supplier address
-/// @param supplierId The ID of the supplier
-error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
+/// @dev Error to indicate that the caller is not the correct producer owner
+/// @param producer The address of the producer
+/// @param producerId The ID of the producer token
+error IncorrectProducer(address producer, uint256 producerId);
 
-/// @dev Error to indicate that the supplier has not entered staking
-/// @param supplier The address of the supplier
-error SupplierNotEnteredStaking(address supplier);
+/// @dev Error to indicate that the producer has not entered staking
+/// @param producer The address of the producer
+error ProducerNotEnteredStaking(address producer);
 
 /**
- * @title StakingReward contract for rewards management
- * @dev This contract manages the staking and reward distribution for energy suppliers.
- * @notice This contract allows for entering and exiting staking, updating rewards, and sending rewards to suppliers.
+ * @title StakingReward contract for reward management for energy producers
+ * @dev This contract manages staking and reward distribution for energy producers.
+ * @notice Producers call enterStakingProducer, getProducerRewards, exitStakingProducer to manage their MGT rewards.
  * @custom:security-contact security@example.com
  */
 contract StakingReward is Ownable, EnumerableRoles {
-    /// @dev Emitted when a user registers as an Energy supplier
-    /// @param sender The address of the sender
-    /// @param supplier The address of the supplier
+    /// @dev Emitted when a producer enters staking
+    /// @param producer The address of the producer
     /// @param timestamp The timestamp of entering staking
-    event EnterStaking(address indexed sender, address indexed supplier, uint256 timestamp);
+    event EnterStakingProducer(address indexed producer, uint256 timestamp);
 
-    /// @dev Emitted when a user unregisters as an Energy supplier
-    /// @param sender The address of the sender
-    /// @param supplier The address of the supplier
+    /// @dev Emitted when a producer exits staking
+    /// @param producer The address of the producer
     /// @param timestamp The timestamp of exiting staking
-    event ExitStaking(address indexed sender, address indexed supplier, uint256 timestamp);
+    event ExitStakingProducer(address indexed producer, uint256 timestamp);
 
-    /// @dev Emitted when a supplier withdraws some amount of rewards from `StakingReward`
-    /// @param sender The address of the sender
-    /// @param to The address of the recipient
+    /// @dev Emitted when a producer withdraws reward
+    /// @param producer The address of the producer
     /// @param amount The amount of rewards sent
-    event RewardSent(address indexed sender, address indexed to, uint256 amount);
+    event RewardSentProducer(address indexed producer, uint256 amount);
 
-    /// @dev Structure to hold supplier information
-    struct Supplier {
+    /// @dev Structure to hold producer staking info
+    struct ProducerInfo {
         uint256 updatedAt;
         uint256 pendingReward;
     }
@@ -53,27 +50,24 @@ contract StakingReward is Ownable, EnumerableRoles {
     /// @dev Keccak256 hashed `STAKING_MANAGER_ROLE` string
     uint256 public constant STAKING_MANAGER_ROLE = uint256(keccak256(bytes("STAKING_MANAGER_ROLE")));
 
-    /// @dev Main contract
+    /// @notice Reference to Main contract for parameters and contract addresses
     Main public main;
 
-    /// @dev Total suppliers
-    uint256 public totalSuppliers;
+    /// @notice Total number of producers currently staking
+    uint256 public totalProducers;
 
-    /// @dev Mapping from address to supplier ID to supplier information
-    mapping(address => mapping(uint256 => Supplier)) public suppliers;
+    /// @notice Mapping of producer address to tokenId to staking info
+    mapping(address => mapping(uint256 => ProducerInfo)) public producers;
 
-    /// @dev Modifier to check if the caller is the correct owner of the supplier ID
-    /// @param supplier The address of the supplier
-    /// @param tokenId The ID of the supplier
-    modifier isCorrectOwner(address supplier, uint256 tokenId) {
-        if (IToken(main.tokens().nrgs).ownerOf(tokenId) != supplier) {
-            revert IncorrectSupplier(supplier, tokenId);
+    /// @dev Modifier to check producer ownership of tokenId
+    modifier isCorrectOwner(address producer, uint256 producerId) {
+        if (IToken(main.tokens().energyProducerToken).ownerOf(producerId) != producer) {
+            revert IncorrectProducer(producer, producerId);
         }
         _;
     }
 
-    /// @dev Modifier to check if the address is not zero
-    /// @param account The address to check
+    /// @dev Modifier to ensure address is not zero
     modifier zeroAddressCheck(address account) {
         if (account == address(0)) {
             revert ZeroAddressPassed();
@@ -82,122 +76,90 @@ contract StakingReward is Ownable, EnumerableRoles {
     }
 
     /**
-     * @notice Constructor to initialize StakingReward contract
+     * @notice Constructor initializes StakingReward with Main reference
      * @param _main The address of the Main contract
-     * @dev Grants `DEFAULT_ADMIN_ROLE` and `STAKING_MANAGER_ROLE` roles to `msg.sender`
      */
     constructor(Main _main) {
         _setOwner(msg.sender);
-
         main = _main;
     }
 
-    /// @dev Changes `main` address to the `_main` address
-    /// @param _main The address of the new main contract
+    /**
+     * @notice Update Main contract reference
+     * @param _main The new Main contract address
+     */
     function changeMain(Main _main) external onlyOwner zeroAddressCheck(address(_main)) {
         main = _main;
     }
 
     /**
-     * @notice Enters staking process
-     * @dev Requirements:
-     * - `msg.sender` must have STAKING_MANAGER_ROLE
-     * - `supplier` must not be address 0
-     * - `supplier` must have NRGS token
-     * @param supplier The address of the supplier
-     * @param tokenId The ID of the supplier
+     * @notice Producer enters staking to start accumulating MGT rewards
+     * @param producerId The ID of the producer token
      */
-    function enterStaking(
-        address supplier,
-        uint256 tokenId
-    ) external onlyRole(STAKING_MANAGER_ROLE) zeroAddressCheck(supplier) isCorrectOwner(supplier, tokenId) {
-        totalSuppliers++;
-        suppliers[supplier][tokenId] = Supplier({
+    function enterStakingProducer(uint256 producerId) external isCorrectOwner(msg.sender, producerId) {
+        totalProducers++;
+        producers[msg.sender][producerId] = ProducerInfo({
             updatedAt: block.timestamp,
-            pendingReward: _updateRewardRate(block.timestamp)
+            pendingReward: _calculateReward(block.timestamp)
         });
-        emit EnterStaking(msg.sender, supplier, block.timestamp);
+        emit EnterStakingProducer(msg.sender, block.timestamp);
     }
 
     /**
-     * @notice Sends rewards to suppliers
-     * @dev Requirements:
-     * - `msg.sender` must have STAKING_MANAGER_ROLE
-     * - `supplier` must be in staking
-     * @param supplier The address of the supplier
-     * @param tokenId The ID of the supplier
+     * @notice Producer claims accumulated rewards without exiting staking
+     * @param producerId The ID of the producer token
      */
-    function sendRewards(
-        address supplier,
-        uint256 tokenId
-    ) external onlyRole(STAKING_MANAGER_ROLE) zeroAddressCheck(supplier) isCorrectOwner(supplier, tokenId) {
-        _sendRewards(supplier, tokenId);
-        emit RewardSent(msg.sender, supplier, block.timestamp);
+    function getProducerRewards(uint256 producerId) external isCorrectOwner(msg.sender, producerId) {
+        ProducerInfo memory info = _updateInfo(msg.sender, producerId);
+        producers[msg.sender][producerId].pendingReward = 0;
+        producers[msg.sender][producerId].updatedAt = block.timestamp;
+
+        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, info.pendingReward);
+        emit RewardSentProducer(msg.sender, info.pendingReward);
     }
 
     /**
-     * @notice Exits staking
-     * @dev Requirements:
-     * - `msg.sender` must have STAKING_MANAGER_ROLE
-     * - `supplier` must be in staking
-     * @param supplier The address of the supplier
-     * @param tokenId The ID of the supplier
+     * @notice Producer exits staking and claims rewards
+     * @param producerId The ID of the producer token
      */
-    function exitStaking(
-        address supplier,
-        uint256 tokenId
-    ) external onlyRole(STAKING_MANAGER_ROLE) zeroAddressCheck(supplier) {
-        _sendRewards(supplier, tokenId);
-        --totalSuppliers;
-        delete suppliers[supplier][tokenId];
-        emit ExitStaking(msg.sender, supplier, block.timestamp);
+    function exitStakingProducer(uint256 producerId) external isCorrectOwner(msg.sender, producerId) {
+        ProducerInfo memory info = _updateInfo(msg.sender, producerId);
+
+        totalProducers--;
+        delete producers[msg.sender][producerId];
+
+        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, info.pendingReward);
+        emit ExitStakingProducer(msg.sender, block.timestamp);
     }
 
     /**
-     * @notice Updates rewards for `supplier`
-     * @dev Requirements:
-     * - `supplier` must be in staking
-     * @param supplier The address of the supplier
-     * @param tokenId The ID of the supplier
-     * @return Supplier The updated supplier information
+     * @notice Update and return current ProducerInfo
+     * @param producer The address of the producer
+     * @param producerId The ID of the producer token
+     * @return ProducerInfo The updated producer staking info
      */
-    function updateRewards(
-        address supplier,
-        uint256 tokenId
-    ) public zeroAddressCheck(supplier) isCorrectOwner(supplier, tokenId) returns (Supplier memory) {
-        return _updateRewards(supplier, tokenId);
+    function updateProducerInfo(
+        address producer,
+        uint256 producerId
+    ) public zeroAddressCheck(producer) isCorrectOwner(producer, producerId) returns (ProducerInfo memory) {
+        return _updateInfo(producer, producerId);
     }
 
-    /// @dev Internal function to update rewards for a supplier
-    /// @param supplier The address of the supplier
-    /// @param tokenId The ID of the supplier
-    /// @return Supplier The updated supplier information
-    function _updateRewards(address supplier, uint256 tokenId) private returns (Supplier memory) {
-        Supplier storage _supplier = suppliers[supplier][tokenId];
-        if (_supplier.updatedAt == 0) {
-            revert SupplierNotEnteredStaking(supplier);
+    /// @dev Internal: accumulate new pendingReward and update timestamp
+    function _updateInfo(address producer, uint256 producerId) private returns (ProducerInfo memory) {
+        ProducerInfo storage entry = producers[producer][producerId];
+        if (entry.updatedAt == 0) {
+            revert ProducerNotEnteredStaking(producer);
         }
-        assert(_supplier.updatedAt <= block.timestamp);
-        _supplier.pendingReward = _updateRewardRate(_supplier.updatedAt);
-        _supplier.updatedAt = block.timestamp;
-        return _supplier;
+
+        entry.pendingReward = _calculateReward(entry.updatedAt);
+        entry.updatedAt = block.timestamp;
+        return entry;
     }
 
-    /// @dev Internal function to send rewards to a supplier
-    /// @param supplier The address of the supplier
-    /// @param tokenId The ID of the supplier
-    function _sendRewards(address supplier, uint256 tokenId) private {
-        Supplier memory _supplier = _updateRewards(supplier, tokenId);
-        suppliers[supplier][tokenId].pendingReward = 0;
-        suppliers[supplier][tokenId].updatedAt = block.timestamp;
-        IToken(main.tokens().mgt).mint(supplier, _supplier.pendingReward);
-    }
-
-    /// @dev Internal function to update reward rate
-    /// @param _updatedAt The timestamp when the rewards were last updated
-    /// @return rewardToUser The calculated reward for the user
-    function _updateRewardRate(uint256 _updatedAt) private view returns (uint256 rewardToUser) {
-        uint256 timePassed = block.timestamp - _updatedAt;
-        rewardToUser = (main.values().rewardAmount * timePassed) / totalSuppliers;
+    /// @dev Internal: compute reward since `fromTimestamp`
+    function _calculateReward(uint256 fromTimestamp) private view returns (uint256) {
+        uint256 elapsed = block.timestamp - fromTimestamp;
+        return (main.MGT_TO_ORACLE_PROVIDER() * elapsed) / totalProducers;
     }
 }
