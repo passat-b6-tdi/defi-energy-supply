@@ -125,6 +125,15 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         main = _main;
     }
 
+    /**
+     * @notice Records the supplier energy price at a specific timestamp.
+     * @dev Requirements:
+     * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
+     * - `supplierId` should exist
+     *
+     * @param supplierId The supplier address
+     * @param supplierPrice The supplier price
+     */
     function recordSupplierPrice(
         uint256 supplierId,
         uint256 supplierPrice
