@@ -29,6 +29,8 @@ error IncorrectSupplier(uint256 supplierId);
  * @dev This contract allows recording and retrieving energy consumption data for consumers and tokens.
  * The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
  * who can retrieve the consumption data.
+ * PROVIDER_ROLE can call recordSupplierPrice, recordProduction, recordConsumption.
+ * MANAGER_ROLE can pause/unpause and retrieve stored data.
  * @author Bohdan
  */
 contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
@@ -96,7 +98,7 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     /// @dev Mapping to store productions
     mapping(uint256 => uint256) private _energyProductions; // producer => energy production
     /// @dev Mapping to store consumption
-    mapping(address => mapping(uint256 => uint256)) private _energyConsumptionDebtsInUSD; // consumer => supplierId => id => energy consumption debt
+    mapping(address => mapping(uint256 => uint256)) private _debtsUSD; // consumer => supplierId => id => energy consumption debt
 
     /// @dev Throws if passed address 0 as parameter
     /// @param account The address to check
@@ -125,18 +127,17 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
 
     function recordSupplierPrice(
         uint256 supplierId,
-        uint256 supplierECTPrice
+        uint256 supplierPrice
     ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) {
         require(
             IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId) != address(0),
             IncorrectSupplier(supplierId)
         );
-        _supplierEnergyPrice[supplierId] = supplierECTPrice;
+        _supplierEnergyPrice[supplierId] = supplierPrice;
 
-        // TODO: Uncomment if used not smart meters
         IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
 
-        emit EnergyPriceRecorded(msg.sender, supplierId, supplierECTPrice, block.timestamp);
+        emit EnergyPriceRecorded(msg.sender, supplierId, supplierPrice, block.timestamp);
     }
 
     /**
@@ -188,12 +189,12 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        uint256 rewardToSupplier = (main.MGT_PER_ECT_CONSUMED() * consumption) / 1e18;
+        uint256 rewardMGT = (main.MGT_PER_ECT_CONSUMED() * consumption) / 1e18;
 
-        _energyConsumptionDebtsInUSD[consumer][supplierId] += consumption * _supplierEnergyPrice[supplierId];
+        _debtsUSD[consumer][supplierId] += consumption * _supplierEnergyPrice[supplierId];
 
         IToken(main.tokens().energyCreditToken).burn(supplier, consumption);
-        IToken(main.tokens().microgridGovernanceToken).mint(supplier, rewardToSupplier);
+        IToken(main.tokens().microgridGovernanceToken).mint(supplier, rewardMGT);
         // TODO: Uncomment if used not smart meters
         // IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, MGT_TO_ORACLE_PROVIDER);
 
@@ -219,8 +220,8 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        _energyConsumptionDebtsInUSD[consumer][supplierId] += consumptionToAdd;
-        _energyConsumptionDebtsInUSD[consumer][supplierId] -= consumptionToRemove;
+        _debtsUSD[consumer][supplierId] += consumptionToAdd;
+        _debtsUSD[consumer][supplierId] -= consumptionToRemove;
 
         emit EnergyConsumptionUpdated(
             msg.sender,
@@ -265,11 +266,8 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param supplierId The ID of the supplier.
      * @return consumption The consumption value of the energy consumption record.
      */
-    function energyConsumptionDebtsInUSD(
-        address consumer,
-        uint256 supplierId
-    ) public view returns (uint256 consumption) {
-        consumption = _energyConsumptionDebtsInUSD[consumer][supplierId];
+    function debtsUSD(address consumer, uint256 supplierId) public view returns (uint256 consumption) {
+        consumption = _debtsUSD[consumer][supplierId];
     }
 
     /**
