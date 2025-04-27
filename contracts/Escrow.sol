@@ -77,16 +77,16 @@ contract Escrow is Ownable, EnumerableRoles {
     function sendFundsToSupplier(address consumer, uint256 supplierId) public onlyRole(ESCROW_MANAGER_ROLE) {
         Main _main = main;
         Main.Tokens memory tokens = _main.tokens();
-        if (IToken(tokens.ecu).balanceOf(consumer, supplierId) == 0) {
+        if (IToken(tokens.electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        address supplier = IToken(tokens.nrgs).ownerOf(supplierId);
+        address supplier = IToken(tokens.energySupplierToken).ownerOf(supplierId);
 
         address oracle = _main.contracts().oracle;
         uint256 consumption = IContract(oracle).energyConsumptions(consumer, supplierId);
 
-        uint256 fees = _main.values().fees;
+        uint256 fees = _main.fees().amount;
         uint256 needToBePaid = consumption + fees;
 
         // Transferring MGT from the `consumer` to the `Escrow`

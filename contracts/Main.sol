@@ -80,6 +80,9 @@ contract Main is Ownable, EnumerableRoles {
     /// @dev Fees struct
     Fees public _fees;
 
+    /// @dev Whitelisted payment tokens mapping
+    mapping(address token => bool whitelisted) public whitelistedPaymentTokens;
+
     /**
      * @dev Modifier to check if the caller is the owner of the supplierId
      * @param supplierId The ID of the supplier
@@ -121,6 +124,7 @@ contract Main is Ownable, EnumerableRoles {
      */
     function changeTokensAddresses(Tokens calldata tokens_) external onlyRole(MANAGER_ROLE) {
         _tokens = tokens_;
+        emit TokensUpdated(msg.sender, tokens_);
     }
 
     /**
@@ -130,6 +134,7 @@ contract Main is Ownable, EnumerableRoles {
      */
     function changeContracts(Contracts calldata contracts_) external onlyRole(MANAGER_ROLE) {
         _contracts = contracts_;
+        emit ContractsUpdated(msg.sender, contracts_);
     }
 
     /**
@@ -141,6 +146,18 @@ contract Main is Ownable, EnumerableRoles {
         if (_newFees.receiver == address(0)) revert ZeroAddressPassed();
 
         _fees = _newFees;
+        emit FeesChanged(msg.sender, _newFees.receiver, _newFees.amount);
+    }
+
+    /**
+     * @notice Whitelist or remove a token for payments
+     * @dev Caller must have MANAGER_ROLE; token must not be zero address
+     * @param token The token address to whitelist or remove
+     * @param whitelisted True to whitelist, false to remove
+     */
+    function setWhitelistedPaymentToken(address token, bool whitelisted) external onlyRole(MANAGER_ROLE) {
+        require(token != address(0), ZeroAddressPassed());
+        whitelistedPaymentTokens[token] = whitelisted;
     }
 
     /**
@@ -234,6 +251,7 @@ contract Main is Ownable, EnumerableRoles {
 
     /**
      * @notice Retrieves current fees structure
+     * @return The fees structure
      */
     function fees() external view returns (Fees memory) {
         return _fees;
@@ -241,6 +259,7 @@ contract Main is Ownable, EnumerableRoles {
 
     /**
      * @notice Retrieves current token contract addresses
+     * @return The token contract addresses structure
      */
     function tokens() external view returns (Tokens memory) {
         return _tokens;
@@ -248,6 +267,7 @@ contract Main is Ownable, EnumerableRoles {
 
     /**
      * @notice Retrieves current functional contract addresses
+     * @return The functional contract addresses structure
      */
     function contracts() external view returns (Contracts memory) {
         return _contracts;
