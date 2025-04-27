@@ -11,6 +11,9 @@ import { Main } from "./Main.sol";
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
 
+/// @dev Error thrown when caller is not an energy oracle provider
+error OnlyEnergyOracleProvider();
+
 /// @dev Error to indicate that the consumer address is incorrect
 /// @param incorrectConsumer The incorrect consumer address
 /// @param supplierId The ID of the supplier
@@ -110,6 +113,16 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         _;
     }
 
+    /**
+     * @dev Modifier to check if the caller is an energy oracle provider
+     */
+    modifier onlyOracleProvider() {
+        if (IToken(main.tokens().energyOracleProviderToken).balanceOf(msg.sender) == 0) {
+            revert OnlyEnergyOracleProvider();
+        }
+        _;
+    }
+
     /// @notice Constructor to initialize StakingManagement contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`
     /// @param _main The address of the main contract
@@ -158,10 +171,7 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param producerId The producer ID
      * @param production The energy production value
      */
-    function recordEnergyProductions(
-        uint256 producerId,
-        uint256 production
-    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused {
+    function recordEnergyProductions(uint256 producerId, uint256 production) external onlyOracleProvider whenNotPaused {
         address producer = IToken(main.tokens().energyProducerToken).ownerOf(producerId);
         require(producer != address(0), IncorrectProducer(producerId));
 
@@ -191,7 +201,7 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         address consumer,
         uint256 supplierId,
         uint256 consumption
-    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(consumer) {
+    ) external onlyOracleProvider whenNotPaused zeroAddressCheck(consumer) {
         address supplier = IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId);
         require(supplier != address(0), IncorrectSupplier(supplierId));
         if (IToken(main.tokens().electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
