@@ -6,8 +6,6 @@ import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 
 import { Main } from "./Main.sol";
-import { IToken } from "./interfaces/IToken.sol";
-import { IContract } from "./interfaces/IContract.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -60,29 +58,26 @@ contract Escrow is Ownable, EnumerableRoles {
     /// @dev Pulls total (consumption + fee), forwards to supplier and fee receiver, then clears debt
     /// @param supplierId ID of the supplier (tokenId)
     /// @param paymentToken ERC20 token address (must be USDC, DAI or USDT)
-    function payForElectricity(uint256 supplierId, address paymentToken) external onlyRole(ESCROW_MANAGER_ROLE) {
+    function payForElectricity(uint256 supplierId, address paymentToken) external {
         if (paymentToken != main.USDC() && paymentToken != main.DAI() && paymentToken != main.USDT()) {
             revert TokenNotWhitelisted(paymentToken);
         }
 
         Main.Tokens memory tokens = main.tokens();
-        if (IToken(tokens.electricityConsumerToken).balanceOf(msg.sender, supplierId) == 0) {
+        if (tokens.electricityConsumerToken.balanceOf(msg.sender, supplierId) == 0) {
             revert IncorrectConsumer(msg.sender, supplierId);
         }
 
-        address oracle = main.contracts().oracle;
-        uint256 consumption = IContract(oracle).energyConsumptions(msg.sender, supplierId);
+        uint256 debtsUSD = main.contracts().oracle.debtsUSD(msg.sender, supplierId);
         uint256 fee = main.fees().amount;
-        address supplier = IToken(tokens.energySupplierToken).ownerOf(supplierId);
+        address supplier = tokens.energySupplierToken.ownerOf(supplierId);
 
-        paymentToken.safeTransferFrom(msg.sender, address(this), consumption + fee);
-
-        paymentToken.safeTransfer(supplier, consumption);
-
+        paymentToken.safeTransferFrom(msg.sender, address(this), debtsUSD + fee);
+        paymentToken.safeTransfer(supplier, debtsUSD);
         paymentToken.safeTransfer(main.fees().receiver, fee);
 
-        IContract(oracle).updateEnergyConsumptions(msg.sender, supplierId, 0, consumption);
+        main.contracts().oracle.updateEnergyConsumptions(msg.sender, supplierId, 0, debtsUSD);
 
-        emit PaidForEnergy(msg.sender, supplierId, supplier, consumption);
+        emit PaidForEnergy(msg.sender, supplierId, supplier, debtsUSD);
     }
 }

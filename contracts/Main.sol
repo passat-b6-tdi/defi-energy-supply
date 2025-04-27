@@ -4,8 +4,13 @@ pragma solidity ^0.8.28;
 import { Ownable } from "solady/src/auth/Ownable.sol";
 import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 
-import { IToken } from "./interfaces/IToken.sol";
-import { IContract } from "./interfaces/IContract.sol";
+import { ERC20TokenBase } from "./tokens/base/ERC20TokenBase.sol";
+import { ERC721TokenBase } from "./tokens/base/ERC721TokenBase.sol";
+import { ElectricityConsumerToken } from "./tokens/ERC1155/ElectricityConsumerToken.sol";
+import { Escrow } from "./Escrow.sol";
+import { EnergyOracle } from "./EnergyOracle.sol";
+import { Register } from "./Register.sol";
+import { StakingReward } from "./StakingReward.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -21,22 +26,22 @@ contract Main is Ownable, EnumerableRoles {
     /// @dev Structure to hold references to token contracts
     struct Tokens {
         // ERC20
-        address energyCreditToken;
-        address microgridGovernanceToken;
+        ERC20TokenBase energyCreditToken;
+        ERC20TokenBase microgridGovernanceToken;
         // ERC721
-        address energyOracleProviderToken;
-        address energyProducerToken;
-        address energySupplierToken;
+        ERC721TokenBase energyOracleProviderToken;
+        ERC721TokenBase energyProducerToken;
+        ERC721TokenBase energySupplierToken;
         // ERC1155
-        address electricityConsumerToken;
+        ElectricityConsumerToken electricityConsumerToken;
     }
 
     /// @dev Structure to hold references to functional contracts
     struct Contracts {
-        address staking;
-        address oracle;
-        address register;
-        address escrow;
+        StakingReward staking;
+        EnergyOracle oracle;
+        Register register;
+        Escrow escrow;
     }
 
     /// @dev Structure to hold references to fees related data

@@ -26,7 +26,7 @@ contract ElectricityConsumerToken is ERC1155, SoladyBaseToken {
         return super.symbol();
     }
 
-    function uri(uint256 /*id*/) public view override returns (string memory) {
+    function uri(uint256 /*id*/) public pure override returns (string memory) {
         return "ElectricityConsumerToken";
     }
 

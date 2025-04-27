@@ -5,9 +5,8 @@ import { Ownable } from "solady/src/auth/Ownable.sol";
 import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 import { Receiver } from "solady/src/accounts/Receiver.sol";
 
-import { IToken } from "./interfaces/IToken.sol";
-import { IContract } from "./interfaces/IContract.sol";
 import { Main } from "./Main.sol";
+import { ERC721TokenBase } from "./tokens/base/ERC721TokenBase.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
@@ -165,7 +164,7 @@ contract Register is Ownable, EnumerableRoles, Receiver {
      * @param supplierId The ID of the supplier
      */
     modifier onlySupplier(uint256 supplierId) {
-        if (IToken(main.tokens().energySupplierToken).ownerOf(supplierId) != msg.sender) {
+        if (main.tokens().energySupplierToken.ownerOf(supplierId) != msg.sender) {
             revert OnlyEnergySupplier();
         }
         _;
@@ -198,16 +197,13 @@ contract Register is Ownable, EnumerableRoles, Receiver {
     function registerProducer(address producer) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(producer) {
         Main _main = main;
 
-        require(
-            IToken(_main.tokens().energyProducerToken).balanceOf(producer) == 0,
-            ProducerAlreadyRegistered(producer)
-        );
+        require(_main.tokens().energyProducerToken.balanceOf(producer) == 0, ProducerAlreadyRegistered(producer));
 
         uint256 producerId = currentProducerId;
         ++currentProducerId;
 
-        IToken(_main.tokens().energyProducerToken).mint(producer, producerId);
-        IContract(_main.contracts().staking).enterStaking(producer, producerId);
+        _main.tokens().energyProducerToken.mint(producer, producerId);
+        // After that tx, producer will be able to enter staking
         emit ProducerRegistered(msg.sender, producer, producerId, block.timestamp);
     }
 
@@ -222,16 +218,12 @@ contract Register is Ownable, EnumerableRoles, Receiver {
     function registerSupplier(address supplier) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(supplier) {
         Main _main = main;
 
-        require(
-            IToken(_main.tokens().energySupplierToken).balanceOf(supplier) == 0,
-            SupplierAlreadyRegistered(supplier)
-        );
+        require(_main.tokens().energySupplierToken.balanceOf(supplier) == 0, SupplierAlreadyRegistered(supplier));
 
         uint256 supplierId = currentSupplierId;
         currentSupplierId++;
 
-        IToken(_main.tokens().energySupplierToken).mint(supplier, supplierId);
-        IContract(_main.contracts().staking).enterStaking(supplier, supplierId);
+        _main.tokens().energySupplierToken.mint(supplier, supplierId);
         emit SupplierRegistered(msg.sender, supplier, supplierId, block.timestamp);
     }
 
@@ -249,12 +241,12 @@ contract Register is Ownable, EnumerableRoles, Receiver {
     ) external onlySupplier(supplierId) zeroAddressCheck(consumer) {
         Main.Tokens memory tokens = main.tokens();
 
-        if (IToken(tokens.electricityConsumerToken).balanceOf(consumer, supplierId) != 0) {
+        if (tokens.electricityConsumerToken.balanceOf(consumer, supplierId) != 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        address supplier = IToken(tokens.energySupplierToken).ownerOf(supplierId);
-        IToken(tokens.electricityConsumerToken).mint(consumer, supplierId, 1);
+        address supplier = tokens.energySupplierToken.ownerOf(supplierId);
+        tokens.electricityConsumerToken.mint(consumer, supplierId, 1);
         emit ConsumerRegistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
@@ -271,7 +263,7 @@ contract Register is Ownable, EnumerableRoles, Receiver {
         uint256 oracleProviderId = currentOracleProviderId;
         currentOracleProviderId++;
 
-        IToken(main.tokens().energyOracleProviderToken).mint(oracleProvider, oracleProviderId);
+        main.tokens().energyOracleProviderToken.mint(oracleProvider, oracleProviderId);
         emit OracleProviderRegistered(msg.sender, oracleProvider, oracleProviderId, block.timestamp);
     }
 
@@ -284,11 +276,12 @@ contract Register is Ownable, EnumerableRoles, Receiver {
      */
     function unregisterProducer(uint256 producerId) external onlyRole(REGISTER_MANAGER_ROLE) {
         Main _main = main;
-        IToken energyProducerToken = IToken(_main.tokens().energyProducerToken);
+        ERC721TokenBase energyProducerToken = _main.tokens().energyProducerToken;
         address producer = energyProducerToken.ownerOf(producerId);
 
         energyProducerToken.burn(producerId);
-        IContract(_main.contracts().staking).exitStaking(producer, producerId);
+        //TODO: fix
+        // _main.contracts().staking.exitStaking(producer, producerId);
         emit ProducerUnregistered(msg.sender, producer, producerId, block.timestamp);
     }
 
@@ -301,11 +294,10 @@ contract Register is Ownable, EnumerableRoles, Receiver {
      */
     function unregisterSupplier(uint256 supplierId) external onlyRole(REGISTER_MANAGER_ROLE) {
         Main _main = main;
-        IToken energySupplierToken = IToken(_main.tokens().energySupplierToken);
+        ERC721TokenBase energySupplierToken = _main.tokens().energySupplierToken;
         address supplier = energySupplierToken.ownerOf(supplierId);
 
         energySupplierToken.burn(supplierId);
-        IContract(_main.contracts().staking).exitStaking(supplier, supplierId);
         emit SupplierUnregistered(msg.sender, supplier, supplierId, block.timestamp);
     }
 
@@ -324,13 +316,13 @@ contract Register is Ownable, EnumerableRoles, Receiver {
     ) external onlySupplier(supplierId) zeroAddressCheck(consumer) {
         Main.Tokens memory tokens = main.tokens();
 
-        if (IToken(tokens.electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
+        if (tokens.electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        address supplier = IToken(tokens.energySupplierToken).ownerOf(supplierId);
+        address supplier = tokens.energySupplierToken.ownerOf(supplierId);
 
-        IToken(tokens.electricityConsumerToken).burn(consumer, supplierId, 1);
+        tokens.electricityConsumerToken.burn(consumer, supplierId, 1);
         emit ConsumerUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
     }
 
@@ -342,7 +334,7 @@ contract Register is Ownable, EnumerableRoles, Receiver {
      * @param oracleProviderId The ID of the oracle provider
      */
     function unregisterOracleProvider(uint256 oracleProviderId) external onlyRole(REGISTER_MANAGER_ROLE) {
-        IToken energyOracleProviderToken = IToken(main.tokens().energyOracleProviderToken);
+        ERC721TokenBase energyOracleProviderToken = main.tokens().energyOracleProviderToken;
         address oracleProvider = energyOracleProviderToken.ownerOf(oracleProviderId);
 
         energyOracleProviderToken.burn(oracleProviderId);

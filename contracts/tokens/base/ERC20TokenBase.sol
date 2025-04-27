@@ -5,10 +5,10 @@ import { ERC20 } from "solady/src/tokens/ERC20.sol";
 import { SoladyBaseToken } from "./SoladyBaseToken.sol";
 
 /**
- * @title ERC20 Base Token contract
+ * @title ERC20 Token Base contract
  * @author Bohdan
  */
-contract ERC20BaseToken is ERC20, SoladyBaseToken {
+contract ERC20TokenBase is ERC20, SoladyBaseToken {
     /// @notice Constructor to initialize ERC20 token contract
     /// @dev Grants each roles to `msg.sender`
     /// @dev Sets `name` and `symbol` of ERC20 token

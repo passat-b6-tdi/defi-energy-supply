@@ -8,7 +8,7 @@ import { SoladyBaseToken } from "./SoladyBaseToken.sol";
  * @title ERC721 Token Base contract (ERC721 standard)
  * @author Bohdan
  */
-abstract contract ERC721TokenBase is ERC721, SoladyBaseToken {
+contract ERC721TokenBase is ERC721, SoladyBaseToken {
     string internal _uri;
 
     /// @notice Constructor to initialize NFT token contract

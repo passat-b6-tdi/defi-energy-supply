@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import { Ownable } from "solady/src/auth/Ownable.sol";
 import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 
-import { IToken } from "./interfaces/IToken.sol";
 import { Main } from "./Main.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
@@ -61,7 +60,7 @@ contract StakingReward is Ownable, EnumerableRoles {
 
     /// @dev Modifier to check producer ownership of tokenId
     modifier isCorrectOwner(address producer, uint256 producerId) {
-        if (IToken(main.tokens().energyProducerToken).ownerOf(producerId) != producer) {
+        if (main.tokens().energyProducerToken.ownerOf(producerId) != producer) {
             revert IncorrectProducer(producer, producerId);
         }
         _;
@@ -116,7 +115,7 @@ contract StakingReward is Ownable, EnumerableRoles {
         producers[msg.sender][producerId].pendingReward = 0;
         producers[msg.sender][producerId].updatedAt = block.timestamp;
 
-        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, info.pendingReward);
+        main.tokens().microgridGovernanceToken.mint(msg.sender, info.pendingReward);
         emit RewardSentProducer(msg.sender, info.pendingReward);
     }
 
@@ -130,7 +129,7 @@ contract StakingReward is Ownable, EnumerableRoles {
         totalProducers--;
         delete producers[msg.sender][producerId];
 
-        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, info.pendingReward);
+        main.tokens().microgridGovernanceToken.mint(msg.sender, info.pendingReward);
         emit ExitStakingProducer(msg.sender, block.timestamp);
     }
 

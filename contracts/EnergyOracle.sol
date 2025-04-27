@@ -5,7 +5,6 @@ import { Ownable } from "solady/src/auth/Ownable.sol";
 import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
-import { IToken } from "./interfaces/IToken.sol";
 import { Main } from "./Main.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
@@ -115,7 +114,7 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @dev Modifier to check if the caller is an energy oracle provider
      */
     modifier onlyOracleProvider() {
-        if (IToken(main.tokens().energyOracleProviderToken).balanceOf(msg.sender) == 0) {
+        if (main.tokens().energyOracleProviderToken.balanceOf(msg.sender) == 0) {
             revert OnlyEnergyOracleProvider();
         }
         _;
@@ -148,14 +147,11 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param supplierPrice The supplier price
      */
     function recordSupplierPrice(uint256 supplierId, uint256 supplierPrice) external onlyOracleProvider whenNotPaused {
-        require(
-            IToken(main.tokens().energySupplierToken).ownerOf(supplierId) != address(0),
-            IncorrectSupplier(supplierId)
-        );
+        require(main.tokens().energySupplierToken.ownerOf(supplierId) != address(0), IncorrectSupplier(supplierId));
 
         _supplierEnergyPrice[supplierId] = supplierPrice;
 
-        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
+        main.tokens().microgridGovernanceToken.mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
 
         emit EnergyPriceRecorded(msg.sender, supplierId, supplierPrice, block.timestamp);
     }
@@ -170,16 +166,13 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param production The energy production value
      */
     function recordEnergyProductions(uint256 producerId, uint256 production) external onlyOracleProvider whenNotPaused {
-        address producer = IToken(main.tokens().energyProducerToken).ownerOf(producerId);
+        address producer = main.tokens().energyProducerToken.ownerOf(producerId);
         require(producer != address(0), IncorrectProducer(producerId));
 
         _energyProductions[producerId] = production;
 
-        IToken(main.tokens().energyCreditToken).mint(producer, production);
-
-        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
-        // TODO: Uncomment if used not smart meters
-        // IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, MGT_TO_ORACLE_PROVIDER);
+        main.tokens().energyCreditToken.mint(producer, production);
+        main.tokens().microgridGovernanceToken.mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
 
         emit EnergyProductionRecorded(msg.sender, producer, producerId, production, block.timestamp);
     }
@@ -199,9 +192,9 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         uint256 supplierId,
         uint256 consumption
     ) external onlyOracleProvider whenNotPaused zeroAddressCheck(consumer) {
-        address supplier = IToken(main.tokens().energySupplierToken).ownerOf(supplierId);
+        address supplier = main.tokens().energySupplierToken.ownerOf(supplierId);
         require(supplier != address(0), IncorrectSupplier(supplierId));
-        if (IToken(main.tokens().electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
+        if (main.tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
@@ -209,10 +202,9 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
 
         _debtsUSD[consumer][supplierId] += consumption * _supplierEnergyPrice[supplierId];
 
-        IToken(main.tokens().energyCreditToken).burn(supplier, consumption);
-        IToken(main.tokens().microgridGovernanceToken).mint(supplier, rewardMGT);
-        // TODO: Uncomment if used not smart meters
-        // IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, MGT_TO_ORACLE_PROVIDER);
+        main.tokens().energyCreditToken.burn(supplier, consumption);
+        main.tokens().microgridGovernanceToken.mint(supplier, rewardMGT);
+        main.tokens().microgridGovernanceToken.mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
 
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
@@ -230,16 +222,14 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         uint256 consumptionToAdd,
         uint256 consumptionToRemove
     ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) {
-        address supplier = IToken(main.tokens().energySupplierToken).ownerOf(supplierId);
+        address supplier = main.tokens().energySupplierToken.ownerOf(supplierId);
         require(supplier != address(0), IncorrectSupplier(supplierId));
-        if (IToken(main.tokens().electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
+        if (main.tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        uint256 price = _supplierEnergyPrice[supplierId];
-
-        _debtsUSD[consumer][supplierId] += consumptionToAdd * price;
-        _debtsUSD[consumer][supplierId] -= consumptionToRemove * price;
+        _debtsUSD[consumer][supplierId] += consumptionToAdd;
+        _debtsUSD[consumer][supplierId] -= consumptionToRemove;
 
         emit EnergyConsumptionUpdated(
             msg.sender,
@@ -284,8 +274,8 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param supplierId The ID of the supplier.
      * @return consumption The consumption value of the energy consumption record.
      */
-    function debtsUSD(address consumer, uint256 supplierId) public view returns (uint256 consumption) {
-        consumption = _debtsUSD[consumer][supplierId];
+    function debtsUSD(address consumer, uint256 supplierId) public view returns (uint256) {
+        return _debtsUSD[consumer][supplierId];
     }
 
     /**
