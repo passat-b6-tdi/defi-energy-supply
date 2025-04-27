@@ -88,8 +88,6 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
 
     /// @dev Keccak256 hashed `ENERGY_ORACLE_MANAGER_ROLE` string
     uint256 public constant ENERGY_ORACLE_MANAGER_ROLE = uint256(keccak256(bytes("ENERGY_ORACLE_MANAGER_ROLE")));
-    /// @dev Keccak256 hashed `ENERGY_ORACLE_PROVIDER_ROLE` string
-    uint256 public constant ENERGY_ORACLE_PROVIDER_ROLE = uint256(keccak256(bytes("ENERGY_ORACLE_PROVIDER_ROLE")));
     /// @dev Keccak256 hashed `ESCROW` string
     uint256 public constant ESCROW = uint256(keccak256(bytes("ESCROW")));
 
@@ -124,10 +122,12 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     }
 
     /// @notice Constructor to initialize StakingManagement contract
-    /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`
+    /// @dev Grants `ENERGY_ORACLE_MANAGER_ROLE`, `ENERGY_ORACLE_PROVIDER_ROLE` and `ESCROW` roles to `msg.sender`
     /// @param _main The address of the main contract
     constructor(Main _main) {
         _setOwner(msg.sender);
+        _setRole(msg.sender, ENERGY_ORACLE_MANAGER_ROLE, true);
+        _setRole(msg.sender, ESCROW, true);
 
         main = _main;
     }
@@ -147,14 +147,12 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param supplierId The supplier address
      * @param supplierPrice The supplier price
      */
-    function recordSupplierPrice(
-        uint256 supplierId,
-        uint256 supplierPrice
-    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) {
+    function recordSupplierPrice(uint256 supplierId, uint256 supplierPrice) external onlyOracleProvider whenNotPaused {
         require(
-            IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId) != address(0),
+            IToken(main.tokens().energySupplierToken).ownerOf(supplierId) != address(0),
             IncorrectSupplier(supplierId)
         );
+
         _supplierEnergyPrice[supplierId] = supplierPrice;
 
         IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
@@ -179,8 +177,7 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
 
         IToken(main.tokens().energyCreditToken).mint(producer, production);
 
-        //TODO: change msg.sender to oracle provider
-        IToken(main.tokens().microgridGovernanceToken).mint(producer, production);
+        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
         // TODO: Uncomment if used not smart meters
         // IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, MGT_TO_ORACLE_PROVIDER);
 
@@ -202,7 +199,7 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         uint256 supplierId,
         uint256 consumption
     ) external onlyOracleProvider whenNotPaused zeroAddressCheck(consumer) {
-        address supplier = IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId);
+        address supplier = IToken(main.tokens().energySupplierToken).ownerOf(supplierId);
         require(supplier != address(0), IncorrectSupplier(supplierId));
         if (IToken(main.tokens().electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
@@ -233,14 +230,16 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         uint256 consumptionToAdd,
         uint256 consumptionToRemove
     ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) {
-        address supplier = IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId);
+        address supplier = IToken(main.tokens().energySupplierToken).ownerOf(supplierId);
         require(supplier != address(0), IncorrectSupplier(supplierId));
         if (IToken(main.tokens().electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        _debtsUSD[consumer][supplierId] += consumptionToAdd;
-        _debtsUSD[consumer][supplierId] -= consumptionToRemove;
+        uint256 price = _supplierEnergyPrice[supplierId];
+
+        _debtsUSD[consumer][supplierId] += consumptionToAdd * price;
+        _debtsUSD[consumer][supplierId] -= consumptionToRemove * price;
 
         emit EnergyConsumptionUpdated(
             msg.sender,
