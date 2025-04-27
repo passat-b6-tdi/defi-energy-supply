@@ -12,6 +12,9 @@ import { Main } from "./Main.sol";
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
 
+/// @dev Error thrown when caller is not an energy supplier
+error OnlyEnergySupplier();
+
 /// @dev Error to indicate that the consumer address is incorrect
 /// @param incorrectConsumer The incorrect consumer address
 /// @param supplierId The ID of the supplier
@@ -157,6 +160,17 @@ contract Register is Ownable, EnumerableRoles, Receiver {
         _;
     }
 
+    /**
+     * @dev Modifier to check if the caller is the owner of the supplierId
+     * @param supplierId The ID of the supplier
+     */
+    modifier onlySupplier(uint256 supplierId) {
+        if (IToken(main.tokens().energySupplierToken).ownerOf(supplierId) != msg.sender) {
+            revert OnlyEnergySupplier();
+        }
+        _;
+    }
+
     /// @notice Constructor to initialize Register contract
     /// @param _main The address of the Main contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`
@@ -231,7 +245,7 @@ contract Register is Ownable, EnumerableRoles, Receiver {
     function registerElectricityConsumer(
         address consumer,
         uint256 supplierId
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
+    ) external onlySupplier(supplierId) zeroAddressCheck(consumer) {
         Main.Tokens memory tokens = main.tokens();
 
         if (IToken(tokens.electricityConsumerToken).balanceOf(consumer, supplierId) != 0) {
@@ -306,7 +320,7 @@ contract Register is Ownable, EnumerableRoles, Receiver {
     function unregisterElectricityConsumer(
         address consumer,
         uint256 supplierId
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
+    ) external onlySupplier(supplierId) zeroAddressCheck(consumer) {
         Main.Tokens memory tokens = main.tokens();
 
         if (IToken(tokens.electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
