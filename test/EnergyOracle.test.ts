@@ -1,4 +1,4 @@
-import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
@@ -15,7 +15,7 @@ import {
   MicrogridGovernanceToken,
 } from '../typechain';
 
-describe.only('EnergyOracle', function () {
+describe('EnergyOracle', function () {
   let minter_role: BigNumber, burner_role: BigNumber, energy_oracle_manager: BigNumber, escrow_role: BigNumber;
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
@@ -87,7 +87,15 @@ describe.only('EnergyOracle', function () {
     energy_oracle_manager = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
     escrow_role = await energyOracle.ESCROW();
 
+    const Contracts: Main.ContractsStruct = {
+      staking: energyOracle.address,
+      oracle: energyOracle.address,
+      escrow: energyOracle.address,
+      register: energyOracle.address,
+    };
+
     // Required for deployment
+    await main.changeContracts(Contracts);
     await energyOracle.setRole(escrow.address, escrow_role, true);
     await mgt.setRole(energyOracle.address, minter_role, true);
     await nrgct.setRole(energyOracle.address, minter_role, true);
@@ -102,7 +110,6 @@ describe.only('EnergyOracle', function () {
       elct,
       main,
       energyOracle,
-      EnergyOracle,
       escrow,
       deployer,
       otherAcc,
@@ -110,7 +117,7 @@ describe.only('EnergyOracle', function () {
   }
 
   it('Deployed correctly', async () => {
-    const { nrgct, mgt, nrgpt, nrgst, nrgopt, elct, main, energyOracle, deployer } = await loadFixture(deployFixture);
+    const { nrgct, mgt, nrgpt, nrgst, nrgopt, elct, main, energyOracle, escrow } = await loadFixture(deployFixture);
 
     expect(nrgct.address).to.be.properAddress;
     expect(mgt.address).to.be.properAddress;
@@ -120,6 +127,7 @@ describe.only('EnergyOracle', function () {
     expect(elct.address).to.be.properAddress;
     expect(main.address).to.be.properAddress;
     expect(energyOracle.address).to.be.properAddress;
+    expect(escrow.address).to.be.properAddress;
   });
 
   describe('Registers', function () {
@@ -220,7 +228,7 @@ describe.only('EnergyOracle', function () {
 
       expect(record).to.emit(energyOracle, 'EnergyConsumptionRecorded');
       expect(await nrgct.balanceOf(user)).to.eq(0);
-      expect(await mgt.balanceOf(user)).to.eq(50000000000000000n);
+      expect(await mgt.balanceOf(user)).to.eq(50000000000000000n * 2n);
       expect(debtsUSD).to.equal(consumption);
     });
 
