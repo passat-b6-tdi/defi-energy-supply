@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import { Ownable } from "solady/src/auth/Ownable.sol";
 import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
@@ -16,10 +16,13 @@ error ZeroAddressPassed();
 /// @param supplierId The ID of the supplier
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
 
+/// @dev Error to indicate that the producer address is incorrect
+/// @param producerId The ID of the producer
+error IncorrectProducer(uint256 producerId);
+
 /// @dev Error to indicate that the supplier address is incorrect
-/// @param incorrectSupplier The incorrect supplier address
 /// @param supplierId The ID of the supplier
-error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
+error IncorrectSupplier(uint256 supplierId);
 
 /**
  * @title Energy Oracle contract to record indicators of consumed energy from the source
@@ -29,6 +32,13 @@ error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
  * @author Bohdan
  */
 contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
+    /// @dev Emmited when an Energy Oracle provider records energy production
+    /// @param sender The address of the sender who recorded the energy production
+    /// @param supplierId The ID of the supplier
+    /// @param price The energy price
+    /// @param timestamp The timestamp when the energy production was recorded
+    event EnergyPriceRecorded(address indexed sender, uint256 indexed supplierId, uint256 price, uint256 timestamp);
+
     /// @dev Emmited when an Energy Oracle provider records energy production
     /// @param sender The address of the sender who recorded the energy production
     /// @param supplier The address of the supplier
@@ -62,10 +72,12 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     /// @param whoseConsumption The address of the consumer
     /// @param supplierId The ID of the supplier
     /// @param timestamp The timestamp when the energy consumption was updated
-    event EnergyConsumptionPaid(
+    event EnergyConsumptionUpdated(
         address indexed sender,
         address indexed whoseConsumption,
         uint256 indexed supplierId,
+        uint256 consumptionToAdd,
+        uint256 consumptionToRemove,
         uint256 timestamp
     );
 
@@ -79,11 +91,12 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     /// @dev Main contract
     Main public main;
 
-    /// @dev Mapping to store consumption
-    mapping(address => mapping(uint256 => uint256)) private _energyConsumptions; // consumer => supplierId => id => energy consumption
-
+    /// @dev Mapping to store prices
+    mapping(uint256 => uint256) private _supplierEnergyPrice; // supplierId => energy price
     /// @dev Mapping to store productions
-    mapping(address => mapping(uint256 => uint256)) private _energyProductions; // supplier => supplierId => id => energy production
+    mapping(uint256 => uint256) private _energyProductions; // producer => energy production
+    /// @dev Mapping to store consumption
+    mapping(address => mapping(uint256 => uint256)) private _energyConsumptionDebtsInUSD; // consumer => supplierId => id => energy consumption debt
 
     /// @dev Throws if passed address 0 as parameter
     /// @param account The address to check
@@ -110,31 +123,48 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         main = _main;
     }
 
+    function recordSupplierPrice(
+        uint256 supplierId,
+        uint256 supplierECTPrice
+    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) {
+        require(
+            IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId) != address(0),
+            IncorrectSupplier(supplierId)
+        );
+        _supplierEnergyPrice[supplierId] = supplierECTPrice;
+
+        // TODO: Uncomment if used not smart meters
+        IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
+
+        emit EnergyPriceRecorded(msg.sender, supplierId, supplierECTPrice, block.timestamp);
+    }
+
     /**
-     * @notice Records the energy production by the supplier at a specific timestamp.
+     * @notice Records the energy production by the producer at a specific timestamp.
      * @dev Requirements:
      * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-     * - `supplier` must have `supplierId`
+     * - `producer` must have `producerId`
      *
-     * @param supplier The supplier address
-     * @param supplierId The supplier ID
+     * @param producerId The producer ID
      * @param production The energy production value
      */
     function recordEnergyProductions(
-        address supplier,
-        uint256 supplierId,
+        uint256 producerId,
         uint256 production
-    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(supplier) {
-        if (IToken(main.tokens().nrgs).ownerOf(supplierId) != supplier) {
-            revert IncorrectSupplier(supplier, supplierId);
-        }
+    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused {
+        address producer = IToken(main.tokens().energyProducerToken).ownerOf(producerId);
+        require(producer != address(0), IncorrectProducer(producerId));
 
-        _energyProductions[supplier][supplierId] = production;
+        _energyProductions[producerId] = production;
 
-        // When smart meter is using comment the line
-        // main.tokens().mgt.mint(msg.sender, main.values().rewardAmount * 2);
+        IToken(main.tokens().energyCreditToken).mint(producer, production);
 
-        emit EnergyProductionRecorded(msg.sender, supplier, supplierId, production, block.timestamp);
+        //TODO: change msg.sender to oracle provider
+        IToken(main.tokens().microgridGovernanceToken).mint(producer, production);
+        // TODO: Uncomment if used not smart meters
+        // IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, MGT_TO_ORACLE_PROVIDER);
+
+        emit EnergyProductionRecorded(msg.sender, producer, producerId, production, block.timestamp);
     }
 
     /**
@@ -152,14 +182,20 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         uint256 supplierId,
         uint256 consumption
     ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(consumer) {
-        if (IToken(main.tokens().ecu).balanceOf(consumer, supplierId) == 0) {
+        address supplier = IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId);
+        require(supplier != address(0), IncorrectSupplier(supplierId));
+        if (IToken(main.tokens().electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        _energyConsumptions[consumer][supplierId] = consumption;
+        uint256 rewardToSupplier = (main.MGT_PER_ECT_CONSUMED() * consumption) / 1e18;
 
-        // When smart meter is using comment the line
-        // main.tokens().mgt.mint(msg.sender, main.values().rewardAmount * 2);
+        _energyConsumptionDebtsInUSD[consumer][supplierId] += consumption * _supplierEnergyPrice[supplierId];
+
+        IToken(main.tokens().energyCreditToken).burn(supplier, consumption);
+        IToken(main.tokens().microgridGovernanceToken).mint(supplier, rewardToSupplier);
+        // TODO: Uncomment if used not smart meters
+        // IToken(main.tokens().microgridGovernanceToken).mint(msg.sender, MGT_TO_ORACLE_PROVIDER);
 
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
@@ -173,15 +209,27 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      */
     function updateEnergyConsumptions(
         address consumer,
-        uint256 supplierId
+        uint256 supplierId,
+        uint256 consumptionToAdd,
+        uint256 consumptionToRemove
     ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) {
-        if (IToken(main.tokens().ecu).balanceOf(consumer, supplierId) == 0) {
+        address supplier = IToken(main.tokens().electricityConsumerToken).ownerOf(supplierId);
+        require(supplier != address(0), IncorrectSupplier(supplierId));
+        if (IToken(main.tokens().electricityConsumerToken).balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        _energyConsumptions[consumer][supplierId] = 0;
+        _energyConsumptionDebtsInUSD[consumer][supplierId] += consumptionToAdd;
+        _energyConsumptionDebtsInUSD[consumer][supplierId] -= consumptionToRemove;
 
-        emit EnergyConsumptionPaid(msg.sender, consumer, supplierId, block.timestamp);
+        emit EnergyConsumptionUpdated(
+            msg.sender,
+            consumer,
+            supplierId,
+            consumptionToAdd,
+            consumptionToRemove,
+            block.timestamp
+        );
     }
 
     /**
@@ -203,22 +251,33 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     }
 
     /**
+     * @dev Retrieves the price per energy consumption.
+     * @param supplierId The id of the supplier.
+     * @return price The price of the energy consumption.
+     */
+    function supplierEnergyPrice(uint256 supplierId) public view returns (uint256 price) {
+        price = _supplierEnergyPrice[supplierId];
+    }
+
+    /**
      * @dev Retrieves the consumption value for a specific energy consumption record.
      * @param consumer The address of the consumer.
      * @param supplierId The ID of the supplier.
      * @return consumption The consumption value of the energy consumption record.
      */
-    function energyConsumptions(address consumer, uint256 supplierId) public view returns (uint256 consumption) {
-        consumption = _energyConsumptions[consumer][supplierId];
+    function energyConsumptionDebtsInUSD(
+        address consumer,
+        uint256 supplierId
+    ) public view returns (uint256 consumption) {
+        consumption = _energyConsumptionDebtsInUSD[consumer][supplierId];
     }
 
     /**
      * @dev Retrieves the production value for a specific energy production record.
-     * @param supplier The address of the supplier.
-     * @param supplierId The ID of the supplier.
+     * @param producerId The ID of the producer.
      * @return production The production value of the energy production record.
      */
-    function energyProductions(address supplier, uint256 supplierId) public view returns (uint256 production) {
-        production = _energyProductions[supplier][supplierId];
+    function energyProductions(uint256 producerId) public view returns (uint256 production) {
+        production = _energyProductions[producerId];
     }
 }
