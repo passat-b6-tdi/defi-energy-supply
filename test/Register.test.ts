@@ -2,94 +2,119 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MGT, Manager, NRGOP, Register, StakingReward, ECU, NRGS } from '../typechain';
+import {
+  Escrow,
+  ElectricityConsumerToken,
+  EnergyCreditToken,
+  EnergyOracle,
+  EnergyOracleProviderToken,
+  EnergyProducerToken,
+  EnergySupplierToken,
+  ERC20Mock,
+  Main,
+  MicrogridGovernanceToken,
+} from '../typechain';
 
 describe('Register', function () {
-  let otherAccAddress: string;
-  let admin_role: string,
-    minter_role: string,
-    staking_role: string,
-    register_manager_role: string,
-    register_role: string;
+  let minter_role: BigNumber, burner_role: BigNumber, energy_oracle_manager: BigNumber, escrow_role: BigNumber;
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
   async function deployFixture() {
     const [deployer, otherAcc] = await ethers.getSigners();
 
-    otherAccAddress = otherAcc.address.toLowerCase();
+    const EnergyCreditToken: ContractFactory = await ethers.getContractFactory('EnergyCreditToken');
+    const nrgct: EnergyCreditToken = (await EnergyCreditToken.deploy()) as EnergyCreditToken;
+    await nrgct.deployed();
 
-    const MGT_Factory: ContractFactory = await ethers.getContractFactory('MGT');
-    const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
+    const MicrogridGovernanceToken: ContractFactory = await ethers.getContractFactory('MicrogridGovernanceToken');
+    const mgt: MicrogridGovernanceToken = (await MicrogridGovernanceToken.deploy()) as MicrogridGovernanceToken;
     await mgt.deployed();
 
-    const NRGS_Factory: ContractFactory = await ethers.getContractFactory('NRGS');
-    const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
-    await nrgs.deployed();
+    const EnergyProducerToken: ContractFactory = await ethers.getContractFactory('EnergyProducerToken');
+    const nrgpt: EnergyProducerToken = (await EnergyProducerToken.deploy()) as EnergyProducerToken;
+    await nrgpt.deployed();
 
-    const ECU_Factory: ContractFactory = await ethers.getContractFactory('ECU');
-    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
-    await ecu.deployed();
+    const EnergySupplierToken: ContractFactory = await ethers.getContractFactory('EnergySupplierToken');
+    const nrgst: EnergySupplierToken = (await EnergySupplierToken.deploy()) as EnergySupplierToken;
+    await nrgst.deployed();
 
-    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory('NRGOP');
-    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
-    await nrgop.deployed();
+    const EnergyOracleProviderToken: ContractFactory = await ethers.getContractFactory('EnergyOracleProviderToken');
+    const nrgopt: EnergyOracleProviderToken = (await EnergyOracleProviderToken.deploy()) as EnergyOracleProviderToken;
+    await nrgopt.deployed();
 
-    const Tokens: Manager.TokensStruct = {
-      mgt: mgt.address,
-      ecu: ecu.address,
-      nrgs: nrgs.address,
-      nrgop: nrgop.address,
-    }
+    const ElectricityConsumerToken: ContractFactory = await ethers.getContractFactory('ElectricityConsumerToken');
+    const elct: ElectricityConsumerToken = (await ElectricityConsumerToken.deploy()) as ElectricityConsumerToken;
+    await elct.deployed();
 
-    const Values: Manager.ValuesStruct = {
-      rewardAmount: 10,
-      fees: 10,
-    }
+    const ERC20Mock: ContractFactory = await ethers.getContractFactory('ERC20Mock');
+    const usdc: ERC20Mock = (await ERC20Mock.deploy()) as ERC20Mock;
+    await usdc.deployed();
+    const usdt: ERC20Mock = (await ERC20Mock.deploy()) as ERC20Mock;
+    await usdt.deployed();
+    const dai: ERC20Mock = (await ERC20Mock.deploy()) as ERC20Mock;
+    await dai.deployed();
 
-    const Manager: ContractFactory = await ethers.getContractFactory('Manager');
-    const manager: Manager = (await Manager.deploy(
-      Tokens,
-      deployer.address,
-      Values,
-    )) as Manager;
-    await manager.deployed();
+    const Tokens: Main.TokensStruct = {
+      energyCreditToken: nrgct.address,
+      microgridGovernanceToken: mgt.address,
+      electricityConsumerToken: elct.address,
+      energyProducerToken: nrgpt.address,
+      energySupplierToken: nrgst.address,
+      energyOracleProviderToken: nrgopt.address,
+    };
 
-    const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward');
-    const stakingReward: StakingReward = (await StakingReward.deploy(manager.address)) as StakingReward;
-    await stakingReward.deployed();
+    const Fees: Main.FeesStruct = {
+      receiver: deployer.address,
+      amount: 10,
+    };
 
-    const Register: ContractFactory = await ethers.getContractFactory('Register');
-    const register: Register = (await Register.deploy(manager.address)) as Register;
-    await register.deployed();
+    const Main: ContractFactory = await ethers.getContractFactory('Main');
+    const main: Main = (await Main.deploy(Tokens, Fees, usdc.address, dai.address, usdt.address)) as Main;
+    await main.deployed();
 
-    admin_role = await mgt.DEFAULT_ADMIN_ROLE();
-    minter_role = await mgt.MINTER_BURNER_ROLE();
+    const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
+    const energyOracle: EnergyOracle = (await EnergyOracle.deploy(main.address)) as EnergyOracle;
+    await energyOracle.deployed();
 
-    staking_role = await stakingReward.STAKING_MANAGER_ROLE();
-    register_role = await nrgs.REGISTER_ROLE();
-    register_manager_role = await register.REGISTER_MANAGER_ROLE();
+    const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
+    const escrow: Escrow = (await Escrow.deploy(main.address)) as Escrow;
+    await escrow.deployed();
 
-    const Contracts: Manager.ContractsStruct = {
-      oracle: ethers.constants.AddressZero,
-      staking: stakingReward.address,
-      register: register.address,
-      escrow: ethers.constants.AddressZero,
-    }
+    minter_role = await mgt.MINTER_ROLE();
+    burner_role = await mgt.BURNER_ROLE();
 
-    await manager.changeContracts(Contracts);
+    energy_oracle_manager = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
+    escrow_role = await energyOracle.ESCROW();
 
-    await mgt.grantRole(minter_role, stakingReward.address);
+    const Contracts: Main.ContractsStruct = {
+      staking: energyOracle.address,
+      oracle: energyOracle.address,
+      escrow: escrow.address,
+      register: energyOracle.address,
+    };
 
-    await nrgs.grantRole(register_role, register.address);
-    await nrgop.grantRole(register_role, register.address);
-    await ecu.grantRole(register_role, register.address);
+    // Required for deployment
+    await main.changeContracts(Contracts);
+    await energyOracle.setRole(escrow.address, escrow_role, true);
+    await mgt.setRole(energyOracle.address, minter_role, true);
+    await nrgct.setRole(energyOracle.address, minter_role, true);
+    await nrgct.setRole(energyOracle.address, burner_role, true);
 
-    await stakingReward.grantRole(staking_role, register.address);
-
-    await ecu.connect(otherAcc).setApprovalForAll(register.address, true);
-
-    return { mgt, ecu, ECU_Factory, nrgs, NRGS_Factory, nrgop, NRGOP_Factory, manager, stakingReward, StakingReward, register, deployer, otherAcc };
+    return {
+      nrgct,
+      mgt,
+      nrgpt,
+      nrgst,
+      nrgopt,
+      elct,
+      main,
+      energyOracle,
+      escrow,
+      usdc,
+      deployer,
+      otherAcc,
+    };
   }
 
   it('Deployed correctly', async () => {
@@ -255,10 +280,16 @@ describe('Register', function () {
 
       await expect(register.registerSupplier(addressZero)).to.be.revertedWithCustomError(register, errorMsg);
       await expect(register.registerOracleProvider(addressZero)).to.be.revertedWithCustomError(register, errorMsg);
-      await expect(register.registerElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(register, errorMsg);
+      await expect(register.registerElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(
+        register,
+        errorMsg,
+      );
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith('ERC721: invalid token ID');
       await expect(register.unRegisterOracleProvider(10)).to.be.revertedWith('ERC721: invalid token ID');
-      await expect(register.unRegisterElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(register, errorMsg);
+      await expect(register.unRegisterElectricityConsumer(addressZero, 10)).to.be.revertedWithCustomError(
+        register,
+        errorMsg,
+      );
     });
 
     it('Requires valid token id', async () => {
@@ -268,7 +299,10 @@ describe('Register', function () {
 
       await expect(register.unRegisterSupplier(10)).to.be.revertedWith(errorMsg);
       await expect(register.unRegisterOracleProvider(10)).to.be.revertedWith(errorMsg);
-      await expect(register.unRegisterElectricityConsumer(deployer.address, 10)).to.be.revertedWithCustomError(register, errorMsgForUser);
+      await expect(register.unRegisterElectricityConsumer(deployer.address, 10)).to.be.revertedWithCustomError(
+        register,
+        errorMsgForUser,
+      );
     });
   });
 });
