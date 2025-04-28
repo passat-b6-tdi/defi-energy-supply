@@ -16,7 +16,7 @@ import {
 } from '../typechain';
 
 describe('EnergyOracle', function () {
-  let minter_role: BigNumber, burner_role: BigNumber, energy_oracle_manager: BigNumber, escrow_role: BigNumber;
+  let minter_role: BigNumber, burner_role: BigNumber, escrow_role: BigNumber;
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
@@ -84,7 +84,6 @@ describe('EnergyOracle', function () {
     minter_role = await mgt.MINTER_ROLE();
     burner_role = await mgt.BURNER_ROLE();
 
-    energy_oracle_manager = await energyOracle.ENERGY_ORACLE_MANAGER_ROLE();
     escrow_role = await energyOracle.ESCROW();
 
     const Contracts: Main.ContractsStruct = {
