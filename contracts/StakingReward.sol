@@ -2,8 +2,8 @@
 pragma solidity ^0.8.28;
 
 import { Ownable } from "solady/src/auth/Ownable.sol";
-import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 
+import { ContractsBase } from "./base/ContractsBase.sol";
 import { Main } from "./Main.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
@@ -30,7 +30,7 @@ error OnlyRegister();
  * @notice Producers call enterStakingProducer, getProducerRewards, exitStakingProducer to manage their MGT rewards.
  * @custom:security-contact security@example.com
  */
-contract StakingReward is Ownable, EnumerableRoles {
+contract StakingReward is Ownable, ContractsBase {
     /// @dev Emitted when a producer enters staking
     /// @param producer The address of the producer
     /// @param producerId The address of the producerId
@@ -54,12 +54,6 @@ contract StakingReward is Ownable, EnumerableRoles {
         uint256 pendingReward;
     }
 
-    /// @dev Keccak256 hashed `STAKING_MANAGER_ROLE` string
-    uint256 public constant STAKING_MANAGER_ROLE = uint256(keccak256(bytes("STAKING_MANAGER_ROLE")));
-
-    /// @notice Reference to Main contract for parameters and contract addresses
-    Main public main;
-
     /// @notice Total number of producers currently staking
     uint256 public totalProducers;
 
@@ -68,43 +62,30 @@ contract StakingReward is Ownable, EnumerableRoles {
 
     /// @dev Modifier to that the caller is the Register contract
     modifier onlyRegister() {
-        require(address(main.contracts().register) == msg.sender, OnlyRegister());
+        require(address(main().contracts().register) == msg.sender, OnlyRegister());
         _;
     }
 
     /// @dev Modifier to check producer ownership of tokenId
     modifier isCorrectOwner(address producer, uint256 producerId) {
-        if (main.tokens().energyProducerToken.ownerOf(producerId) != producer) {
+        if (main().tokens().energyProducerToken.ownerOf(producerId) != producer) {
             revert IncorrectProducer(producer, producerId);
-        }
-        _;
-    }
-
-    /// @dev Modifier to ensure address is not zero
-    modifier zeroAddressCheck(address account) {
-        if (account == address(0)) {
-            revert ZeroAddressPassed();
         }
         _;
     }
 
     /**
      * @notice Constructor initializes StakingReward with Main reference
-     * @param _main The address of the Main contract
+     * @param main_ The address of the Main contract
      */
-    constructor(Main _main) {
+    constructor(address main_) ContractsBase(main_) {
         _setOwner(msg.sender);
-        _setRole(msg.sender, STAKING_MANAGER_ROLE, true);
-
-        main = _main;
     }
 
-    /**
-     * @notice Update Main contract reference
-     * @param _main The new Main contract address
-     */
-    function changeMain(Main _main) external onlyOwner zeroAddressCheck(address(_main)) {
-        main = _main;
+    /// @notice Update Main contract address
+    /// @param main_ New Main contract address
+    function changeMain(address main_) public override onlyOwner {
+        super.changeMain(main_);
     }
 
     /**
@@ -112,7 +93,7 @@ contract StakingReward is Ownable, EnumerableRoles {
      * @param producerId The ID of the producer token
      */
     function enterStakingProducer(uint256 producerId) external onlyRegister {
-        address producer = main.tokens().energyProducerToken.ownerOf(producerId);
+        address producer = main().tokens().energyProducerToken.ownerOf(producerId);
 
         totalProducers++;
         producers[producerId] = ProducerInfo({
@@ -127,14 +108,14 @@ contract StakingReward is Ownable, EnumerableRoles {
      * @param producerId The ID of the producer token
      */
     function exitStakingProducer(uint256 producerId) external onlyRegister {
-        address producer = main.tokens().energyProducerToken.ownerOf(producerId);
-
         ProducerInfo memory info = _updateInfo(producerId);
+
+        address producer = main().tokens().energyProducerToken.ownerOf(producerId);
 
         totalProducers--;
         delete producers[producerId];
 
-        main.tokens().microgridGovernanceToken.mint(producer, info.pendingReward);
+        main().tokens().microgridGovernanceToken.mint(producer, info.pendingReward);
         emit ExitStakingProducer(producer, producerId, block.timestamp);
     }
 
@@ -147,7 +128,7 @@ contract StakingReward is Ownable, EnumerableRoles {
         producers[producerId].pendingReward = 0;
         producers[producerId].updatedAt = block.timestamp;
 
-        main.tokens().microgridGovernanceToken.mint(msg.sender, info.pendingReward);
+        main().tokens().microgridGovernanceToken.mint(msg.sender, info.pendingReward);
         emit RewardSentProducer(msg.sender, info.pendingReward);
     }
 
@@ -179,6 +160,10 @@ contract StakingReward is Ownable, EnumerableRoles {
     /// @dev Internal: compute reward since `fromTimestamp`
     function _calculateReward(uint256 fromTimestamp) private view returns (uint256) {
         uint256 elapsed = block.timestamp - fromTimestamp;
-        return (main.MGT_TO_ORACLE_PROVIDER() * elapsed) / totalProducers;
+        return (main().MGT_TO_ORACLE_PROVIDER() * elapsed) / totalProducers;
+    }
+
+    function main() public view returns (Main) {
+        return Main(_main);
     }
 }

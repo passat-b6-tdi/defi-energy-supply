@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Ownable } from "solady/src/auth/Ownable.sol";
-import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
+import { OwnableEnumerableRoles } from "./base/OwnableEnumerableRoles.sol";
 
 import { ERC20TokenBase } from "./tokens/base/ERC20TokenBase.sol";
 import { ERC721TokenBase } from "./tokens/base/ERC721TokenBase.sol";
@@ -22,7 +21,7 @@ error ZeroAddressPassed();
  * It also manages configuration values like reward amounts and fees, and stores immutable stablecoin addresses.
  * @author Bohdan
  */
-contract Main is Ownable, EnumerableRoles {
+contract Main is OwnableEnumerableRoles {
     /// @dev Structure to hold references to token contracts
     struct Tokens {
         // ERC20
@@ -94,7 +93,6 @@ contract Main is Ownable, EnumerableRoles {
      * @dev Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender` and sets immutable stablecoin addresses
      */
     constructor(Tokens memory tokens_, Fees memory fees_, address USDC_, address DAI_, address USDT_) {
-        _setOwner(msg.sender);
         _setRole(msg.sender, MANAGER_ROLE, true);
 
         if (USDC_ == address(0) || DAI_ == address(0) || USDT_ == address(0)) {

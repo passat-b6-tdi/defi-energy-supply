@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Ownable } from "solady/src/auth/Ownable.sol";
-import { EnumerableRoles } from "solady/src/auth/EnumerableRoles.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
+import { OwnableEnumerableRoles } from "./base/OwnableEnumerableRoles.sol";
+import { ContractsBase } from "./base/ContractsBase.sol";
 import { Main } from "./Main.sol";
-
-/// @dev Error to indicate that a zero address was passed as a parameter
-error ZeroAddressPassed();
 
 /// @dev Error thrown when caller is not an energy oracle provider
 error OnlyEnergyOracleProvider();
@@ -35,7 +32,7 @@ error IncorrectSupplier(uint256 supplierId);
  * MANAGER_ROLE can pause/unpause and retrieve stored data.
  * @author Bohdan
  */
-contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
+contract EnergyOracle is OwnableEnumerableRoles, ContractsBase, Pausable {
     /// @dev Emmited when an Energy Oracle provider records energy production
     /// @param sender The address of the sender who recorded the energy production
     /// @param supplierId The ID of the supplier
@@ -90,9 +87,6 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     /// @dev Keccak256 hashed `ESCROW` string
     uint256 public constant ESCROW = uint256(keccak256(bytes("ESCROW")));
 
-    /// @dev Main contract
-    Main public main;
-
     /// @dev Mapping to store prices
     mapping(uint256 => uint256) private _supplierEnergyPrice; // supplierId => energy price
     /// @dev Mapping to store productions
@@ -100,21 +94,11 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
     /// @dev Mapping to store consumption
     mapping(address => mapping(uint256 => uint256)) private _debtsUSD; // consumer => supplierId => id => energy consumption debt
 
-    /// @dev Throws if passed address 0 as parameter
-    /// @param account The address to check
-    modifier zeroAddressCheck(address account) {
-        if (account == address(0)) {
-            revert ZeroAddressPassed();
-        }
-
-        _;
-    }
-
     /**
      * @dev Modifier to check if the caller is an energy oracle provider
      */
     modifier onlyOracleProvider() {
-        if (main.tokens().energyOracleProviderToken.balanceOf(msg.sender) == 0) {
+        if (main().tokens().energyOracleProviderToken.balanceOf(msg.sender) == 0) {
             revert OnlyEnergyOracleProvider();
         }
         _;
@@ -122,19 +106,16 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
 
     /// @notice Constructor to initialize StakingManagement contract
     /// @dev Grants `ENERGY_ORACLE_MANAGER_ROLE`, `ENERGY_ORACLE_PROVIDER_ROLE` and `ESCROW` roles to `msg.sender`
-    /// @param _main The address of the main contract
-    constructor(Main _main) {
-        _setOwner(msg.sender);
+    /// @param main_ The address of the main contract
+    constructor(address main_) ContractsBase(main_) {
         _setRole(msg.sender, ENERGY_ORACLE_MANAGER_ROLE, true);
         _setRole(msg.sender, ESCROW, true);
-
-        main = _main;
     }
 
-    /// @dev Changes `main` address to the `_main` address.
-    /// @param _main The address of the new main contract
-    function changeMain(Main _main) external onlyOwner zeroAddressCheck(address(_main)) {
-        main = _main;
+    /// @notice Update Main contract address
+    /// @param main_ New Main contract address
+    function changeMain(address main_) public override onlyOwner {
+        super.changeMain(main_);
     }
 
     /**
@@ -147,11 +128,11 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param supplierPrice The supplier price
      */
     function recordSupplierPrice(uint256 supplierId, uint256 supplierPrice) external onlyOracleProvider whenNotPaused {
-        require(main.tokens().energySupplierToken.ownerOf(supplierId) != address(0), IncorrectSupplier(supplierId));
+        require(main().tokens().energySupplierToken.ownerOf(supplierId) != address(0), IncorrectSupplier(supplierId));
 
         _supplierEnergyPrice[supplierId] = supplierPrice;
 
-        main.tokens().microgridGovernanceToken.mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
+        main().tokens().microgridGovernanceToken.mint(msg.sender, main().MGT_TO_ORACLE_PROVIDER());
 
         emit EnergyPriceRecorded(msg.sender, supplierId, supplierPrice, block.timestamp);
     }
@@ -166,13 +147,12 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      * @param production The energy production value
      */
     function recordEnergyProductions(uint256 producerId, uint256 production) external onlyOracleProvider whenNotPaused {
-        address producer = main.tokens().energyProducerToken.ownerOf(producerId);
-        require(producer != address(0), IncorrectProducer(producerId));
+        address producer = main().tokens().energyProducerToken.ownerOf(producerId);
 
         _energyProductions[producerId] = production;
 
-        main.tokens().energyCreditToken.mint(producer, production);
-        main.tokens().microgridGovernanceToken.mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
+        main().tokens().energyCreditToken.mint(producer, production);
+        main().tokens().microgridGovernanceToken.mint(msg.sender, main().MGT_TO_ORACLE_PROVIDER());
 
         emit EnergyProductionRecorded(msg.sender, producer, producerId, production, block.timestamp);
     }
@@ -192,19 +172,19 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         uint256 supplierId,
         uint256 consumption
     ) external onlyOracleProvider whenNotPaused zeroAddressCheck(consumer) {
-        address supplier = main.tokens().energySupplierToken.ownerOf(supplierId);
-        require(supplier != address(0), IncorrectSupplier(supplierId));
-        if (main.tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
+        address supplier = main().tokens().energySupplierToken.ownerOf(supplierId);
+
+        if (main().tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        uint256 rewardMGT = (main.MGT_PER_ECT_CONSUMED() * consumption) / 1e18;
+        uint256 rewardMGT = (main().MGT_PER_ECT_CONSUMED() * consumption) / 1e18;
 
         _debtsUSD[consumer][supplierId] += consumption * _supplierEnergyPrice[supplierId];
 
-        main.tokens().energyCreditToken.burn(supplier, consumption);
-        main.tokens().microgridGovernanceToken.mint(supplier, rewardMGT);
-        main.tokens().microgridGovernanceToken.mint(msg.sender, main.MGT_TO_ORACLE_PROVIDER());
+        main().tokens().energyCreditToken.burn(supplier, consumption);
+        main().tokens().microgridGovernanceToken.mint(supplier, rewardMGT);
+        main().tokens().microgridGovernanceToken.mint(msg.sender, main().MGT_TO_ORACLE_PROVIDER());
 
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
@@ -222,9 +202,9 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
         uint256 consumptionToAdd,
         uint256 consumptionToRemove
     ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) {
-        address supplier = main.tokens().energySupplierToken.ownerOf(supplierId);
-        require(supplier != address(0), IncorrectSupplier(supplierId));
-        if (main.tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
+        main().tokens().energySupplierToken.ownerOf(supplierId);
+
+        if (main().tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
@@ -285,5 +265,9 @@ contract EnergyOracle is Ownable, EnumerableRoles, Pausable {
      */
     function energyProductions(uint256 producerId) public view returns (uint256 production) {
         production = _energyProductions[producerId];
+    }
+
+    function main() public view returns (Main) {
+        return Main(_main);
     }
 }
