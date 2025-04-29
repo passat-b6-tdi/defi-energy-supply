@@ -212,6 +212,9 @@ describe('EnergyOracle', function () {
     await energyOracle.unpause();
 
     await expect(
+      energyOracle.recordConsumerConsumptions(ethers.constants.AddressZero, tokenId, consumption),
+    ).to.be.revertedWithCustomError(energyOracle, 'ZeroAddressPassed');
+    await expect(
       energyOracle.connect(otherAcc).recordConsumerConsumptions(user, tokenId, consumption),
     ).to.be.revertedWithCustomError(energyOracle, 'OnlyEnergyOracleProvider');
     await expect(energyOracle.recordConsumerConsumptions(user, tokenId + 1, consumption)).to.be.revertedWithCustomError(

@@ -190,11 +190,11 @@ describe('Register', function () {
 
       const opId = await register.currentOracleProviderId();
 
-      await expect(register.connect(otherAcc).registerSupplier(deployer.address)).to.be.revertedWithCustomError(
+      await expect(register.connect(otherAcc).registerOracleProvider(deployer.address)).to.be.revertedWithCustomError(
         register,
         'EnumerableRolesUnauthorized',
       );
-      await expect(register.registerSupplier(ethers.constants.AddressZero)).to.be.revertedWithCustomError(
+      await expect(register.registerOracleProvider(ethers.constants.AddressZero)).to.be.revertedWithCustomError(
         register,
         'ZeroAddressPassed',
       );
@@ -252,7 +252,9 @@ describe('Register', function () {
       await time.increase(10000);
       const unregistration = await register.unregisterProducer(producerId);
 
-      await expect(register.unregisterProducer(producerId)).to.be.revertedWithCustomError(nrgpt, 'TokenDoesNotExist');
+      await expect(register.unregisterProducer(producerId))
+        .to.be.revertedWithCustomError(staking, 'ProducerNotEnteredStaking')
+        .withArgs(producerId);
 
       expect(unregistration).to.emit(register, 'ProducerUnregistered');
       expect(unregistration).to.emit(staking, 'ExitStakingProducer');

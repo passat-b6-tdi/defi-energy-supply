@@ -14,12 +14,9 @@ import {
   StakingReward,
 } from '../typechain';
 
-describe.only('Staking', function () {
-  let admin_role: BigNumber,
-    minter_role: BigNumber,
-    burner_role: BigNumber,
-    staking_role: BigNumber,
-    register_role: BigNumber;
+describe('Staking', function () {
+  let minter_role: BigNumber;
+
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
@@ -81,7 +78,6 @@ describe.only('Staking', function () {
     await staking.deployed();
 
     minter_role = await mgt.MINTER_ROLE();
-    burner_role = await mgt.BURNER_ROLE();
 
     const Contracts: Main.ContractsStruct = {
       staking: staking.address,

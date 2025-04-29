@@ -139,7 +139,6 @@ describe('Escrow', function () {
     const consumer = deployer.address;
     const supplier = otherAcc.address;
     const tokenId = 10;
-    const energyPrice = 1;
     const consumption = 25;
 
     await nrgst.mint(supplier, tokenId);
@@ -150,6 +149,9 @@ describe('Escrow', function () {
     await expect(escrow.connect(otherAcc).payForElectricity(tokenId, usdc.address))
       .to.be.revertedWithCustomError(escrow, 'IncorrectConsumer')
       .withArgs(otherAcc.address, tokenId);
+    await expect(escrow.payForElectricity(tokenId, escrow.address))
+      .to.be.revertedWithCustomError(escrow, 'TokenNotWhitelisted')
+      .withArgs(escrow.address);
 
     const balanceBefore = await usdc.balanceOf(consumer);
     const debtsUSD = await energyOracle.debtsUSD(consumer, tokenId);
