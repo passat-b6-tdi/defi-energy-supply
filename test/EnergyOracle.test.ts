@@ -129,154 +129,153 @@ describe('EnergyOracle', function () {
     expect(escrow.address).to.be.properAddress;
   });
 
-  describe('Registers', function () {
-    it('recordSupplierPrice', async () => {
-      const { energyOracle, nrgst, nrgopt, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
+  it('recordSupplierPrice', async () => {
+    const { energyOracle, nrgst, nrgopt, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
 
-      const tokenId = 10;
-      const user = deployer.address;
-      const energyPrice = 22;
+    const tokenId = 10;
+    const user = deployer.address;
+    const energyPrice = 22;
 
-      await nrgst.mint(user, tokenId);
-      await nrgopt.mint(user, tokenId);
+    await nrgst.mint(user, tokenId);
+    await nrgopt.mint(user, tokenId);
 
-      await energyOracle.pause();
-      await expect(energyOracle.recordSupplierPrice(tokenId, energyPrice)).to.be.revertedWith('Pausable: paused');
-      await energyOracle.unpause();
+    await energyOracle.pause();
+    await expect(energyOracle.recordSupplierPrice(tokenId, energyPrice)).to.be.revertedWith('Pausable: paused');
+    await energyOracle.unpause();
 
-      await expect(
-        energyOracle.connect(otherAcc).recordSupplierPrice(tokenId, energyPrice),
-      ).to.be.revertedWithCustomError(energyOracle, 'OnlyEnergyOracleProvider');
-      await expect(energyOracle.recordSupplierPrice(tokenId + 1, energyPrice)).to.be.reverted;
+    await expect(
+      energyOracle.connect(otherAcc).recordSupplierPrice(tokenId, energyPrice),
+    ).to.be.revertedWithCustomError(energyOracle, 'OnlyEnergyOracleProvider');
+    await expect(energyOracle.recordSupplierPrice(tokenId + 1, energyPrice)).to.be.reverted;
 
-      const record = await energyOracle.recordSupplierPrice(tokenId, energyPrice);
+    const record = await energyOracle.recordSupplierPrice(tokenId, energyPrice);
 
-      const supplierEnergyPrice = await energyOracle.supplierEnergyPrice(tokenId);
+    const supplierEnergyPrice = await energyOracle.supplierEnergyPrice(tokenId);
 
-      expect(record).to.emit(energyOracle, 'EnergyPriceRecorded');
-      expect(await mgt.balanceOf(user)).to.eq(50000000000000000n);
-      expect(supplierEnergyPrice).to.equal(energyPrice);
-    });
+    expect(record).to.emit(energyOracle, 'EnergyPriceRecorded');
+    expect(await mgt.balanceOf(user)).to.eq(50000000000000000n);
+    expect(supplierEnergyPrice).to.equal(energyPrice);
+  });
 
-    it('recordEnergyProductions', async () => {
-      const { energyOracle, nrgpt, nrgopt, nrgct, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
+  it('recordEnergyProductions', async () => {
+    const { energyOracle, nrgpt, nrgopt, nrgct, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
 
-      const tokenId = 10;
-      const user = deployer.address;
-      const production = 22;
+    const tokenId = 10;
+    const user = deployer.address;
+    const production = 22;
 
-      await nrgpt.mint(user, tokenId);
-      await nrgopt.mint(user, tokenId);
+    await nrgpt.mint(user, tokenId);
+    await nrgopt.mint(user, tokenId);
 
-      await energyOracle.pause();
-      await expect(energyOracle.recordEnergyProductions(tokenId, production)).to.be.revertedWith('Pausable: paused');
-      await energyOracle.unpause();
+    await energyOracle.pause();
+    await expect(energyOracle.recordEnergyProductions(tokenId, production)).to.be.revertedWith('Pausable: paused');
+    await energyOracle.unpause();
 
-      await expect(
-        energyOracle.connect(otherAcc).recordEnergyProductions(tokenId, production),
-      ).to.be.revertedWithCustomError(energyOracle, 'OnlyEnergyOracleProvider');
+    await expect(
+      energyOracle.connect(otherAcc).recordEnergyProductions(tokenId, production),
+    ).to.be.revertedWithCustomError(energyOracle, 'OnlyEnergyOracleProvider');
 
-      await expect(energyOracle.recordEnergyProductions(tokenId + 1, production)).to.be.revertedWithCustomError(
-        nrgpt,
-        'TokenDoesNotExist',
-      );
+    await expect(energyOracle.recordEnergyProductions(tokenId + 1, production)).to.be.revertedWithCustomError(
+      nrgpt,
+      'TokenDoesNotExist',
+    );
 
-      const record = await energyOracle.recordEnergyProductions(tokenId, production);
+    const record = await energyOracle.recordEnergyProductions(tokenId, production);
 
-      const energyProductions = await energyOracle.energyProductions(tokenId);
+    const energyProductions = await energyOracle.energyProductions(tokenId);
 
-      expect(record).to.emit(energyOracle, 'EnergyProductionRecorded');
-      expect(await nrgct.balanceOf(user)).to.eq(production);
-      expect(await mgt.balanceOf(user)).to.eq(50000000000000000n);
-      expect(energyProductions).to.equal(production);
-    });
+    expect(record).to.emit(energyOracle, 'EnergyProductionRecorded');
+    expect(await nrgct.balanceOf(user)).to.eq(production);
+    expect(await mgt.balanceOf(user)).to.eq(50000000000000000n);
+    expect(energyProductions).to.equal(production);
+  });
 
-    it('recordConsumerConsumptions', async () => {
-      const { energyOracle, nrgopt, nrgct, nrgst, elct, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
+  it('recordConsumerConsumptions', async () => {
+    const { energyOracle, nrgopt, nrgct, nrgst, elct, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
 
-      const tokenId = 10;
-      const user = deployer.address;
-      const consumption = 20;
-      const energyPrice = 1;
+    const tokenId = 10;
+    const user = deployer.address;
+    const consumption = 20;
+    const energyPrice = 1;
 
-      await nrgopt.mint(user, tokenId);
-      await nrgct.mint(user, consumption);
-      await nrgst.mint(user, tokenId);
-      await elct.mint(user, tokenId, 1);
+    await nrgopt.mint(user, tokenId);
+    await nrgct.mint(user, consumption);
+    await nrgst.mint(user, tokenId);
+    await elct.mint(user, tokenId, 1);
 
-      await energyOracle.recordSupplierPrice(tokenId, energyPrice);
+    await energyOracle.recordSupplierPrice(tokenId, energyPrice);
 
-      await energyOracle.pause();
-      await expect(energyOracle.recordConsumerConsumptions(user, tokenId, consumption)).to.be.revertedWith(
-        'Pausable: paused',
-      );
-      await energyOracle.unpause();
+    await energyOracle.pause();
+    await expect(energyOracle.recordConsumerConsumptions(user, tokenId, consumption)).to.be.revertedWith(
+      'Pausable: paused',
+    );
+    await energyOracle.unpause();
 
-      await expect(
-        energyOracle.connect(otherAcc).recordConsumerConsumptions(user, tokenId, consumption),
-      ).to.be.revertedWithCustomError(energyOracle, 'OnlyEnergyOracleProvider');
-      await expect(
-        energyOracle.recordConsumerConsumptions(user, tokenId + 1, consumption),
-      ).to.be.revertedWithCustomError(nrgst, 'TokenDoesNotExist');
-      await expect(energyOracle.recordConsumerConsumptions(otherAcc.address, tokenId, consumption))
-        .to.be.revertedWithCustomError(energyOracle, 'IncorrectConsumer')
-        .withArgs(otherAcc.address, tokenId);
+    await expect(
+      energyOracle.connect(otherAcc).recordConsumerConsumptions(user, tokenId, consumption),
+    ).to.be.revertedWithCustomError(energyOracle, 'OnlyEnergyOracleProvider');
+    await expect(energyOracle.recordConsumerConsumptions(user, tokenId + 1, consumption)).to.be.revertedWithCustomError(
+      nrgst,
+      'TokenDoesNotExist',
+    );
+    await expect(energyOracle.recordConsumerConsumptions(otherAcc.address, tokenId, consumption))
+      .to.be.revertedWithCustomError(energyOracle, 'IncorrectConsumer')
+      .withArgs(otherAcc.address, tokenId);
 
-      const record = await energyOracle.recordConsumerConsumptions(user, tokenId, consumption);
-      const debtsUSD = await energyOracle.debtsUSD(user, tokenId);
+    const record = await energyOracle.recordConsumerConsumptions(user, tokenId, consumption);
+    const debtsUSD = await energyOracle.debtsUSD(user, tokenId);
 
-      expect(record).to.emit(energyOracle, 'EnergyConsumptionRecorded');
-      expect(await nrgct.balanceOf(user)).to.eq(0);
-      expect(await mgt.balanceOf(user)).to.eq(50000000000000000n * 2n);
-      expect(debtsUSD).to.equal(consumption);
-    });
+    expect(record).to.emit(energyOracle, 'EnergyConsumptionRecorded');
+    expect(await nrgct.balanceOf(user)).to.eq(0);
+    expect(await mgt.balanceOf(user)).to.eq(50000000000000000n * 2n);
+    expect(debtsUSD).to.equal(consumption);
+  });
 
-    it('updateEnergyConsumptions', async () => {
-      const { energyOracle, nrgopt, nrgct, nrgst, elct, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
+  it('updateEnergyConsumptions', async () => {
+    const { energyOracle, nrgopt, nrgct, nrgst, elct, mgt, deployer, otherAcc } = await loadFixture(deployFixture);
 
-      const tokenId = 10;
-      const user = deployer.address;
-      const consumptionToAdd = 21;
-      const consumptionToRemove = 5;
-      const energyPrice = 1;
+    const tokenId = 10;
+    const user = deployer.address;
+    const consumptionToAdd = 21;
+    const consumptionToRemove = 5;
+    const energyPrice = 1;
 
-      await nrgopt.mint(user, tokenId);
-      await nrgct.mint(user, consumptionToAdd);
-      await nrgst.mint(user, tokenId);
-      await elct.mint(user, tokenId, 1);
+    await nrgopt.mint(user, tokenId);
+    await nrgct.mint(user, consumptionToAdd);
+    await nrgst.mint(user, tokenId);
+    await elct.mint(user, tokenId, 1);
 
-      await energyOracle.recordSupplierPrice(tokenId, energyPrice);
+    await energyOracle.recordSupplierPrice(tokenId, energyPrice);
 
-      await expect(
-        energyOracle.connect(otherAcc).updateEnergyConsumptions(user, tokenId, consumptionToAdd, consumptionToRemove),
-      ).to.be.revertedWithCustomError(energyOracle, 'EnumerableRolesUnauthorized');
-      await energyOracle.pause();
-      await expect(
-        energyOracle.updateEnergyConsumptions(user, tokenId, consumptionToAdd, consumptionToRemove),
-      ).to.be.revertedWith('Pausable: paused');
-      await energyOracle.unpause();
-      await expect(
-        energyOracle.updateEnergyConsumptions(
-          ethers.constants.AddressZero,
-          tokenId,
-          consumptionToAdd,
-          consumptionToRemove,
-        ),
-      ).to.be.revertedWithCustomError(energyOracle, 'ZeroAddressPassed');
-      await expect(
-        energyOracle.updateEnergyConsumptions(user, tokenId + 1, consumptionToAdd, consumptionToRemove),
-      ).to.be.revertedWithCustomError(nrgst, 'TokenDoesNotExist');
-      await expect(
-        energyOracle.updateEnergyConsumptions(otherAcc.address, tokenId, consumptionToAdd, consumptionToRemove),
-      )
-        .to.be.revertedWithCustomError(energyOracle, 'IncorrectConsumer')
-        .withArgs(otherAcc.address, tokenId);
+    await expect(
+      energyOracle.connect(otherAcc).updateEnergyConsumptions(user, tokenId, consumptionToAdd, consumptionToRemove),
+    ).to.be.revertedWithCustomError(energyOracle, 'EnumerableRolesUnauthorized');
+    await energyOracle.pause();
+    await expect(
+      energyOracle.updateEnergyConsumptions(user, tokenId, consumptionToAdd, consumptionToRemove),
+    ).to.be.revertedWith('Pausable: paused');
+    await energyOracle.unpause();
+    await expect(
+      energyOracle.updateEnergyConsumptions(
+        ethers.constants.AddressZero,
+        tokenId,
+        consumptionToAdd,
+        consumptionToRemove,
+      ),
+    ).to.be.revertedWithCustomError(energyOracle, 'ZeroAddressPassed');
+    await expect(
+      energyOracle.updateEnergyConsumptions(user, tokenId + 1, consumptionToAdd, consumptionToRemove),
+    ).to.be.revertedWithCustomError(nrgst, 'TokenDoesNotExist');
+    await expect(
+      energyOracle.updateEnergyConsumptions(otherAcc.address, tokenId, consumptionToAdd, consumptionToRemove),
+    )
+      .to.be.revertedWithCustomError(energyOracle, 'IncorrectConsumer')
+      .withArgs(otherAcc.address, tokenId);
 
-      const record = await energyOracle.updateEnergyConsumptions(user, tokenId, consumptionToAdd, consumptionToRemove);
-      const debtsUSD = await energyOracle.debtsUSD(user, tokenId);
+    const record = await energyOracle.updateEnergyConsumptions(user, tokenId, consumptionToAdd, consumptionToRemove);
+    const debtsUSD = await energyOracle.debtsUSD(user, tokenId);
 
-      expect(record).to.emit(energyOracle, 'EnergyConsumptionUpdated');
-      expect(debtsUSD).to.equal(0 + consumptionToAdd - consumptionToRemove);
-    });
+    expect(record).to.emit(energyOracle, 'EnergyConsumptionUpdated');
+    expect(debtsUSD).to.equal(0 + consumptionToAdd - consumptionToRemove);
   });
 });

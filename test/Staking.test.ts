@@ -2,240 +2,251 @@ import { time, loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MGT, Manager, StakingReward, Register, NRGOP, ECU, NRGS } from '../typechain';
+import {
+  ElectricityConsumerToken,
+  EnergyCreditToken,
+  EnergyOracleProviderToken,
+  EnergyProducerToken,
+  EnergySupplierToken,
+  ERC20Mock,
+  Main,
+  MicrogridGovernanceToken,
+  StakingReward,
+} from '../typechain';
 
-describe('Staking', function () {
-  let otherAccAddress: string;
-  let admin_role: string, minter_role: string, staking_role: string, register_role: string;
+describe.only('Staking', function () {
+  let admin_role: BigNumber,
+    minter_role: BigNumber,
+    burner_role: BigNumber,
+    staking_role: BigNumber,
+    register_role: BigNumber;
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
   async function deployFixture() {
     const [deployer, otherAcc] = await ethers.getSigners();
 
-    otherAccAddress = otherAcc.address.toLowerCase();
+    const EnergyCreditToken: ContractFactory = await ethers.getContractFactory('EnergyCreditToken');
+    const nrgct: EnergyCreditToken = (await EnergyCreditToken.deploy()) as EnergyCreditToken;
+    await nrgct.deployed();
 
-    const MGT_Factory: ContractFactory = await ethers.getContractFactory('MGT');
-    const mgt: MGT = (await MGT_Factory.deploy()) as MGT;
+    const MicrogridGovernanceToken: ContractFactory = await ethers.getContractFactory('MicrogridGovernanceToken');
+    const mgt: MicrogridGovernanceToken = (await MicrogridGovernanceToken.deploy()) as MicrogridGovernanceToken;
     await mgt.deployed();
 
-    const NRGS_Factory: ContractFactory = await ethers.getContractFactory('NRGS');
-    const nrgs: NRGS = (await NRGS_Factory.deploy()) as NRGS;
-    await nrgs.deployed();
+    const EnergyProducerToken: ContractFactory = await ethers.getContractFactory('EnergyProducerToken');
+    const nrgpt: EnergyProducerToken = (await EnergyProducerToken.deploy()) as EnergyProducerToken;
+    await nrgpt.deployed();
 
-    const ECU_Factory: ContractFactory = await ethers.getContractFactory('ECU');
-    const ecu: ECU = (await ECU_Factory.deploy()) as ECU;
-    await ecu.deployed();
+    const EnergySupplierToken: ContractFactory = await ethers.getContractFactory('EnergySupplierToken');
+    const nrgst: EnergySupplierToken = (await EnergySupplierToken.deploy()) as EnergySupplierToken;
+    await nrgst.deployed();
 
-    const NRGOP_Factory: ContractFactory = await ethers.getContractFactory('NRGOP');
-    const nrgop: NRGOP = (await NRGOP_Factory.deploy()) as NRGOP;
-    await nrgop.deployed();
+    const EnergyOracleProviderToken: ContractFactory = await ethers.getContractFactory('EnergyOracleProviderToken');
+    const nrgopt: EnergyOracleProviderToken = (await EnergyOracleProviderToken.deploy()) as EnergyOracleProviderToken;
+    await nrgopt.deployed();
 
-    const Tokens: Manager.TokensStruct = {
-      mgt: mgt.address,
-      ecu: ecu.address,
-      nrgs: nrgs.address,
-      nrgop: nrgop.address,
-    }
+    const ElectricityConsumerToken: ContractFactory = await ethers.getContractFactory('ElectricityConsumerToken');
+    const elct: ElectricityConsumerToken = (await ElectricityConsumerToken.deploy()) as ElectricityConsumerToken;
+    await elct.deployed();
 
-    const Values: Manager.ValuesStruct = {
-      rewardAmount: 10,
-      fees: 10,
-    }
+    const ERC20Mock: ContractFactory = await ethers.getContractFactory('ERC20Mock');
+    const usdc: ERC20Mock = (await ERC20Mock.deploy()) as ERC20Mock;
+    await usdc.deployed();
+    const usdt: ERC20Mock = (await ERC20Mock.deploy()) as ERC20Mock;
+    await usdt.deployed();
+    const dai: ERC20Mock = (await ERC20Mock.deploy()) as ERC20Mock;
+    await dai.deployed();
 
-    const Manager: ContractFactory = await ethers.getContractFactory('Manager');
-    const manager: Manager = (await Manager.deploy(
-      Tokens,
-      deployer.address,
-      Values,
-    )) as Manager;
-    await manager.deployed();
+    const Tokens: Main.TokensStruct = {
+      energyCreditToken: nrgct.address,
+      microgridGovernanceToken: mgt.address,
+      electricityConsumerToken: elct.address,
+      energyProducerToken: nrgpt.address,
+      energySupplierToken: nrgst.address,
+      energyOracleProviderToken: nrgopt.address,
+    };
+
+    const Fees: Main.FeesStruct = {
+      receiver: deployer.address,
+      amount: 10,
+    };
+
+    const Main: ContractFactory = await ethers.getContractFactory('Main');
+    const main: Main = (await Main.deploy(Tokens, Fees, usdc.address, dai.address, usdt.address)) as Main;
+    await main.deployed();
 
     const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward');
-    const stakingReward: StakingReward = (await StakingReward.deploy(manager.address)) as StakingReward;
-    await stakingReward.deployed();
+    const staking: StakingReward = (await StakingReward.deploy(main.address)) as StakingReward;
+    await staking.deployed();
 
-    const Register: ContractFactory = await ethers.getContractFactory('Register');
-    const register: Register = (await Register.deploy(manager.address)) as Register;
-    await register.deployed();
+    minter_role = await mgt.MINTER_ROLE();
+    burner_role = await mgt.BURNER_ROLE();
 
-    admin_role = await mgt.DEFAULT_ADMIN_ROLE();
-    minter_role = await mgt.MINTER_BURNER_ROLE();
-    register_role = await nrgs.REGISTER_ROLE();
-    staking_role = await stakingReward.STAKING_MANAGER_ROLE();
+    const Contracts: Main.ContractsStruct = {
+      staking: staking.address,
+      oracle: deployer.address,
+      escrow: deployer.address,
+      register: deployer.address,
+    };
 
-    await mgt.grantRole(minter_role, stakingReward.address);
+    // Required for deployment
+    await main.changeContracts(Contracts);
+    await mgt.setRole(staking.address, minter_role, true);
 
-    return { mgt, MGT_Factory, nrgs, NRGS_Factory, register, stakingReward, manager, deployer, otherAcc };
+    return {
+      nrgct,
+      mgt,
+      nrgpt,
+      nrgst,
+      nrgopt,
+      elct,
+      main,
+      staking,
+      usdc,
+      deployer,
+      otherAcc,
+    };
   }
 
   it('Deployed correctly', async () => {
-    const { mgt, nrgs, stakingReward, manager, deployer } = await loadFixture(deployFixture);
+    const { nrgct, mgt, nrgpt, nrgst, nrgopt, elct, main, staking } = await loadFixture(deployFixture);
 
+    expect(nrgct.address).to.be.properAddress;
     expect(mgt.address).to.be.properAddress;
-    expect(stakingReward.address).to.be.properAddress;
-    expect(nrgs.address).to.be.properAddress;
-
-    expect(await mgt.name()).to.be.eq('Mictrogrid Token');
-    expect(await mgt.symbol()).to.be.eq('MGT');
-    expect(await nrgs.name()).to.be.eq('Energy Supplier Token');
-    expect(await nrgs.symbol()).to.be.eq('NRGS');
-
-    expect(await mgt.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await mgt.hasRole(minter_role, deployer.address)).to.be.true;
-    expect(await mgt.hasRole(minter_role, stakingReward.address)).to.be.true;
-
-    expect(await nrgs.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await nrgs.hasRole(register_role, deployer.address)).to.be.true;
-    expect(await stakingReward.hasRole(admin_role, deployer.address)).to.be.true;
-    expect(await stakingReward.hasRole(staking_role, deployer.address)).to.be.true;
-
-    expect(await stakingReward.manager()).to.be.eq(manager.address);
+    expect(nrgpt.address).to.be.properAddress;
+    expect(nrgst.address).to.be.properAddress;
+    expect(nrgopt.address).to.be.properAddress;
+    expect(elct.address).to.be.properAddress;
+    expect(main.address).to.be.properAddress;
+    expect(staking.address).to.be.properAddress;
   });
 
-  describe('Rewards', function () {
-    it('Manager can add supplier to staking', async () => {
-      const { stakingReward, nrgs, deployer } = await loadFixture(deployFixture);
-      await nrgs.mint(deployer.address, 0);
+  it('enterStakingProducer', async () => {
+    const { staking, nrgpt, otherAcc } = await loadFixture(deployFixture);
 
-      const tx = await stakingReward.enterStaking(deployer.address, 0);
-      const now = await time.latest();
+    const producerId = 25;
 
-      const sup = await stakingReward.suppliers(deployer.address, 0);
+    await nrgpt.mint(otherAcc.address, producerId);
 
-      expect(tx).to.emit(stakingReward, 'EnterStaking');
-      expect(sup.updatedAt).to.be.eq(now);
-      expect(sup.pendingReward).to.be.eq(0);
-    });
+    await expect(staking.connect(otherAcc).enterStakingProducer(producerId)).to.be.revertedWithCustomError(
+      staking,
+      'OnlyRegister',
+    );
 
-    it('Manager can remove supplier from staking', async () => {
-      const { stakingReward, nrgs, deployer, mgt } = await loadFixture(deployFixture);
-      await nrgs.mint(deployer.address, 0);
+    const enter = await staking.enterStakingProducer(producerId);
 
-      const txEnter = await stakingReward.enterStaking(deployer.address, 0);
-      const now = await time.latest();
+    expect(enter).to.emit(staking, 'EnterStakingProducer');
+    expect(await staking.totalProducers()).to.equal(1);
+    expect((await staking.producers(producerId)).updatedAt).to.be.gt(0);
+    expect((await staking.producers(producerId)).pendingReward).to.be.eq(0);
 
-      let sup = await stakingReward.suppliers(deployer.address, 0);
-
-      expect(txEnter).to.emit(stakingReward, 'EnterStaking');
-      expect(sup.updatedAt).to.be.eq(now);
-      expect(sup.pendingReward).to.be.eq(0);
-
-      const txExit = await stakingReward.exitStaking(deployer.address, 0);
-
-      sup = await stakingReward.suppliers(deployer.address, 0);
-
-      expect(txExit).to.emit(stakingReward, 'ExitStaking');
-      expect(sup.updatedAt).to.be.eq(0);
-      expect(sup.pendingReward).to.be.eq(0);
-    });
-
-    it('Everyone can update rewards to supplier', async () => {
-      const { stakingReward, nrgs, deployer, manager } = await loadFixture(deployFixture);
-      await nrgs.mint(deployer.address, 0);
-
-      const txEnter = await stakingReward.enterStaking(deployer.address, 0);
-      let now = await time.latest();
-
-      let sup = await stakingReward.suppliers(deployer.address, 0);
-
-      expect(txEnter).to.emit(stakingReward, 'EnterStaking');
-      expect(sup.updatedAt).to.be.eq(now);
-      expect(sup.pendingReward).to.be.eq(0);
-
-      await time.increaseTo(now + 200);
-
-      now = await time.latest();
-      const totalSuppliers = await stakingReward.totalSuppliers();
-      const rewardAmount = (await manager.values()).rewardAmount;
-      const timePassed = BigNumber.from(now).sub(sup.updatedAt);
-      const rewardToUser = rewardAmount.mul(timePassed).div(totalSuppliers);
-
-      const txSend = await stakingReward.updateRewards(deployer.address, 0);
-      sup = await stakingReward.suppliers(deployer.address, 0);
-
-      now = await time.latest();
-
-      expect(txSend).to.emit(stakingReward, 'RewardSent');
-      expect(sup.updatedAt).to.be.eq(now);
-      expect(sup.pendingReward).to.be.eq(rewardToUser.add(rewardAmount));
-    });
-
-    it('Manager can send rewards to supplier', async () => {
-      const { stakingReward, nrgs, deployer, mgt, manager } = await loadFixture(deployFixture);
-      await nrgs.mint(deployer.address, 0);
-
-      let MGTBalance = await mgt.balanceOf(deployer.address);
-      expect(MGTBalance).to.eq(0);
-
-      const txEnter = await stakingReward.enterStaking(deployer.address, 0);
-      let now = await time.latest();
-
-      let sup = await stakingReward.suppliers(deployer.address, 0);
-
-      expect(txEnter).to.emit(stakingReward, 'EnterStaking');
-      expect(sup.updatedAt).to.be.eq(now);
-      expect(sup.pendingReward).to.be.eq(0);
-
-      await time.increaseTo(now + 200);
-
-      now = await time.latest();
-      const totalSuppliers = await stakingReward.totalSuppliers();
-      const rewardAmount = (await manager.values()).rewardAmount;
-      const timePassed = BigNumber.from(now).sub(sup.updatedAt);
-      const rewardToUser = rewardAmount.mul(timePassed).div(totalSuppliers);
-
-      const txSend = await stakingReward.sendRewards(deployer.address, 0);
-      now = await time.latest();
-      MGTBalance = await mgt.balanceOf(deployer.address);
-
-      expect(txSend).to.emit(stakingReward, 'RewardSent');
-      expect(sup.updatedAt).to.be.approximately(now, 1000);
-      expect(MGTBalance.toNumber()).to.be.eq(rewardToUser.add(rewardAmount).toNumber());
-    });
+    await time.increase(1000);
   });
 
-  describe('Errors', function () {
-    it('Only STAKING_MANAGER_ROLE', async () => {
-      const { stakingReward, otherAcc } = await loadFixture(deployFixture);
+  it('updateProducerInfo', async () => {
+    const { staking, nrgpt, otherAcc, deployer } = await loadFixture(deployFixture);
 
-      const errorMsg = `AccessControl: account ${otherAccAddress} is missing role ${staking_role}`;
+    const producerId = 25;
 
-      await expect(stakingReward.connect(otherAcc).enterStaking(otherAcc.address, 10)).to.be.revertedWith(errorMsg);
-      await expect(stakingReward.connect(otherAcc).sendRewards(otherAcc.address, 10)).to.be.revertedWith(errorMsg);
-      await expect(stakingReward.connect(otherAcc).exitStaking(otherAcc.address, 10)).to.be.revertedWith(errorMsg);
-    });
+    await nrgpt.mint(otherAcc.address, producerId);
+    await nrgpt.mint(deployer.address, producerId + 1);
 
-    it('Zero Address Check', async () => {
-      const { stakingReward } = await loadFixture(deployFixture);
-      const addressZero = ethers.constants.AddressZero;
-      const errorMsg = 'ZeroAddressPassed';
+    await staking.enterStakingProducer(producerId);
 
-      await expect(stakingReward.enterStaking(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
-      await expect(stakingReward.sendRewards(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
-      await expect(stakingReward.exitStaking(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
-      await expect(stakingReward.updateRewards(addressZero, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg);
-    });
+    const lastUpdatedAt = (await staking.producers(producerId)).updatedAt;
 
-    it('Is Correct Owner', async () => {
-      const { stakingReward, otherAcc, deployer, nrgs } = await loadFixture(deployFixture);
-      await nrgs.mint(deployer.address, 10);
-      const errorMsg1 = 'IncorrectSupplier';
-      const errorMsg2 = 'SupplierNotEnteredStaking';
+    await expect(staking.updateProducerInfo(ethers.constants.AddressZero, producerId)).to.be.revertedWithCustomError(
+      staking,
+      'ZeroAddressPassed',
+    );
+    await expect(staking.updateProducerInfo(deployer.address, producerId))
+      .to.be.revertedWithCustomError(staking, 'IncorrectProducer')
+      .withArgs(deployer.address, producerId);
+    await expect(staking.updateProducerInfo(deployer.address, producerId + 1))
+      .to.be.revertedWithCustomError(staking, 'ProducerNotEnteredStaking')
+      .withArgs(producerId + 1);
 
-      await expect(stakingReward.enterStaking(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
-      await expect(stakingReward.sendRewards(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
-      await expect(stakingReward.exitStaking(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg2);
-      await expect(stakingReward.updateRewards(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
-    });
+    const increaseTo = (await time.latest()) + 1000;
+    await time.increaseTo(increaseTo);
 
-    it('updateRewards requires', async () => {
-      const { stakingReward, otherAcc, deployer, nrgs } = await loadFixture(deployFixture);
-      await nrgs.mint(otherAcc.address, 10);
+    await staking.updateProducerInfo(otherAcc.address, producerId);
 
-      const errorMsg1 = 'SupplierNotEnteredStaking';
+    const currentTime = increaseTo + 1;
+    const elapsed = BigNumber.from(currentTime).sub(lastUpdatedAt);
+    const reward = elapsed.mul(ethers.utils.parseEther('0.05')).div(1);
 
-      await expect(stakingReward.updateRewards(otherAcc.address, 10)).to.be.revertedWithCustomError(stakingReward, errorMsg1);
-    });
+    expect((await staking.producers(producerId)).updatedAt).to.equal(currentTime);
+    expect((await staking.producers(producerId)).pendingReward).to.equal(reward);
+  });
+
+  it('getProducerRewards', async () => {
+    const { staking, nrgpt, mgt, otherAcc, deployer } = await loadFixture(deployFixture);
+
+    const producerId = 25;
+
+    await nrgpt.mint(otherAcc.address, producerId);
+    await nrgpt.mint(deployer.address, producerId + 1);
+
+    await staking.enterStakingProducer(producerId);
+
+    const lastUpdatedAt = (await staking.producers(producerId)).updatedAt;
+
+    await expect(staking.getProducerRewards(producerId))
+      .to.be.revertedWithCustomError(staking, 'IncorrectProducer')
+      .withArgs(deployer.address, producerId);
+    await expect(staking.getProducerRewards(producerId + 1))
+      .to.be.revertedWithCustomError(staking, 'ProducerNotEnteredStaking')
+      .withArgs(producerId + 1);
+
+    const increaseTo = (await time.latest()) + 1000;
+    await time.increaseTo(increaseTo);
+
+    const getRewards = await staking.connect(otherAcc).getProducerRewards(producerId);
+
+    const currentTime = increaseTo + 1;
+    const elapsed = BigNumber.from(currentTime).sub(lastUpdatedAt);
+    const reward = elapsed.mul(ethers.utils.parseEther('0.05')).div(1);
+
+    expect(getRewards).to.emit(staking, 'RewardSentProducer').withArgs(otherAcc.address, reward);
+    expect((await staking.producers(producerId)).updatedAt).to.equal(currentTime);
+    expect((await staking.producers(producerId)).pendingReward).to.equal(0);
+    expect(await mgt.balanceOf(otherAcc.address)).to.equal(reward);
+  });
+
+  it('exitStakingProducer', async () => {
+    const { staking, nrgpt, mgt, otherAcc, deployer } = await loadFixture(deployFixture);
+
+    const producerId = 25;
+
+    await nrgpt.mint(otherAcc.address, producerId);
+
+    await staking.enterStakingProducer(producerId);
+
+    const lastUpdatedAt = (await staking.producers(producerId)).updatedAt;
+
+    await expect(staking.connect(otherAcc).exitStakingProducer(producerId)).to.be.revertedWithCustomError(
+      staking,
+      'OnlyRegister',
+    );
+
+    await expect(staking.exitStakingProducer(producerId + 1))
+      .to.be.revertedWithCustomError(staking, 'ProducerNotEnteredStaking')
+      .withArgs(producerId + 1);
+
+    const increaseTo = (await time.latest()) + 1000;
+    await time.increaseTo(increaseTo);
+
+    const exit = await staking.exitStakingProducer(producerId);
+
+    const currentTime = increaseTo + 1;
+    const elapsed = BigNumber.from(currentTime).sub(lastUpdatedAt);
+    const reward = elapsed.mul(ethers.utils.parseEther('0.05')).div(1);
+
+    expect(exit).to.emit(staking, 'ExitStakingProducer');
+    expect(await staking.totalProducers()).to.equal(0);
+    expect((await staking.producers(producerId)).updatedAt).to.equal(0);
+    expect((await staking.producers(producerId)).pendingReward).to.equal(0);
+    expect(await mgt.balanceOf(otherAcc.address)).to.equal(reward);
   });
 });
