@@ -3,203 +3,207 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 1. Fetch real historical weather data for Kyiv
-API = "https://archive-api.open-meteo.com/v1/archive"
-params = {
-    "latitude":   50.4501,
-    "longitude":  30.5234,
-    "start_date": "2024-03-01",
-    "end_date":   "2024-03-10",
-    "hourly":     "cloudcover,windspeed_10m,shortwave_radiation,temperature_2m,pressure_msl",
-    "timezone":   "Europe/Kyiv",
-}
-resp = requests.get(API, params=params)
-resp.raise_for_status()
-h = resp.json()["hourly"]
+# === 0. Константи ===
+LATITUDE = 50.4501
+LONGITUDE = 30.5234
+START_DATE = "2024-03-01"
+END_DATE = "2024-03-10"
+TIMEZONE = "Europe/Kyiv"
 
-# 2. Build DataFrame
-times = pd.to_datetime(h["time"])
-weather = pd.DataFrame({
-    "cloud_cover": np.array(h["cloudcover"], dtype=float) / 100.0,   # → [0,1]
-    "wind_speed":  np.array(h["windspeed_10m"], dtype=float),        # m/s
-    "solar_irr":   np.array(h["shortwave_radiation"], dtype=float),  # W/m²
-    "temp":        np.array(h["temperature_2m"], dtype=float),       # °C
-    "pressure":    np.array(h["pressure_msl"], dtype=float) * 100.0, # Pa
-}, index=times)
+SOLAR_PANEL_KW = 3
+WIND_TURBINE_KW = 15
+N_HOUSES = 5
 
-# 3. Detailed solar model: tilt, temp coeff., soiling, air density
-tilt_opt    = 35.0   # optimal tilt in Kyiv
-tilt_actual = 30.0   # your panel tilt
-f_tilt      = np.cos(np.radians(tilt_actual - tilt_opt))
+TILT_OPT = 35.0
+TILT_ACTUAL = 30.0
+NOCT = 45.0
+TEMP_COEFF = -0.004
+SOILING_FACTOR = 0.95
+INVERTER_EFFICIENCY = 0.97
 
-NOCT       = 45.0    # Nominal Operating Cell Temp (°C)
-weather["cell_temp"] = weather["temp"] + weather["solar_irr"]/800 * (NOCT - 20)
-temp_coeff  = -0.004 # –0.4 % / °C
-weather["f_temp"]  = 1 + temp_coeff * (weather["cell_temp"] - 25)
+BATTERY_CAPACITIES = [10, 20, 50]
+CHARGE_LIMIT_KW = 5
+DISCHARGE_LIMIT_KW = 5
+ETA_CH = 0.95
+ETA_DIS = 0.95
+SELF_DISCHARGE = 0.001
 
-weather["f_soil"]  = 0.95  # 5% loss due to dirt/snow
+BUY_PRICE = 0.15
+SELL_PRICE = 0.10
 
-R = 287.05  # J/(kg·K)
-weather["rho"]    = weather["pressure"] / (R * (weather["temp"] + 273.15))
-weather["f_rho"]  = weather["rho"] / 1.225
+# === 1. Завантаження даних ===
+def fetch_weather():
+    API = "https://archive-api.open-meteo.com/v1/archive"
+    params = {
+        "latitude": LATITUDE,
+        "longitude": LONGITUDE,
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+        "hourly": "cloudcover,windspeed_10m,shortwave_radiation,temperature_2m,pressure_msl",
+        "timezone": "UTC",
+    }
+    resp = requests.get(API, params=params)
+    resp.raise_for_status()
+    return resp.json()["hourly"]
 
-# 4. Compute solar generation with all factors
-n_houses = 5
-panel_kw = 3  # kW per house at STC
-weather["solar_gen"] = (
-      weather["solar_irr"]
-    * f_tilt
-    * weather["f_temp"]
-    * weather["f_soil"]
-    * weather["f_rho"]
-    / 1000
-    * n_houses * panel_kw
-)
+# === 2. Обробка даних ===
+def prepare_weather_data(h):
+    times = pd.to_datetime(h["time"]).tz_localize("UTC").tz_convert(TIMEZONE)
+    weather = pd.DataFrame({
+        "cloud_cover": np.array(h["cloudcover"], dtype=float) / 100.0,
+        "wind_speed":  np.array(h["windspeed_10m"], dtype=float),
+        "solar_irr":   np.array(h["shortwave_radiation"], dtype=float),
+        "temp":        np.array(h["temperature_2m"], dtype=float),
+        "pressure":    np.array(h["pressure_msl"], dtype=float) * 100.0,
+    }, index=times)
+    
+    weather = weather.sort_index().asfreq('h')
+    weather.interpolate(method='time', inplace=True)
+    weather['cloud_cover'] = weather['cloud_cover'].clip(0, 1)
+    weather['temp'] = weather['temp'].clip(-30, 40)
 
-# 5. Wind generation (simple cubic curve)
-wind_capacity = 15  # kW total
-def wind_power_curve(ws):
-    if ws < 3 or ws > 25:
-        return 0.0
-    if ws < 12:
-        return wind_capacity * ((ws - 3)/9)**3
-    return wind_capacity
+    for col in ['wind_speed', 'solar_irr']:
+        mu, sigma = weather[col].mean(), weather[col].std()
+        mask = (weather[col] < mu - 3*sigma) | (weather[col] > mu + 3*sigma)
+        weather.loc[mask, col] = np.nan
+    weather[['wind_speed', 'solar_irr']] = weather[['wind_speed', 'solar_irr']].interpolate(method='time')
 
-weather["wind_gen"] = weather["wind_speed"].apply(wind_power_curve)
+    return weather
 
-# 6. Synthetic per-house consumption
-np.random.seed(7)
-hour = weather.index.hour + weather.index.minute / 60
-cons_dict = {}
-for i in range(n_houses):
-    base = np.random.uniform(0.8,1.2,len(weather))
-    daily = 0.5 * np.sin((hour-17)/12*np.pi)
-    noise = np.random.normal(0,0.05,len(weather))
-    cons = base + daily + noise
-    cons_dict[f"House {i+1}"] = np.clip(cons, 0.5, 2.5)
-cons_df = pd.DataFrame(cons_dict, index=weather.index)
-weather["demand"] = cons_df.sum(axis=1)
+# === 3. Генерація енергії ===
+def compute_generation(weather):
+    f_tilt = np.cos(np.radians(TILT_ACTUAL - TILT_OPT))
 
-# 7. Simulate battery (strict energy limits + internal balance)
-battery_caps = [10, 20, 50]  # kWh
-charge_limit = 5             # kW
-discharge_limit = 5          # kW
-eta_ch, eta_dis = 0.95, 0.95
-self_discharge = 0.001       # 0.1% per hour
+    R = 287.05
+    weather["rho"] = weather["pressure"] / (R * (weather["temp"] + 273.15))
+    weather["f_rho"] = weather["rho"] / 1.225
 
-soc_dict = {}
-import_dict = {}
-export_dict = {}
-charge_energy_dict = {}
-discharge_energy_dict = {}
+    weather["cell_temp"] = weather["temp"] + weather["solar_irr"] / 800 * (NOCT - 20)
+    weather["f_temp"] = 1 + TEMP_COEFF * (weather["cell_temp"] - 25)
 
-for cap in battery_caps:
-    T = len(weather)
-    soc = np.zeros(T); soc[0] = cap
-    imp = np.zeros(T); exp = np.zeros(T)
-    charge_energy = np.zeros(T)
-    discharge_energy = np.zeros(T)
+    weather["solar_gen"] = (
+        weather["solar_irr"]
+        * f_tilt
+        * weather["f_temp"]
+        * SOILING_FACTOR
+        * weather["f_rho"]
+        / 1000
+        * SOLAR_PANEL_KW * N_HOUSES
+        * INVERTER_EFFICIENCY
+    )
 
-    for t in range(1, T):
-        # self-discharge
-        soc[t-1] *= (1 - self_discharge)
+    def wind_power(ws):
+        if ws < 3: return 0
+        if ws < 12: return WIND_TURBINE_KW * ((ws - 3) / (12 - 3))**3
+        if ws < 25: return WIND_TURBINE_KW
+        return 0
 
-        gen = weather["solar_gen"].iat[t] + weather["wind_gen"].iat[t]
-        dem = weather["demand"].iat[t]
+    weather["wind_gen"] = weather["wind_speed"].apply(wind_power) * INVERTER_EFFICIENCY
 
-        if gen >= dem:
-            surplus = gen - dem
-            # power we can put into battery
-            P_ch = min(surplus, charge_limit)
-            # energy after efficiency
-            E_ch = min(P_ch * eta_ch, cap - soc[t-1])
-            soc[t] = soc[t-1] + E_ch
-            exp[t] = max(0, surplus - P_ch)
-            charge_energy[t] = E_ch
-        else:
-            deficit = dem - gen
-            P_dis = min(deficit, discharge_limit)
-            E_dis = min(P_dis / eta_dis, soc[t-1])
-            soc[t] = soc[t-1] - E_dis
-            rem = deficit - E_dis * eta_dis
-            imp[t] = max(0, rem)
-            discharge_energy[t] = E_dis
+    return weather
 
-    soc_dict[cap] = soc
-    import_dict[cap] = imp
-    export_dict[cap] = exp
-    charge_energy_dict[cap] = charge_energy
-    discharge_energy_dict[cap] = discharge_energy
+# === 4. Генерація споживання ===
+def generate_consumption(weather):
+    np.random.seed(7)
+    hour = weather.index.hour + weather.index.minute / 60
+    cons_dict = {}
+    for i in range(N_HOUSES):
+        base = np.random.uniform(0.8, 1.2, len(weather))
+        daily = 0.5 * np.sin((hour-17)/12*np.pi)
+        noise = np.random.normal(0, 0.05, len(weather))
+        cons = base + daily + noise
+        cons_dict[f"House {i+1}"] = np.clip(cons, 0.5, 2.5)
+    cons_df = pd.DataFrame(cons_dict, index=weather.index)
+    weather["demand"] = cons_df.sum(axis=1)
+    return weather, cons_df
 
-    # internal balance checks
-    net_ch = charge_energy.sum()
-    net_dis = discharge_energy.sum()
-    print(f"🔋 {cap}kWh → charged {net_ch:.1f} kWh, discharged {net_dis:.1f} kWh, Δ={net_ch-net_dis:.1f} kWh")
-    mc = charge_energy.max()
-    md = discharge_energy.max()
-    print(f"    max per-hour energy: charge {mc:.3f} ≤ {charge_limit*eta_ch:.1f}, discharge {md:.3f} ≤ {discharge_limit/eta_dis:.1f}")
+# === 5. Симуляція батарей ===
+def simulate_battery(weather):
+    soc_dict, import_dict, export_dict = {}, {}, {}
+    for cap in BATTERY_CAPACITIES:
+        T = len(weather)
+        soc = np.zeros(T); soc[0] = cap
+        imp = np.zeros(T); exp = np.zeros(T)
+        for t in range(1, T):
+            soc[t-1] *= (1 - SELF_DISCHARGE)
+            gen = weather["solar_gen"].iat[t] + weather["wind_gen"].iat[t]
+            dem = weather["demand"].iat[t]
+            if gen >= dem:
+                surplus = gen - dem
+                P_ch = min(surplus, CHARGE_LIMIT_KW)
+                E_ch = min(P_ch * ETA_CH, cap - soc[t-1])
+                soc[t] = soc[t-1] + E_ch
+                exp[t] = max(0, surplus - P_ch)
+            else:
+                deficit = dem - gen
+                P_dis = min(deficit, DISCHARGE_LIMIT_KW)
+                E_dis = min(P_dis / ETA_DIS, soc[t-1])
+                soc[t] = soc[t-1] - E_dis
+                rem = deficit - E_dis * ETA_DIS
+                imp[t] = max(0, rem)
+        soc_dict[cap] = soc
+        import_dict[cap] = imp
+        export_dict[cap] = exp
+    return soc_dict, import_dict, export_dict
 
-# 8. Plot results
+# === 6. Перевірка балансу енергії ===
+def check_balance(weather, soc_dict, import_dict, export_dict):
+    for cap in BATTERY_CAPACITIES:
+        net_gen = (weather["solar_gen"] + weather["wind_gen"]).sum()
+        net_demand = weather["demand"].sum()
+        net_imp = import_dict[cap].sum()
+        net_exp = export_dict[cap].sum()
+        soc_delta = soc_dict[cap][-1] - soc_dict[cap][0]
+        balance = (net_gen + net_imp) - (net_demand + net_exp + soc_delta)
+        print(f"Battery {cap} kWh → Energy balance error: {balance:.3f} kWh")
 
-# 8.1 Consumption
-plt.figure(figsize=(10,4))
-for col in cons_df.columns:
-    plt.plot(cons_df.index, cons_df[col], label=col)
-plt.title("Hourly Consumption per House")
-plt.ylabel("kW")
-plt.legend(loc="upper right")
-plt.tight_layout()
-plt.show()
+# === 7. Основний скрипт ===
+def main():
+    weather_raw = fetch_weather()
+    weather = prepare_weather_data(weather_raw)
+    weather = compute_generation(weather)
+    weather, cons_df = generate_consumption(weather)
+    soc_dict, import_dict, export_dict = simulate_battery(weather)
+    check_balance(weather, soc_dict, import_dict, export_dict)
 
-# 8.2 Generation
-plt.figure(figsize=(10,4))
-plt.plot(weather.index, weather["solar_gen"], label="Solar (kW)")
-plt.plot(weather.index, weather["wind_gen"],  label="Wind  (kW)")
-plt.title("Hourly Generation")
-plt.ylabel("kW")
-plt.legend()
-plt.tight_layout()
-plt.show()
+    # Графіки
+    plt.figure(figsize=(10,5))
+    plt.plot(weather.index, weather["solar_gen"], label="Solar Generation (kW)")
+    plt.plot(weather.index, weather["wind_gen"], label="Wind Generation (kW)")
+    plt.plot(weather.index, weather["demand"], label="Total Demand (kW)")
+    plt.legend(); plt.title("Generation and Total Demand"); plt.grid(); plt.show()
 
-# 8.3 SoC with shading
-for cap in battery_caps:
-    soc = soc_dict[cap]
-    delta = soc - np.roll(soc,1); delta[0]=0
-    status = np.where(delta>1e-6,"charging",
-              np.where(delta<-1e-6,"discharging","idle"))
-    plt.figure(figsize=(10,4))
-    plt.fill_between(weather.index, 0, soc, where=status=="charging",
-                     color="green", alpha=0.3, label="Charging")
-    plt.fill_between(weather.index, 0, soc, where=status=="discharging",
-                     color="red",   alpha=0.3, label="Discharging")
-    plt.plot(weather.index, soc, color="black", label=f"SoC {cap} kWh")
-    plt.title(f"Battery (Capacity {cap} kWh)")
-    plt.ylabel("kWh")
-    plt.legend(loc="upper right")
-    plt.tight_layout()
+    plt.figure(figsize=(12,6))
+    for col in cons_df.columns:
+        plt.plot(cons_df.index, cons_df[col], label=col)
+    plt.title("Hourly Consumption per House")
+    plt.ylabel("kW")
+    plt.legend()
+    plt.grid()
     plt.show()
 
-# 8.4 Grid imports
-plt.figure(figsize=(10,4))
-for cap, imp in import_dict.items():
-    plt.plot(weather.index, imp, label=f"Import {cap} kW")
-plt.title("Grid Imports")
-plt.ylabel("kW")
-plt.legend()
-plt.tight_layout()
-plt.show()
+    for cap in BATTERY_CAPACITIES:
+        plt.figure(figsize=(10,5))
+        plt.plot(weather.index, soc_dict[cap], label=f"SoC ({cap} kWh)")
+        plt.legend(); plt.title(f"Battery State of Charge ({cap} kWh)"); plt.grid(); plt.show()
 
-# 8.5 Grid exports
-plt.figure(figsize=(10,4))
-for cap, exp in export_dict.items():
-    plt.plot(weather.index, exp, label=f"Export {cap} kW")
-plt.title("Grid Exports")
-plt.ylabel("kW")
-plt.legend()
-plt.tight_layout()
-plt.show()
+    plt.figure(figsize=(10,5))
+    for cap, imp in import_dict.items():
+        plt.plot(weather.index, imp, label=f"Import {cap} kWh battery")
+    plt.title("Grid Import Power")
+    plt.ylabel("kW")
+    plt.legend()
+    plt.grid()
+    plt.show()
 
-# 9. Net import checks
-for cap in battery_caps:
-    net = import_dict[cap].sum() - export_dict[cap].sum()
-    print(f"{cap} kWh → net import: {net:.3f} kWh")
+    plt.figure(figsize=(10,5))
+    for cap, exp in export_dict.items():
+        plt.plot(weather.index, exp, label=f"Export {cap} kWh battery")
+    plt.title("Grid Export Power")
+    plt.ylabel("kW")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+if __name__ == "__main__":
+    main()
