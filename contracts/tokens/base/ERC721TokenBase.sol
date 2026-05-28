@@ -12,8 +12,10 @@ contract ERC721TokenBase is ERC721, SoladyBaseToken {
     string internal _uri;
 
     /// @notice Constructor to initialize NFT token contract
-    /// @dev Grants each roles to `msg.sender`
-    /// @dev Sets `name` and `symbol` of ERC721 token
+    /// @dev Grants owner and MINTER/BURNER roles to `msg.sender`, sets `name`/`symbol`, and stores the metadata URI.
+    /// @param _name The token name
+    /// @param _symbol The token symbol
+    /// @param uri The static metadata URI returned by `tokenURI` for any tokenId
     constructor(string memory _name, string memory _symbol, string memory uri) SoladyBaseToken(_name, _symbol) {
         _uri = uri;
     }
@@ -28,18 +30,21 @@ contract ERC721TokenBase is ERC721, SoladyBaseToken {
         return SoladyBaseToken.symbol();
     }
 
+    /// @notice Returns the static metadata URI used for every token id
+    /// @return The metadata URI shared by all tokens
     function tokenURI(uint256 /*id*/) public view override returns (string memory) {
         return _uri;
     }
 
-    /// @dev Mints `to` address NRGOP token
-    /// @param to address to mint
+    /// @dev Mints a token to `to`
+    /// @param to The address receiving the minted token
+    /// @param tokenId The id of the token to mint
     function mint(address to, uint256 tokenId) external onlyRole(MINTER_ROLE) {
         _safeMint(to, tokenId);
     }
 
-    /// @dev Burns `from` address NRGOP token
-    /// @param tokenId uint256
+    /// @dev Burns the token with the given `tokenId`
+    /// @param tokenId The id of the token to burn
     function burn(uint256 tokenId) public onlyRole(BURNER_ROLE) {
         _burn(tokenId);
     }

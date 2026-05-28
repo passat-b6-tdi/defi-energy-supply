@@ -10,8 +10,9 @@ import { SoladyBaseToken } from "./SoladyBaseToken.sol";
  */
 contract ERC20TokenBase is ERC20, SoladyBaseToken {
     /// @notice Constructor to initialize ERC20 token contract
-    /// @dev Grants each roles to `msg.sender`
-    /// @dev Sets `name` and `symbol` of ERC20 token
+    /// @dev Grants owner and MINTER/BURNER roles to `msg.sender` and sets the token's `name` and `symbol`.
+    /// @param _name The token name
+    /// @param _symbol The token symbol
     constructor(string memory _name, string memory _symbol) SoladyBaseToken(_name, _symbol) {}
 
     /// @dev Returns the name of the token.
