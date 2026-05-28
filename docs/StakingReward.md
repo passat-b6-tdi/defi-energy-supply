@@ -8,270 +8,260 @@ error ZeroAddressPassed()
 
 _Error to indicate that a zero address was passed as a parameter_
 
-## IncorrectSupplier
+## IncorrectProducerId
 
 ```solidity
-error IncorrectSupplier(address incorrectSupplier, uint256 supplierId)
+error IncorrectProducerId(uint256 producerId)
 ```
 
-_Error to indicate that the supplier address is incorrect_
+_Error to indicate that the caller is not the correct producer owner_
 
 ### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| incorrectSupplier | address | The incorrect supplier address |
-| supplierId | uint256 | The ID of the supplier |
+| producerId | uint256 | The ID of the producer token |
 
-## SupplierNotEnteredStaking
+## IncorrectProducer
 
 ```solidity
-error SupplierNotEnteredStaking(address supplier)
+error IncorrectProducer(address producer, uint256 producerId)
 ```
 
-_Error to indicate that the supplier has not entered staking_
+_Error to indicate that the caller is not the correct producer owner_
 
 ### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier |
+| producer | address | The address of the producer |
+| producerId | uint256 | The ID of the producer token |
+
+## ProducerNotEnteredStaking
+
+```solidity
+error ProducerNotEnteredStaking(uint256 producerId)
+```
+
+_Error to indicate that the producer has not entered staking_
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| producerId | uint256 | The id of the producer |
+
+## OnlyRegister
+
+```solidity
+error OnlyRegister()
+```
+
+_Error thrown when caller is not the Register contract_
 
 ## StakingReward
 
-This contract allows for entering and exiting staking, updating rewards, and sending rewards to suppliers.
+Producers call enterStakingProducer, getProducerRewards, exitStakingProducer to manage their MGT rewards.
 
-_This contract manages the staking and reward distribution for energy suppliers._
+_This contract manages staking and reward distribution for energy producers._
 
-### EnterStaking
+### EnterStakingProducer
 
 ```solidity
-event EnterStaking(address sender, address supplier, uint256 timestamp)
+event EnterStakingProducer(address producer, uint256 producerId, uint256 timestamp)
 ```
 
-_Emitted when a user registers as an Energy supplier_
+_Emitted when a producer enters staking_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| sender | address | The address of the sender |
-| supplier | address | The address of the supplier |
+| producer | address | The address of the producer |
+| producerId | uint256 | The address of the producerId |
 | timestamp | uint256 | The timestamp of entering staking |
 
-### ExitStaking
+### ExitStakingProducer
 
 ```solidity
-event ExitStaking(address sender, address supplier, uint256 timestamp)
+event ExitStakingProducer(address producer, uint256 producerId, uint256 timestamp)
 ```
 
-_Emitted when a user unregisters as an Energy supplier_
+_Emitted when a producer exits staking_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| sender | address | The address of the sender |
-| supplier | address | The address of the supplier |
+| producer | address | The address of the producer |
+| producerId | uint256 | The address of the producerId |
 | timestamp | uint256 | The timestamp of exiting staking |
 
-### RewardSent
+### RewardSentProducer
 
 ```solidity
-event RewardSent(address sender, address to, uint256 amount)
+event RewardSentProducer(address producer, uint256 amount)
 ```
 
-_Emitted when a supplier withdraws some amount of rewards from `StakingReward`_
+_Emitted when a producer withdraws reward_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| sender | address | The address of the sender |
-| to | address | The address of the recipient |
+| producer | address | The address of the producer |
 | amount | uint256 | The amount of rewards sent |
 
-### Supplier
+### ProducerInfo
 
-_Structure to hold supplier information_
+_Structure to hold producer staking info_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
 
 ```solidity
-struct Supplier {
+struct ProducerInfo {
   uint256 updatedAt;
   uint256 pendingReward;
 }
 ```
 
-### STAKING_MANAGER_ROLE
+### totalProducers
 
 ```solidity
-bytes32 STAKING_MANAGER_ROLE
+uint256 totalProducers
 ```
 
-_Keccak256 hashed `STAKING_MANAGER_ROLE` string_
+Total number of producers currently staking
 
-### manager
+### producers
 
 ```solidity
-contract Manager manager
+mapping(uint256 => struct StakingReward.ProducerInfo) producers
 ```
 
-_Manager contract_
+Mapping of producerId to staking info
 
-### totalSuppliers
+### onlyRegister
 
 ```solidity
-uint256 totalSuppliers
+modifier onlyRegister()
 ```
 
-_Total suppliers_
-
-### suppliers
-
-```solidity
-mapping(address => mapping(uint256 => struct StakingReward.Supplier)) suppliers
-```
-
-_Mapping from address to supplier ID to supplier information_
+_Modifier to that the caller is the Register contract_
 
 ### isCorrectOwner
 
 ```solidity
-modifier isCorrectOwner(address supplier, uint256 tokenId)
+modifier isCorrectOwner(address producer, uint256 producerId)
 ```
 
-_Modifier to check if the caller is the correct owner of the supplier ID_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| supplier | address | The address of the supplier |
-| tokenId | uint256 | The ID of the supplier |
-
-### zeroAddressCheck
-
-```solidity
-modifier zeroAddressCheck(address account)
-```
-
-_Modifier to check if the address is not zero_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| account | address | The address to check |
+_Modifier to check producer ownership of tokenId_
 
 ### constructor
 
 ```solidity
-constructor(contract Manager _manager) public
+constructor(address main_) public
 ```
 
-Constructor to initialize StakingReward contract
-
-_Grants `DEFAULT_ADMIN_ROLE` and `STAKING_MANAGER_ROLE` roles to `msg.sender`_
+Constructor initializes StakingReward with Main reference
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _manager | contract Manager | The address of the Manager contract |
+| main_ | address | The address of the Main contract |
 
-### changeManager
+### changeMain
 
 ```solidity
-function changeManager(contract Manager _newManager) external
+function changeMain(address main_) public
 ```
 
-_Changes `manager` address to the `_newManager` address_
+Update Main contract address
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _newManager | contract Manager | The address of the new manager contract |
+| main_ | address | New Main contract address |
 
-### enterStaking
+### enterStakingProducer
 
 ```solidity
-function enterStaking(address supplier, uint256 tokenId) external
+function enterStakingProducer(uint256 producerId) external
 ```
 
-Enters staking process
-
-_Requirements:
-- `msg.sender` must have STAKING_MANAGER_ROLE
-- `supplier` must not be address 0
-- `supplier` must have NRGS token_
+Producer enters staking to start accumulating MGT rewards
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier |
-| tokenId | uint256 | The ID of the supplier |
+| producerId | uint256 | The ID of the producer token |
 
-### sendRewards
+### exitStakingProducer
 
 ```solidity
-function sendRewards(address supplier, uint256 tokenId) external
+function exitStakingProducer(uint256 producerId) external
 ```
 
-Sends rewards to suppliers
-
-_Requirements:
-- `msg.sender` must have STAKING_MANAGER_ROLE
-- `supplier` must be in staking_
+Producer exits staking and claims rewards
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier |
-| tokenId | uint256 | The ID of the supplier |
+| producerId | uint256 | The ID of the producer token |
 
-### exitStaking
+### getProducerRewards
 
 ```solidity
-function exitStaking(address supplier, uint256 tokenId) external
+function getProducerRewards(uint256 producerId) external
 ```
 
-Exits staking
-
-_Requirements:
-- `msg.sender` must have STAKING_MANAGER_ROLE
-- `supplier` must be in staking_
+Producer claims accumulated rewards without exiting staking
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier |
-| tokenId | uint256 | The ID of the supplier |
+| producerId | uint256 | The ID of the producer token |
 
-### updateRewards
+### updateProducerInfo
 
 ```solidity
-function updateRewards(address supplier, uint256 tokenId) public returns (struct StakingReward.Supplier)
+function updateProducerInfo(address producer, uint256 producerId) public returns (struct StakingReward.ProducerInfo)
 ```
 
-Updates rewards for `supplier`
-
-_Requirements:
-- `supplier` must be in staking_
+Update and return the current ProducerInfo for the given producer.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier |
-| tokenId | uint256 | The ID of the supplier |
+| producer | address | The address of the producer (must own `producerId`) |
+| producerId | uint256 | The ID of the producer token |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | struct StakingReward.Supplier | Supplier The updated supplier information |
+| [0] | struct StakingReward.ProducerInfo | The updated `ProducerInfo` containing latest timestamp and pending reward |
+
+### main
+
+```solidity
+function main() public view returns (contract Main)
+```
+
+Returns the Main contract reference
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | contract Main | The Main contract instance configured for this staking contract |
 

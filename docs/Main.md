@@ -8,278 +8,255 @@ error ZeroAddressPassed()
 
 _Error to indicate that a zero address was passed as a parameter_
 
-## OnlyEnergySupplier
-
-```solidity
-error OnlyEnergySupplier()
-```
-
-_Error to indicate that the caller is not an energy supplier_
-
-## OnlyEnergyOracleProvider
-
-```solidity
-error OnlyEnergyOracleProvider()
-```
-
-_Error to indicate that the caller is not an energy oracle provider_
-
 ## Main
 
-This contract allows managing energy suppliers, consumers, and oracle providers.
-It also allows recording energy production and consumption, and handling payments.
+This contract allows for managing and updating the addresses of token and functional contracts in the ecosystem.
+It also manages configuration values like reward amounts and fees, and stores immutable stablecoin addresses.
 
-_A main contract for managing Microgrid ecosystem._
+_This contract manages the links to various contracts and stores configuration values for the system._
 
-### MAIN_MANAGER_ROLE
+### Tokens
 
-```solidity
-bytes32 MAIN_MANAGER_ROLE
-```
-
-_Keccak256 hashed `MAIN_MANAGER_ROLE` string_
-
-### manager
+_Structure to hold references to token contracts_
 
 ```solidity
-contract Manager manager
+struct Tokens {
+  contract ERC20TokenBase energyCreditToken;
+  contract ERC20TokenBase microgridGovernanceToken;
+  contract ERC721TokenBase energyOracleProviderToken;
+  contract ERC721TokenBase energyProducerToken;
+  contract ERC721TokenBase energySupplierToken;
+  contract ElectricityConsumerToken electricityConsumerToken;
+}
 ```
 
-_Manager contract_
+### Contracts
 
-### onlySupplier
+_Structure to hold references to functional contracts_
 
 ```solidity
-modifier onlySupplier(uint256 supplierId)
+struct Contracts {
+  contract StakingReward staking;
+  contract EnergyOracle oracle;
+  contract Register register;
+  contract Escrow escrow;
+}
 ```
 
-_Modifier to check if the caller is the owner of the supplierId_
+### Fees
 
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| supplierId | uint256 | The ID of the supplier |
-
-### onlyOracleProvider
+_Structure to hold references to fees related data_
 
 ```solidity
-modifier onlyOracleProvider()
+struct Fees {
+  address receiver;
+  uint256 amount;
+}
 ```
 
-_Modifier to check if the caller is an energy oracle provider_
+### TokensUpdated
+
+```solidity
+event TokensUpdated(address sender, struct Main.Tokens tokens)
+```
+
+_Emitted when a manager changes the `Tokens _tokens`_
+
+### ContractsUpdated
+
+```solidity
+event ContractsUpdated(address sender, struct Main.Contracts staking)
+```
+
+_Emitted when a manager changes the `Contracts _contracts`_
+
+### FeesChanged
+
+```solidity
+event FeesChanged(address sender, address newFeeReceiver, uint256 newFees)
+```
+
+_Emitted when a manager changes the `feeReceiver` and `fees`_
+
+### ValuesUpdated
+
+```solidity
+event ValuesUpdated(address sender, uint256 values)
+```
+
+_Emitted when a manager changes other configuration values_
+
+### MANAGER_ROLE
+
+```solidity
+uint256 MANAGER_ROLE
+```
+
+_Keccak256 hashed `MANAGER_ROLE` string_
+
+### MGT_TO_ORACLE_PROVIDER
+
+```solidity
+uint256 MGT_TO_ORACLE_PROVIDER
+```
+
+MGT amount minted to an oracle provider per recording action (0.05 MGT, 18 decimals)
+
+### MGT_PER_ECT_CONSUMED
+
+```solidity
+uint256 MGT_PER_ECT_CONSUMED
+```
+
+MGT amount minted to a supplier per unit of consumed ECT (0.0005 MGT, 18 decimals)
+
+### _contracts
+
+```solidity
+struct Main.Contracts _contracts
+```
+
+_Contracts struct storage_
+
+### _fees
+
+```solidity
+struct Main.Fees _fees
+```
+
+_Fees struct storage_
+
+### USDC
+
+```solidity
+address USDC
+```
+
+Immutable address of the USDC stablecoin used for payments
+
+### DAI
+
+```solidity
+address DAI
+```
+
+Immutable address of the DAI stablecoin used for payments
+
+### USDT
+
+```solidity
+address USDT
+```
+
+Immutable address of the USDT stablecoin used for payments
 
 ### constructor
 
 ```solidity
-constructor(contract Manager _manager) public
+constructor(struct Main.Tokens tokens_, struct Main.Fees fees_, address USDC_, address DAI_, address USDT_) public
 ```
 
-Constructor to initialize the Main contract.
+Constructor to initialize the Manager contract
 
-_Grants `DEFAULT_ADMIN_ROLE` and `MAIN_MANAGER_ROLE` roles to the contract deployer._
+_Grants `DEFAULT_ADMIN_ROLE` and `MANAGER_ROLE` roles to `msg.sender` and sets immutable stablecoin addresses_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _manager | contract Manager | The address of the Manager contract. |
+| tokens_ | struct Main.Tokens | The initial addresses of the token contracts |
+| fees_ | struct Main.Fees | The initial values for fees structure |
+| USDC_ | address | The address of the USDC stablecoin contract |
+| DAI_ | address | The address of the DAI stablecoin contract |
+| USDT_ | address | The address of the USDT stablecoin contract |
 
-### changeManager
+### changeTokensAddresses
 
 ```solidity
-function changeManager(contract Manager _newManager) external
+function changeTokensAddresses(struct Main.Tokens tokens_) external
 ```
 
-_Changes `manager` address to the `_newManager` address._
+Changes token contract addresses
+
+_Caller must have MANAGER_ROLE_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _newManager | contract Manager | The address of the new manger contract |
+| tokens_ | struct Main.Tokens | The new addresses of the token contracts |
 
-### registerSupplier
+### changeContracts
 
 ```solidity
-function registerSupplier(address supplier) external
+function changeContracts(struct Main.Contracts contracts_) external
 ```
 
-Registers an Energy supplier.
+Changes functional contract addresses
 
-_Requirements:
-- `msg.sender` must have `MAIN_MANAGER_ROLE`._
+_Caller must have MANAGER_ROLE_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier. |
+| contracts_ | struct Main.Contracts | The new addresses of the functional contracts |
 
-### registerElectricityConsumer
+### changeFees
 
 ```solidity
-function registerElectricityConsumer(address consumer, uint256 supplierId) external
+function changeFees(struct Main.Fees _newFees) external
 ```
 
-Registers an Electricity consumer.
+Updates fees structure
 
-_Requirements:
-- `supplierId` must be greater than 0.
-- `msg.sender` must be a supplier._
+_Caller must have MANAGER_ROLE; receiver must not be zero address_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| consumer | address | The address of the consumer. |
-| supplierId | uint256 | The ID of the supplier for the consumer. |
+| _newFees | struct Main.Fees | The new fees structure |
 
-### registerOracleProvider
+### fees
 
 ```solidity
-function registerOracleProvider(address oracleProvider) external
+function fees() external view returns (struct Main.Fees)
 ```
 
-Registers an Energy oracle provider.
+Retrieves current fees structure
 
-_Requirements:
-- `msg.sender` must have `MAIN_MANAGER_ROLE`._
-
-#### Parameters
+#### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| oracleProvider | address | The address of the oracle provider. |
+| [0] | struct Main.Fees | The fees structure |
 
-### unRegisterSupplier
+### tokens
 
 ```solidity
-function unRegisterSupplier(uint256 supplierId) external
+function tokens() external view returns (struct Main.Tokens)
 ```
 
-Unregisters an Energy supplier.
+Retrieves current token contract addresses
 
-_Requirements:
-- `supplierId` must be greater than 0.
-- `msg.sender` must have `MAIN_MANAGER_ROLE`._
-
-#### Parameters
+#### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplierId | uint256 | The ID of the supplier. |
+| [0] | struct Main.Tokens | The token contract addresses structure |
 
-### unRegisterElectricityConsumer
+### contracts
 
 ```solidity
-function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external
+function contracts() external view returns (struct Main.Contracts)
 ```
 
-Unregisters an Electricity consumer.
+Retrieves current functional contract addresses
 
-_Requirements:
-- `supplierId` must be greater than 0.
-- `msg.sender` must be a supplier._
-
-#### Parameters
+#### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| consumer | address | The address of the consumer. |
-| supplierId | uint256 | The ID of the supplier for the consumer. |
-
-### unRegisterOracleProvider
-
-```solidity
-function unRegisterOracleProvider(uint256 oracleProviderId) external
-```
-
-Unregisters an Energy oracle provider.
-
-_Requirements:
-- `oracleProviderId` must be greater than 0.
-- `msg.sender` must have `MAIN_MANAGER_ROLE`._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| oracleProviderId | uint256 | The ID of the oracle provider. |
-
-### recordEnergyProductions
-
-```solidity
-function recordEnergyProductions(address supplier, uint256 supplierId, uint256 production) external
-```
-
-Records the energy production by the supplier at a specific timestamp.
-
-_Requirements:
-- `msg.sender` must be an energy oracle provider.
-- `supplier` must have `supplierId`._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| supplier | address | The supplier address. |
-| supplierId | uint256 | The supplier ID. |
-| production | uint256 | The energy production value. |
-
-### recordConsumerConsumptions
-
-```solidity
-function recordConsumerConsumptions(address consumer, uint256 supplierId, uint256 consumption) external
-```
-
-Records the energy consumption for a consumer and supplier at a specific timestamp.
-
-_Requirements:
-- `msg.sender` must be an energy oracle provider.
-- `consumer` must have a supplier with `supplierId`._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| consumer | address | The consumer address. |
-| supplierId | uint256 | The supplier ID. |
-| consumption | uint256 | The energy consumption value. |
-
-### payForElectricity
-
-```solidity
-function payForElectricity(uint256 supplierId) external
-```
-
-Pays for electricity.
-
-_Requirements:
-- `supplierId` must be greater than 0.
-- `msg.sender` must be a consumer._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| supplierId | uint256 | The ID of the supplier for the consumer. |
-
-### getRewards
-
-```solidity
-function getRewards(uint256 supplierId) external
-```
-
-Gets the rewards for a supplier.
-
-_Requirements:
-- `supplierId` must be greater than 0.
-- `msg.sender` must be a supplier._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| supplierId | uint256 | The ID of the supplier. |
+| [0] | struct Main.Contracts | The functional contract addresses structure |
 

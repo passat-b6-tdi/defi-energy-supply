@@ -1,13 +1,5 @@
 # Solidity API
 
-## ZeroAddressPassed
-
-```solidity
-error ZeroAddressPassed()
-```
-
-_Error to indicate that a zero address was passed as a parameter_
-
 ## IncorrectConsumer
 
 ```solidity
@@ -23,96 +15,107 @@ _Error to indicate that the consumer address is incorrect_
 | incorrectConsumer | address | The incorrect consumer address |
 | supplierId | uint256 | The ID of the supplier |
 
+## TokenNotWhitelisted
+
+```solidity
+error TokenNotWhitelisted(address token)
+```
+
+_Error when a payment token is not supported_
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| token | address | The token address provided |
+
 ## Escrow
 
-This contract allows consumers to pay for energy consumed from suppliers using ERC20 tokens.
-It also allows the distribution of fees to the fee receiver.
-The contract is managed by an Escrow Manager who can send funds to suppliers.
+Manages payments from consumers to suppliers using whitelisted stablecoins
 
-_A contract for managing energy payments and transfers between consumers and suppliers._
+_Uses Main for configuration; only ESCROW_MANAGER_ROLE can call `sendFundsToSupplier`_
 
 ### PaidForEnergy
 
 ```solidity
-event PaidForEnergy(address consumer, uint256 tokenId, address supplier, uint256 amount)
+event PaidForEnergy(address consumer, uint256 supplierId, address supplier, uint256 amount)
 ```
 
-_Emmited when a consumer paid for energy_
+_Emitted when a consumer pays for energy_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | consumer | address | The address of the consumer |
-| tokenId | uint256 | The ID of the token representing the supplier |
+| supplierId | uint256 | The ID of the supplier token |
 | supplier | address | The address of the supplier |
-| amount | uint256 | The amount paid for energy |
+| amount | uint256 | The amount paid for energy (excluding fees) |
 
 ### ESCROW_MANAGER_ROLE
 
 ```solidity
-bytes32 ESCROW_MANAGER_ROLE
+uint256 ESCROW_MANAGER_ROLE
 ```
 
 _Keccak256 hashed `ESCROW_MANAGER_ROLE` string_
 
-### manager
-
-```solidity
-contract Manager manager
-```
-
-_Manager contract_
-
 ### constructor
 
 ```solidity
-constructor(contract Manager _manager) public
+constructor(address main_) public
 ```
 
-Constructor to initialize the Escrow contract
-
-_Grants `DEFAULT_ADMIN_ROLE` and `ESCROW_MANAGER_ROLE` roles to the contract deployer._
+Constructor sets Main reference and grants roles
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _manager | contract Manager | The address of the Manager contract. |
+| main_ | address | Address of the Main contract |
 
-### changeManager
+### changeMain
 
 ```solidity
-function changeManager(contract Manager _newManager) external
+function changeMain(address main_) public
 ```
 
-_Changes `manager` address to the `_newManager` address._
+Update Main contract address
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _newManager | contract Manager | The address of the new manger contract |
+| main_ | address | New Main contract address |
 
-### sendFundsToSupplier
+### payForElectricity
 
 ```solidity
-function sendFundsToSupplier(address consumer, uint256 supplierId) public
+function payForElectricity(uint256 supplierId, address paymentToken) external
 ```
 
-Sends funds to the supplier for the energy consumed by a consumer.
-@dev
-Requirements:
-- `msg.sender` must have `ESCROW_MANAGER_ROLE`
-- `consumer` must not be the zero address
-- `consumer` must have consumed energy
-- Transfers the required amount of tokens from the consumer to the escrow contract,
-and then distributes the tokens to the supplier and fee receiver.
+Consumer pays for energy and fees in a whitelisted stablecoin
+
+_Pulls total (consumption + fee), forwards to supplier and fee receiver, then clears debt_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| consumer | address | The address of the consumer. |
-| supplierId | uint256 | The ID of the token representing the supplier. |
+| supplierId | uint256 | ID of the supplier (tokenId) |
+| paymentToken | address | ERC20 token address (must be USDC, DAI or USDT) |
+
+### main
+
+```solidity
+function main() public view returns (contract Main)
+```
+
+Returns the Main contract reference
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | contract Main | The Main contract instance configured for this escrow |
 
