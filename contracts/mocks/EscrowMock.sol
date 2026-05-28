@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import { EnergyOracle } from "../EnergyOracle.sol";
 
@@ -12,6 +12,6 @@ contract EscrowMock {
         energyOracle = _energyOracle;
     }
     function read(address consumer, uint256 tokenId) public {
-        consumption = energyOracle.energyConsumptions(consumer, tokenId);
+        consumption = energyOracle.debtsUSD(consumer, tokenId);
     }
 }

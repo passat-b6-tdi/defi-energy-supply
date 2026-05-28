@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
-import { NRGBase } from "./NRGBase.sol";
+import { ERC721TokenBase } from "../base/ERC721TokenBase.sol";
 
 /**
  * @title Energy Supplier Token contract (ERC721 standard)
  * @author Bohdan
  */
-contract NRGS is NRGBase {
+contract EnergySupplierToken is ERC721TokenBase {
     /// @notice Constructor to initialize NFT token contract
     /// @dev Grants each roles to `msg.sender`
     /// @dev Sets `name` and `symbol` of ERC721 token
-    constructor() NRGBase("Energy Supplier Token", "NRGS") {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(REGISTER_ROLE, msg.sender);
-    }
+    constructor() ERC721TokenBase("Energy Supplier Token", "NRGST", "") {}
 }

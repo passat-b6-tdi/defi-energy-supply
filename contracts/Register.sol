@@ -1,17 +1,37 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
-import { ERC1155Holder, ERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "./Manager.sol";
+import { Receiver } from "solady/src/accounts/Receiver.sol";
+
+import { OwnableEnumerableRoles } from "./base/OwnableEnumerableRoles.sol";
+import { ContractsBase } from "./base/ContractsBase.sol";
+import { Main } from "./Main.sol";
+
+import { ERC721TokenBase } from "./tokens/base/ERC721TokenBase.sol";
+import { ElectricityConsumerToken } from "./tokens/ERC1155/ElectricityConsumerToken.sol";
 
 /// @dev Error to indicate that a zero address was passed as a parameter
 error ZeroAddressPassed();
+
+/// @dev Error thrown when caller is not an energy supplier
+error OnlyEnergySupplier();
 
 /// @dev Error to indicate that the consumer address is incorrect
 /// @param incorrectConsumer The incorrect consumer address
 /// @param supplierId The ID of the supplier
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
+
+/// @dev Error when attempting to register a producer that's already registered
+/// @param producer The producer address attempted to be re-registered
+error ProducerAlreadyRegistered(address producer);
+
+/// @dev Error when attempting to register a supplier that's already registered
+/// @param supplier The supplier address attempted to be re-registered
+error SupplierAlreadyRegistered(address supplier);
+
+/// @dev Error when attempting to register a oracle provider that's already registered
+/// @param op The oracle provider address attempted to be re-registered
+error OracleProviderAlreadyRegistered(address op);
 
 /**
  * @title Contract for registration of suppliers and consumers
@@ -20,7 +40,19 @@ error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
  * It ensures that only authorized roles can perform these operations and emits events for tracking.
  * @custom:security-contact security@example.com
  */
-contract Register is AccessControl, ERC1155Holder {
+contract Register is OwnableEnumerableRoles, ContractsBase, Receiver {
+    /// @dev Emitted when a user registers as an Energy producer
+    /// @param sender The address of the sender
+    /// @param producer The address of the producer
+    /// @param producerId The ID of the producer
+    /// @param timestamp The timestamp of registration
+    event ProducerRegistered(
+        address indexed sender,
+        address indexed producer,
+        uint256 indexed producerId,
+        uint256 timestamp
+    );
+
     /// @dev Emitted when a user registers as an Energy supplier
     /// @param sender The address of the sender
     /// @param supplier The address of the supplier
@@ -33,29 +65,27 @@ contract Register is AccessControl, ERC1155Holder {
         uint256 timestamp
     );
 
+    /// @dev Emitted when an Energy producer unregisters
+    /// @param sender The address of the sender
+    /// @param producerId The ID of the producer
+    /// @param timestamp The timestamp of unregistration
+    event ProducerUnregistered(address indexed sender, uint256 indexed producerId, uint256 timestamp);
+
     /// @dev Emitted when an Energy supplier unregisters
     /// @param sender The address of the sender
-    /// @param supplier The address of the supplier
     /// @param supplierId The ID of the supplier
     /// @param timestamp The timestamp of unregistration
-    event SupplierUnregistered(
-        address indexed sender,
-        address indexed supplier,
-        uint256 indexed supplierId,
-        uint256 timestamp
-    );
+    event SupplierUnregistered(address indexed sender, uint256 indexed supplierId, uint256 timestamp);
 
     /// @dev Emitted when a supplier registers a user as Electricity consumer
     /// @param sender The address of the sender
     /// @param consumer The address of the consumer
     /// @param supplierId The ID of the supplier
-    /// @param supplierAddress The address of the supplier
     /// @param timestamp The timestamp of registration
     event ConsumerRegistered(
         address indexed sender,
         address indexed consumer,
         uint256 indexed supplierId,
-        address supplierAddress,
         uint256 timestamp
     );
 
@@ -63,13 +93,11 @@ contract Register is AccessControl, ERC1155Holder {
     /// @param sender The address of the sender
     /// @param consumer The address of the consumer
     /// @param supplierId The ID of the supplier
-    /// @param supplierAddress The address of the supplier
     /// @param timestamp The timestamp of unregistration
     event ConsumerUnregistered(
         address indexed sender,
         address indexed consumer,
         uint256 indexed supplierId,
-        address supplierAddress,
         uint256 timestamp
     );
 
@@ -87,21 +115,15 @@ contract Register is AccessControl, ERC1155Holder {
 
     /// @dev Emitted when an Energy oracle provider unregisters
     /// @param sender The address of the sender
-    /// @param oracleProvider The address of the oracle provider
     /// @param oracleProviderId The ID of the oracle provider
     /// @param timestamp The timestamp of unregistration
-    event OracleProviderUnregistered(
-        address indexed sender,
-        address indexed oracleProvider,
-        uint256 indexed oracleProviderId,
-        uint256 timestamp
-    );
+    event OracleProviderUnregistered(address indexed sender, uint256 indexed oracleProviderId, uint256 timestamp);
 
     /// @dev Keccak256 hashed `REGISTER_MANAGER_ROLE` string
-    bytes32 public constant REGISTER_MANAGER_ROLE = keccak256(bytes("REGISTER_MANAGER_ROLE"));
+    uint256 public constant REGISTER_MANAGER_ROLE = uint256(keccak256(bytes("REGISTER_MANAGER_ROLE")));
 
-    /// @dev Manager contract
-    Manager public manager;
+    /// @dev Counter of producers Ids
+    uint256 public currentProducerId = 1;
 
     /// @dev Counter of suppliers Ids
     uint256 public currentSupplierId = 1;
@@ -109,30 +131,51 @@ contract Register is AccessControl, ERC1155Holder {
     /// @dev Counter of oracle providers Ids
     uint256 public currentOracleProviderId = 1;
 
-    /// @dev Throws if passed address 0 as parameter
-    /// @param account The address to check
-    modifier zeroAddressCheck(address account) {
-        if (account == address(0)) {
-            revert ZeroAddressPassed();
+    /**
+     * @dev Modifier to check if the caller is the owner of the supplierId
+     * @param supplierId The ID of the supplier
+     */
+    modifier onlySupplier(uint256 supplierId) {
+        if (main().tokens().energySupplierToken.ownerOf(supplierId) != msg.sender) {
+            revert OnlyEnergySupplier();
         }
         _;
     }
 
     /// @notice Constructor to initialize Register contract
-    /// @param _manager The address of the Manager contract
+    /// @param main_ The address of the Main contract
     /// @dev Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`
-    constructor(Manager _manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(REGISTER_MANAGER_ROLE, msg.sender);
-        manager = _manager;
+    constructor(address main_) ContractsBase(main_) {
+        _setRole(msg.sender, REGISTER_MANAGER_ROLE, true);
     }
 
-    /// @dev Changes `manager` address to the `_newManager` address.
-    /// @param _newManager The address of the new manger contract
-    function changeManager(
-        Manager _newManager
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
-        manager = _newManager;
+    /// @notice Update Main contract address
+    /// @param main_ New Main contract address
+    function changeMain(address main_) public override onlyOwner {
+        super.changeMain(main_);
+    }
+
+    /**
+     * @notice Registers an Energy producer.
+     * @dev Requirements:
+     * - `msg.sender` must have REGISTER_MANAGER_ROLE
+     * - `producer` must not be address 0
+     * - `producer` must have EnergyProducerToken
+     * @param producer The address of the producer
+     */
+    function registerProducer(address producer) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(producer) {
+        Main main_ = main();
+        ERC721TokenBase pToken = main_.tokens().energyProducerToken;
+
+        require(pToken.balanceOf(producer) == 0, ProducerAlreadyRegistered(producer));
+
+        uint256 producerId = currentProducerId;
+        ++currentProducerId;
+
+        pToken.mint(producer, producerId);
+
+        main_.contracts().staking.enterStakingProducer(producerId);
+        emit ProducerRegistered(msg.sender, producer, producerId, block.timestamp);
     }
 
     /**
@@ -140,14 +183,18 @@ contract Register is AccessControl, ERC1155Holder {
      * @dev Requirements:
      * - `msg.sender` must have REGISTER_MANAGER_ROLE
      * - `supplier` must not be address 0
-     * - `supplier` must have NRGS token
+     * - `supplier` must have EnergySupplierToken token
      * @param supplier The address of the supplier
      */
     function registerSupplier(address supplier) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(supplier) {
+        ERC721TokenBase sToken = main().tokens().energySupplierToken;
+
+        require(sToken.balanceOf(supplier) == 0, SupplierAlreadyRegistered(supplier));
+
         uint256 supplierId = currentSupplierId;
         currentSupplierId++;
-        manager.tokens().nrgs.mint(supplier, supplierId);
-        manager.contracts().staking.enterStaking(supplier, supplierId);
+
+        sToken.mint(supplier, supplierId);
         emit SupplierRegistered(msg.sender, supplier, supplierId, block.timestamp);
     }
 
@@ -162,13 +209,13 @@ contract Register is AccessControl, ERC1155Holder {
     function registerElectricityConsumer(
         address consumer,
         uint256 supplierId
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(msg.sender, supplierId) != 0) {
-            revert IncorrectConsumer(msg.sender, supplierId);
-        }
-        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
-        manager.tokens().ecu.mint(consumer, supplierId, 1);
-        emit ConsumerRegistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
+    ) external onlySupplier(supplierId) zeroAddressCheck(consumer) {
+        ElectricityConsumerToken elcToken = main().tokens().electricityConsumerToken;
+
+        require(elcToken.balanceOf(consumer, supplierId) == 0, IncorrectConsumer(consumer, supplierId));
+
+        elcToken.mint(consumer, supplierId, 1);
+        emit ConsumerRegistered(msg.sender, consumer, supplierId, block.timestamp);
     }
 
     /**
@@ -181,10 +228,31 @@ contract Register is AccessControl, ERC1155Holder {
     function registerOracleProvider(
         address oracleProvider
     ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(oracleProvider) {
+        ERC721TokenBase opToken = main().tokens().energyOracleProviderToken;
+
+        require(opToken.balanceOf(oracleProvider) == 0, OracleProviderAlreadyRegistered(oracleProvider));
+
         uint256 oracleProviderId = currentOracleProviderId;
         currentOracleProviderId++;
-        manager.tokens().nrgop.mint(oracleProvider, oracleProviderId);
+
+        opToken.mint(oracleProvider, oracleProviderId);
         emit OracleProviderRegistered(msg.sender, oracleProvider, oracleProviderId, block.timestamp);
+    }
+
+    /**
+     * @notice Unregisters an Energy producer.
+     * @dev Requirements:
+     * - `msg.sender` must have REGISTER_MANAGER_ROLE
+     * - `producer` must have NRGS token
+     * @param producerId The ID of the producer
+     */
+    function unregisterProducer(uint256 producerId) external onlyRole(REGISTER_MANAGER_ROLE) {
+        Main main_ = main();
+
+        main_.contracts().staking.exitStakingProducer(producerId);
+        main_.tokens().energyProducerToken.burn(producerId);
+
+        emit ProducerUnregistered(msg.sender, producerId, block.timestamp);
     }
 
     /**
@@ -194,11 +262,10 @@ contract Register is AccessControl, ERC1155Holder {
      * - `supplier` must have NRGS token
      * @param supplierId The ID of the supplier
      */
-    function unRegisterSupplier(uint256 supplierId) external onlyRole(REGISTER_MANAGER_ROLE) {
-        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
-        manager.tokens().nrgs.burn(supplierId);
-        manager.contracts().staking.exitStaking(supplier, supplierId);
-        emit SupplierUnregistered(msg.sender, supplier, supplierId, block.timestamp);
+    function unregisterSupplier(uint256 supplierId) external onlyRole(REGISTER_MANAGER_ROLE) {
+        main().tokens().energySupplierToken.burn(supplierId);
+
+        emit SupplierUnregistered(msg.sender, supplierId, block.timestamp);
     }
 
     /**
@@ -210,16 +277,18 @@ contract Register is AccessControl, ERC1155Holder {
      * @param consumer The address of the consumer
      * @param supplierId The ID of the supplier for the consumer
      */
-    function unRegisterElectricityConsumer(
+    function unregisterElectricityConsumer(
         address consumer,
         uint256 supplierId
-    ) external onlyRole(REGISTER_MANAGER_ROLE) zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+    ) external onlySupplier(supplierId) zeroAddressCheck(consumer) {
+        Main.Tokens memory tokens = main().tokens();
+
+        if (tokens.electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
-        address supplier = manager.tokens().nrgs.ownerOf(supplierId);
-        manager.tokens().ecu.burn(consumer, supplierId, 1);
-        emit ConsumerUnregistered(msg.sender, consumer, supplierId, supplier, block.timestamp);
+
+        tokens.electricityConsumerToken.burn(consumer, supplierId, 1);
+        emit ConsumerUnregistered(msg.sender, consumer, supplierId, block.timestamp);
     }
 
     /**
@@ -229,19 +298,13 @@ contract Register is AccessControl, ERC1155Holder {
      * - `oracleProvider` must have NRGS token
      * @param oracleProviderId The ID of the oracle provider
      */
-    function unRegisterOracleProvider(uint256 oracleProviderId) external onlyRole(REGISTER_MANAGER_ROLE) {
-        address oracleProvider = manager.tokens().nrgop.ownerOf(oracleProviderId);
-        manager.tokens().nrgop.burn(oracleProviderId);
-        emit OracleProviderUnregistered(msg.sender, oracleProvider, oracleProviderId, block.timestamp);
+    function unregisterOracleProvider(uint256 oracleProviderId) external onlyRole(REGISTER_MANAGER_ROLE) {
+        main().tokens().energyOracleProviderToken.burn(oracleProviderId);
+
+        emit OracleProviderUnregistered(msg.sender, oracleProviderId, block.timestamp);
     }
 
-    /**
-     * @inheritdoc AccessControl
-     * @notice Supports interface for ERC1155Receiver and AccessControl
-     * @param interfaceId The interface ID to check
-     * @return True if the interface is supported, false otherwise
-     */
-    function supportsInterface(bytes4 interfaceId) public view override(ERC1155Receiver, AccessControl) returns (bool) {
-        return super.supportsInterface(interfaceId);
+    function main() public view returns (Main) {
+        return Main(_main);
     }
 }

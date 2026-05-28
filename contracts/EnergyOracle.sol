@@ -1,31 +1,45 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { Manager } from "./Manager.sol";
 
-/// @dev Error to indicate that a zero address was passed as a parameter
-error ZeroAddressPassed();
+import { OwnableEnumerableRoles } from "./base/OwnableEnumerableRoles.sol";
+import { ContractsBase } from "./base/ContractsBase.sol";
+import { Main } from "./Main.sol";
+
+/// @dev Error thrown when caller is not an energy oracle provider
+error OnlyEnergyOracleProvider();
 
 /// @dev Error to indicate that the consumer address is incorrect
 /// @param incorrectConsumer The incorrect consumer address
 /// @param supplierId The ID of the supplier
 error IncorrectConsumer(address incorrectConsumer, uint256 supplierId);
 
+/// @dev Error to indicate that the producer address is incorrect
+/// @param producerId The ID of the producer
+error IncorrectProducer(uint256 producerId);
+
 /// @dev Error to indicate that the supplier address is incorrect
-/// @param incorrectSupplier The incorrect supplier address
 /// @param supplierId The ID of the supplier
-error IncorrectSupplier(address incorrectSupplier, uint256 supplierId);
+error IncorrectSupplier(uint256 supplierId);
 
 /**
  * @title Energy Oracle contract to record indicators of consumed energy from the source
  * @dev This contract allows recording and retrieving energy consumption data for consumers and tokens.
  * The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
  * who can retrieve the consumption data.
+ * PROVIDER_ROLE can call recordSupplierPrice, recordProduction, recordConsumption.
+ * MANAGER_ROLE can pause/unpause and retrieve stored data.
  * @author Bohdan
  */
-contract EnergyOracle is AccessControl, Pausable {
+contract EnergyOracle is OwnableEnumerableRoles, ContractsBase, Pausable {
+    /// @dev Emmited when an Energy Oracle provider records energy production
+    /// @param sender The address of the sender who recorded the energy production
+    /// @param supplierId The ID of the supplier
+    /// @param price The energy price
+    /// @param timestamp The timestamp when the energy production was recorded
+    event EnergyPriceRecorded(address indexed sender, uint256 indexed supplierId, uint256 price, uint256 timestamp);
+
     /// @dev Emmited when an Energy Oracle provider records energy production
     /// @param sender The address of the sender who recorded the energy production
     /// @param supplier The address of the supplier
@@ -59,84 +73,88 @@ contract EnergyOracle is AccessControl, Pausable {
     /// @param whoseConsumption The address of the consumer
     /// @param supplierId The ID of the supplier
     /// @param timestamp The timestamp when the energy consumption was updated
-    event EnergyConsumptionPaid(
+    event EnergyConsumptionUpdated(
         address indexed sender,
         address indexed whoseConsumption,
         uint256 indexed supplierId,
+        uint256 consumptionToAdd,
+        uint256 consumptionToRemove,
         uint256 timestamp
     );
 
     /// @dev Keccak256 hashed `ENERGY_ORACLE_MANAGER_ROLE` string
-    bytes32 public constant ENERGY_ORACLE_MANAGER_ROLE = keccak256(bytes("ENERGY_ORACLE_MANAGER_ROLE"));
-    /// @dev Keccak256 hashed `ENERGY_ORACLE_PROVIDER_ROLE` string
-    bytes32 public constant ENERGY_ORACLE_PROVIDER_ROLE = keccak256(bytes("ENERGY_ORACLE_PROVIDER_ROLE"));
+    uint256 public constant ENERGY_ORACLE_MANAGER_ROLE = uint256(keccak256(bytes("ENERGY_ORACLE_MANAGER_ROLE")));
     /// @dev Keccak256 hashed `ESCROW` string
-    bytes32 public constant ESCROW = keccak256(bytes("ESCROW"));
+    uint256 public constant ESCROW = uint256(keccak256(bytes("ESCROW")));
 
-    /// @dev Manager contract
-    Manager public manager;
-
-    /// @dev Mapping to store consumption
-    mapping(address => mapping(uint256 => uint256)) private _energyConsumptions; // consumer => supplierId => id => energy consumption
-
+    /// @dev Mapping to store prices
+    mapping(uint256 => uint256) private _supplierEnergyPrice; // supplierId => energy price
     /// @dev Mapping to store productions
-    mapping(address => mapping(uint256 => uint256)) private _energyProductions; // supplier => supplierId => id => energy production
+    mapping(uint256 => uint256) private _energyProductions; // producer => energy production
+    /// @dev Mapping to store consumption
+    mapping(address => mapping(uint256 => uint256)) private _debtsUSD; // consumer => supplierId => id => energy consumption debt
 
-    /// @dev Throws if passed address 0 as parameter
-    /// @param account The address to check
-    modifier zeroAddressCheck(address account) {
-        if (account == address(0)) {
-            revert ZeroAddressPassed();
+    /**
+     * @dev Modifier to check if the caller is an energy oracle provider
+     */
+    modifier onlyOracleProvider() {
+        if (main().tokens().energyOracleProviderToken.balanceOf(msg.sender) == 0) {
+            revert OnlyEnergyOracleProvider();
         }
-
         _;
     }
 
     /// @notice Constructor to initialize StakingManagement contract
-    /// @dev Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`
-    /// @param _manager The address of the manager contract
-    constructor(Manager _manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ENERGY_ORACLE_MANAGER_ROLE, msg.sender);
-        _grantRole(ENERGY_ORACLE_PROVIDER_ROLE, msg.sender);
-        _grantRole(ESCROW, msg.sender);
-
-        manager = _manager;
+    /// @dev Grants `ENERGY_ORACLE_MANAGER_ROLE`, `ENERGY_ORACLE_PROVIDER_ROLE` and `ESCROW` roles to `msg.sender`
+    /// @param main_ The address of the main contract
+    constructor(address main_) ContractsBase(main_) {
+        _setRole(msg.sender, ENERGY_ORACLE_MANAGER_ROLE, true);
+        _setRole(msg.sender, ESCROW, true);
     }
 
-    /// @dev Changes `manager` address to the `_newManager` address.
-    /// @param _newManager The address of the new manger contract
-    function changeManager(
-        Manager _newManager
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) zeroAddressCheck(address(_newManager)) {
-        manager = _newManager;
+    /// @notice Update Main contract address
+    /// @param main_ New Main contract address
+    function changeMain(address main_) public override onlyOwner {
+        super.changeMain(main_);
     }
 
     /**
-     * @notice Records the energy production by the supplier at a specific timestamp.
+     * @notice Records the supplier energy price at a specific timestamp.
      * @dev Requirements:
      * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-     * - `supplier` must have `supplierId`
+     * - `supplierId` should exist
      *
-     * @param supplier The supplier address
-     * @param supplierId The supplier ID
+     * @param supplierId The supplier address
+     * @param supplierPrice The supplier price
+     */
+    function recordSupplierPrice(uint256 supplierId, uint256 supplierPrice) external onlyOracleProvider whenNotPaused {
+        require(main().tokens().energySupplierToken.ownerOf(supplierId) != address(0), IncorrectSupplier(supplierId));
+
+        _supplierEnergyPrice[supplierId] = supplierPrice;
+
+        main().tokens().microgridGovernanceToken.mint(msg.sender, main().MGT_TO_ORACLE_PROVIDER());
+
+        emit EnergyPriceRecorded(msg.sender, supplierId, supplierPrice, block.timestamp);
+    }
+
+    /**
+     * @notice Records the energy production by the producer at a specific timestamp.
+     * @dev Requirements:
+     * - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
+     * - `producer` must have `producerId`
+     *
+     * @param producerId The producer ID
      * @param production The energy production value
      */
-    function recordEnergyProductions(
-        address supplier,
-        uint256 supplierId,
-        uint256 production
-    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(supplier) {
-        if (manager.tokens().nrgs.ownerOf(supplierId) != supplier) {
-            revert IncorrectSupplier(supplier, supplierId);
-        }
+    function recordEnergyProductions(uint256 producerId, uint256 production) external onlyOracleProvider whenNotPaused {
+        address producer = main().tokens().energyProducerToken.ownerOf(producerId);
 
-        _energyProductions[supplier][supplierId] = production;
+        _energyProductions[producerId] = production;
 
-        // When smart meter is using comment the line
-        // manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
+        main().tokens().energyCreditToken.mint(producer, production);
+        main().tokens().microgridGovernanceToken.mint(msg.sender, main().MGT_TO_ORACLE_PROVIDER());
 
-        emit EnergyProductionRecorded(msg.sender, supplier, supplierId, production, block.timestamp);
+        emit EnergyProductionRecorded(msg.sender, producer, producerId, production, block.timestamp);
     }
 
     /**
@@ -153,15 +171,20 @@ contract EnergyOracle is AccessControl, Pausable {
         address consumer,
         uint256 supplierId,
         uint256 consumption
-    ) external onlyRole(ENERGY_ORACLE_PROVIDER_ROLE) whenNotPaused zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+    ) external onlyOracleProvider whenNotPaused zeroAddressCheck(consumer) {
+        address supplier = main().tokens().energySupplierToken.ownerOf(supplierId);
+
+        if (main().tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        _energyConsumptions[consumer][supplierId] = consumption;
+        uint256 rewardMGT = (main().MGT_PER_ECT_CONSUMED() * consumption) / 1e18;
 
-        // When smart meter is using comment the line
-        // manager.tokens().mgt.mint(msg.sender, manager.values().rewardAmount * 2);
+        _debtsUSD[consumer][supplierId] += consumption * _supplierEnergyPrice[supplierId];
+
+        main().tokens().energyCreditToken.burn(supplier, consumption);
+        main().tokens().microgridGovernanceToken.mint(supplier, rewardMGT);
+        main().tokens().microgridGovernanceToken.mint(msg.sender, main().MGT_TO_ORACLE_PROVIDER());
 
         emit EnergyConsumptionRecorded(msg.sender, consumer, supplierId, consumption, block.timestamp);
     }
@@ -175,15 +198,27 @@ contract EnergyOracle is AccessControl, Pausable {
      */
     function updateEnergyConsumptions(
         address consumer,
-        uint256 supplierId
+        uint256 supplierId,
+        uint256 consumptionToAdd,
+        uint256 consumptionToRemove
     ) public onlyRole(ESCROW) whenNotPaused zeroAddressCheck(consumer) {
-        if (manager.tokens().ecu.balanceOf(consumer, supplierId) == 0) {
+        main().tokens().energySupplierToken.ownerOf(supplierId);
+
+        if (main().tokens().electricityConsumerToken.balanceOf(consumer, supplierId) == 0) {
             revert IncorrectConsumer(consumer, supplierId);
         }
 
-        _energyConsumptions[consumer][supplierId] = 0;
+        _debtsUSD[consumer][supplierId] += consumptionToAdd;
+        _debtsUSD[consumer][supplierId] -= consumptionToRemove;
 
-        emit EnergyConsumptionPaid(msg.sender, consumer, supplierId, block.timestamp);
+        emit EnergyConsumptionUpdated(
+            msg.sender,
+            consumer,
+            supplierId,
+            consumptionToAdd,
+            consumptionToRemove,
+            block.timestamp
+        );
     }
 
     /**
@@ -205,22 +240,34 @@ contract EnergyOracle is AccessControl, Pausable {
     }
 
     /**
+     * @dev Retrieves the price per energy consumption.
+     * @param supplierId The id of the supplier.
+     * @return price The price of the energy consumption.
+     */
+    function supplierEnergyPrice(uint256 supplierId) public view returns (uint256 price) {
+        price = _supplierEnergyPrice[supplierId];
+    }
+
+    /**
      * @dev Retrieves the consumption value for a specific energy consumption record.
      * @param consumer The address of the consumer.
      * @param supplierId The ID of the supplier.
      * @return consumption The consumption value of the energy consumption record.
      */
-    function energyConsumptions(address consumer, uint256 supplierId) public view returns (uint256 consumption) {
-        consumption = _energyConsumptions[consumer][supplierId];
+    function debtsUSD(address consumer, uint256 supplierId) public view returns (uint256) {
+        return _debtsUSD[consumer][supplierId];
     }
 
     /**
      * @dev Retrieves the production value for a specific energy production record.
-     * @param supplier The address of the supplier.
-     * @param supplierId The ID of the supplier.
+     * @param producerId The ID of the producer.
      * @return production The production value of the energy production record.
      */
-    function energyProductions(address supplier, uint256 supplierId) public view returns (uint256 production) {
-        production = _energyProductions[supplier][supplierId];
+    function energyProductions(uint256 producerId) public view returns (uint256 production) {
+        production = _energyProductions[producerId];
+    }
+
+    function main() public view returns (Main) {
+        return Main(_main);
     }
 }
