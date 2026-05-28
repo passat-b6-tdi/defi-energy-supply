@@ -1,24 +1,41 @@
 # Summary
 
-- Contracts
-  - Escrow
-    - [Escrow](docs/Escrow.md)
-  - Main
-    - [Main](docs/Main.md)
-  - Manager
-    - [Manager](docs/Manager.md)
-  - EnergyOracle
-    - [EnergyOracle](docs/Energyoracle.md)
-  - Register
-    - [Register](docs/Register.md)
-  - staking
-    - [StakingReward](docs/Stakingreward.md)
-  - tokens
-    - ERC1155
-      - [ECU](docs/tokens/ECU.md)
-    - ERC20
-      - [MGT](docs/tokens/MGT.md)
-    - ERC721
-      - [NRGBase](docs/tokens/erc721/NRGBase.md)
-      - [NRGS](docs/tokens/erc721/NRGS.md)
-      - [NRGOP](docs/tokens/erc721/NRGOP.md)
+- [Overview](docs/Overview.md)
+- [Getting started](docs/GettingStarted.md)
+- [Architecture](docs/Architecture.md)
+- [Access control](docs/Roles.md)
+
+## Contracts
+
+- [Main](docs/contracts/Main.md)
+- [Register](docs/contracts/Register.md)
+- [Escrow](docs/contracts/Escrow.md)
+- [EnergyOracle](docs/contracts/EnergyOracle.md)
+- [StakingReward](docs/contracts/StakingReward.md)
+
+### Base
+
+- [ContractsBase](docs/contracts/base/ContractsBase.md)
+- [OwnableEnumerableRoles](docs/contracts/base/OwnableEnumerableRoles.md)
+
+### Tokens
+
+- ERC-20
+  - [EnergyCreditToken (NRGCT)](docs/contracts/tokens/ERC20/EnergyCreditToken.md)
+  - [MicrogridGovernanceToken (MGT)](docs/contracts/tokens/ERC20/MicrogridGovernanceToken.md)
+- ERC-721
+  - [EnergyProducerToken (NRGPT)](docs/contracts/tokens/ERC712/EnergyProducerToken.md)
+  - [EnergySupplierToken (NRGST)](docs/contracts/tokens/ERC712/EnergySupplierToken.md)
+  - [EnergyOracleProviderToken (NRGOPT)](docs/contracts/tokens/ERC712/EnergyOracleProviderToken.md)
+- ERC-1155
+  - [ElectricityConsumerToken (ELCT)](docs/contracts/tokens/ERC1155/ElectricityConsumerToken.md)
+- Base
+  - [SoladyBaseToken](docs/contracts/tokens/base/SoladyBaseToken.md)
+  - [ERC20TokenBase](docs/contracts/tokens/base/ERC20TokenBase.md)
+  - [ERC721TokenBase](docs/contracts/tokens/base/ERC721TokenBase.md)
+
+### Mocks (test fixtures)
+
+- [ERC20Mock](docs/contracts/mocks/ERC20Mock.md)
+- [EscrowMock](docs/contracts/mocks/EscrowMock.md)
+- [OracleMock](docs/contracts/mocks/OracleMock.md)
