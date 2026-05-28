@@ -304,6 +304,8 @@ contract Register is OwnableEnumerableRoles, ContractsBase, Receiver {
         emit OracleProviderUnregistered(msg.sender, oracleProviderId, block.timestamp);
     }
 
+    /// @notice Returns the Main contract reference
+    /// @return The Main contract instance configured for this register
     function main() public view returns (Main) {
         return Main(_main);
     }

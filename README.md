@@ -9,34 +9,68 @@ The Energy Billing Automation System is a comprehensive solution designed to aut
 - Real-time monitoring of electricity consumption
 - Generation of accurate and detailed bills for energy market participants
 
+## Tech Stack
+
+- **Solidity** `0.8.20` smart contracts (OpenZeppelin, Solady)
+- **Hardhat** development environment with TypeScript
+- **Python** utilities for simulation and Telegram bot integration
+- Target network: **Arbitrum Sepolia**
+
+## Project Structure
+
+```
+contracts/        Solidity sources (Main, Register, Escrow, EnergyOracle, StakingReward, base, mocks, tokens)
+scripts/
+  typescript/     Hardhat deploy & verify scripts
+  python/         Simulation and Telegram bot scripts
+test/             Hardhat test suites
+deployed/         Deployment artifacts
+docs/             Generated documentation
+```
+
 ## Installation
 
 1. Clone the repository:
 
 ```
-git clone https://github.com/your-username/energy-billing-automation.git
+git clone https://github.com/passat-b6-tdi/defi-energy-supply.git
+cd defi-energy-supply
 ```
 
 2. Install the required dependencies:
 
 ```
-npm install
-
-yarn
-
 yarn install
 ```
 
-3. Interaction with the system
+3. Copy `.env.example` to `.env` and fill in the required environment variables.
 
-- `yarn clean`: Removes the build artifacts.
-- `yarn compile`: Compiles the smart contracts.
-- `yarn recompile`: Cleans and then compiles the smart contracts.
-- `yarn test`: Run the smart contract tests.
-- `yarn coverage`: Generates code coverage report for the smart contracts.
-- `yarn docgen`: Generates documentation for the smart contracts.
-- `yarn size`: Calculates the size of the compiled smart contracts.
-- `yarn run:script`: Deploys the contracts with specific script.
+## Available Scripts
+
+### Build & Test
+
+- `yarn clean` — Removes the build artifacts.
+- `yarn compile` — Compiles the smart contracts.
+- `yarn recompile` — Cleans and then compiles the smart contracts.
+- `yarn test` — Runs the smart contract tests.
+- `yarn coverage` — Generates a code coverage report.
+- `yarn size` — Calculates the size of the compiled smart contracts.
+- `yarn docgen` — Generates documentation for the smart contracts.
+
+### Deployment & Verification
+
+- `yarn run:script <path>` — Runs an arbitrary Hardhat script.
+- `yarn deploy:network <network>` — Deploys to the given Hardhat network.
+- `yarn deploy:arb-sepolia` — Deploys all contracts to Arbitrum Sepolia.
+- `yarn verify:network <network>` — Verifies deployed contracts on the given network.
+- `yarn verify:arb-sepolia` — Verifies contracts on Arbitrum Sepolia.
+
+### Formatting
+
+- `yarn prettier` — Formats Solidity and TypeScript sources.
+- `yarn prettier:sol` — Formats Solidity sources only.
+- `yarn prettier:ts` — Formats JavaScript/TypeScript sources only.
+- `yarn prettier:json:md` — Formats JSON and Markdown files.
 
 ## Contributing
 

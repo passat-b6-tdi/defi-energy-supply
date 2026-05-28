@@ -22,6 +22,7 @@ error IncorrectProducer(address producer, uint256 producerId);
 /// @param producerId The id of the producer
 error ProducerNotEnteredStaking(uint256 producerId);
 
+/// @dev Error thrown when caller is not the Register contract
 error OnlyRegister();
 
 /**
@@ -49,6 +50,8 @@ contract StakingReward is Ownable, ContractsBase {
     event RewardSentProducer(address indexed producer, uint256 amount);
 
     /// @dev Structure to hold producer staking info
+    /// @param updatedAt Timestamp at which the producer's reward state was last updated
+    /// @param pendingReward Accumulated MGT reward not yet claimed by the producer
     struct ProducerInfo {
         uint256 updatedAt;
         uint256 pendingReward;
@@ -133,10 +136,10 @@ contract StakingReward is Ownable, ContractsBase {
     }
 
     /**
-     * @notice Update and return current ProducerInfo
-     * @param producer The address of the producer
+     * @notice Update and return the current ProducerInfo for the given producer.
+     * @param producer The address of the producer (must own `producerId`)
      * @param producerId The ID of the producer token
-     * @return ProducerInfo The updated producer staking info
+     * @return The updated `ProducerInfo` containing latest timestamp and pending reward
      */
     function updateProducerInfo(
         address producer,
@@ -145,7 +148,9 @@ contract StakingReward is Ownable, ContractsBase {
         return _updateInfo(producerId);
     }
 
-    /// @dev Internal: accumulate new pendingReward and update timestamp
+    /// @dev Internal: accumulates new pendingReward and updates timestamp for `producerId`
+    /// @param producerId The ID of the producer token
+    /// @return The updated ProducerInfo
     function _updateInfo(uint256 producerId) private returns (ProducerInfo memory) {
         ProducerInfo storage entry = producers[producerId];
         if (entry.updatedAt == 0) {
@@ -157,12 +162,16 @@ contract StakingReward is Ownable, ContractsBase {
         return entry;
     }
 
-    /// @dev Internal: compute reward since `fromTimestamp`
+    /// @dev Internal: compute MGT reward accrued since `fromTimestamp`, divided across all active producers
+    /// @param fromTimestamp The timestamp the reward is computed from
+    /// @return The reward amount in MGT (18 decimals)
     function _calculateReward(uint256 fromTimestamp) private view returns (uint256) {
         uint256 elapsed = block.timestamp - fromTimestamp;
         return (main().MGT_TO_ORACLE_PROVIDER() * elapsed) / totalProducers;
     }
 
+    /// @notice Returns the Main contract reference
+    /// @return The Main contract instance configured for this staking contract
     function main() public view returns (Main) {
         return Main(_main);
     }

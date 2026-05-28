@@ -112,10 +112,9 @@ const config: HardhatUserConfig = {
     ],
   },
   docgen: {
-    // path: './docs',
-    // clear: true,
-    // runOnCompile: true,
+    outputDir: './docs/contracts',
     pages: 'files',
+    exclude: ['mocks'],
   },
   paths: {
     artifacts: './artifacts',

@@ -8,6 +8,14 @@ error ZeroAddressPassed()
 
 _Error to indicate that a zero address was passed as a parameter_
 
+## OnlyEnergySupplier
+
+```solidity
+error OnlyEnergySupplier()
+```
+
+_Error thrown when caller is not an energy supplier_
+
 ## IncorrectConsumer
 
 ```solidity
@@ -23,12 +31,71 @@ _Error to indicate that the consumer address is incorrect_
 | incorrectConsumer | address | The incorrect consumer address |
 | supplierId | uint256 | The ID of the supplier |
 
+## ProducerAlreadyRegistered
+
+```solidity
+error ProducerAlreadyRegistered(address producer)
+```
+
+_Error when attempting to register a producer that's already registered_
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| producer | address | The producer address attempted to be re-registered |
+
+## SupplierAlreadyRegistered
+
+```solidity
+error SupplierAlreadyRegistered(address supplier)
+```
+
+_Error when attempting to register a supplier that's already registered_
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| supplier | address | The supplier address attempted to be re-registered |
+
+## OracleProviderAlreadyRegistered
+
+```solidity
+error OracleProviderAlreadyRegistered(address op)
+```
+
+_Error when attempting to register a oracle provider that's already registered_
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| op | address | The oracle provider address attempted to be re-registered |
+
 ## Register
 
 This contract allows for registering and unregistering suppliers, consumers, and oracle providers in the energy microgrid system.
 It ensures that only authorized roles can perform these operations and emits events for tracking.
 
 _This contract manages the registration and unregistration of energy suppliers, consumers, and oracle providers._
+
+### ProducerRegistered
+
+```solidity
+event ProducerRegistered(address sender, address producer, uint256 producerId, uint256 timestamp)
+```
+
+_Emitted when a user registers as an Energy producer_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| sender | address | The address of the sender |
+| producer | address | The address of the producer |
+| producerId | uint256 | The ID of the producer |
+| timestamp | uint256 | The timestamp of registration |
 
 ### SupplierRegistered
 
@@ -47,10 +114,26 @@ _Emitted when a user registers as an Energy supplier_
 | supplierId | uint256 | The ID of the supplier |
 | timestamp | uint256 | The timestamp of registration |
 
+### ProducerUnregistered
+
+```solidity
+event ProducerUnregistered(address sender, uint256 producerId, uint256 timestamp)
+```
+
+_Emitted when an Energy producer unregisters_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| sender | address | The address of the sender |
+| producerId | uint256 | The ID of the producer |
+| timestamp | uint256 | The timestamp of unregistration |
+
 ### SupplierUnregistered
 
 ```solidity
-event SupplierUnregistered(address sender, address supplier, uint256 supplierId, uint256 timestamp)
+event SupplierUnregistered(address sender, uint256 supplierId, uint256 timestamp)
 ```
 
 _Emitted when an Energy supplier unregisters_
@@ -60,14 +143,13 @@ _Emitted when an Energy supplier unregisters_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | sender | address | The address of the sender |
-| supplier | address | The address of the supplier |
 | supplierId | uint256 | The ID of the supplier |
 | timestamp | uint256 | The timestamp of unregistration |
 
 ### ConsumerRegistered
 
 ```solidity
-event ConsumerRegistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
+event ConsumerRegistered(address sender, address consumer, uint256 supplierId, uint256 timestamp)
 ```
 
 _Emitted when a supplier registers a user as Electricity consumer_
@@ -79,13 +161,12 @@ _Emitted when a supplier registers a user as Electricity consumer_
 | sender | address | The address of the sender |
 | consumer | address | The address of the consumer |
 | supplierId | uint256 | The ID of the supplier |
-| supplierAddress | address | The address of the supplier |
 | timestamp | uint256 | The timestamp of registration |
 
 ### ConsumerUnregistered
 
 ```solidity
-event ConsumerUnregistered(address sender, address consumer, uint256 supplierId, address supplierAddress, uint256 timestamp)
+event ConsumerUnregistered(address sender, address consumer, uint256 supplierId, uint256 timestamp)
 ```
 
 _Emitted when a supplier unregisters an Electricity consumer_
@@ -97,7 +178,6 @@ _Emitted when a supplier unregisters an Electricity consumer_
 | sender | address | The address of the sender |
 | consumer | address | The address of the consumer |
 | supplierId | uint256 | The ID of the supplier |
-| supplierAddress | address | The address of the supplier |
 | timestamp | uint256 | The timestamp of unregistration |
 
 ### OracleProviderRegistered
@@ -120,7 +200,7 @@ _Emitted when a user registers as an Energy oracle provider_
 ### OracleProviderUnregistered
 
 ```solidity
-event OracleProviderUnregistered(address sender, address oracleProvider, uint256 oracleProviderId, uint256 timestamp)
+event OracleProviderUnregistered(address sender, uint256 oracleProviderId, uint256 timestamp)
 ```
 
 _Emitted when an Energy oracle provider unregisters_
@@ -130,25 +210,24 @@ _Emitted when an Energy oracle provider unregisters_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | sender | address | The address of the sender |
-| oracleProvider | address | The address of the oracle provider |
 | oracleProviderId | uint256 | The ID of the oracle provider |
 | timestamp | uint256 | The timestamp of unregistration |
 
 ### REGISTER_MANAGER_ROLE
 
 ```solidity
-bytes32 REGISTER_MANAGER_ROLE
+uint256 REGISTER_MANAGER_ROLE
 ```
 
 _Keccak256 hashed `REGISTER_MANAGER_ROLE` string_
 
-### manager
+### currentProducerId
 
 ```solidity
-contract Manager manager
+uint256 currentProducerId
 ```
 
-_Manager contract_
+_Counter of producers Ids_
 
 ### currentSupplierId
 
@@ -166,24 +245,24 @@ uint256 currentOracleProviderId
 
 _Counter of oracle providers Ids_
 
-### zeroAddressCheck
+### onlySupplier
 
 ```solidity
-modifier zeroAddressCheck(address account)
+modifier onlySupplier(uint256 supplierId)
 ```
 
-_Throws if passed address 0 as parameter_
+_Modifier to check if the caller is the owner of the supplierId_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| account | address | The address to check |
+| supplierId | uint256 | The ID of the supplier |
 
 ### constructor
 
 ```solidity
-constructor(contract Manager _manager) public
+constructor(address main_) public
 ```
 
 Constructor to initialize Register contract
@@ -194,21 +273,40 @@ _Grants `DEFAULT_ADMIN_ROLE` and `REGISTER_MANAGER_ROLE` roles to `msg.sender`_
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _manager | contract Manager | The address of the Manager contract |
+| main_ | address | The address of the Main contract |
 
-### changeManager
+### changeMain
 
 ```solidity
-function changeManager(contract Manager _newManager) external
+function changeMain(address main_) public
 ```
 
-_Changes `manager` address to the `_newManager` address._
+Update Main contract address
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _newManager | contract Manager | The address of the new manger contract |
+| main_ | address | New Main contract address |
+
+### registerProducer
+
+```solidity
+function registerProducer(address producer) external
+```
+
+Registers an Energy producer.
+
+_Requirements:
+- `msg.sender` must have REGISTER_MANAGER_ROLE
+- `producer` must not be address 0
+- `producer` must have EnergyProducerToken_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| producer | address | The address of the producer |
 
 ### registerSupplier
 
@@ -221,7 +319,7 @@ Registers an Energy supplier.
 _Requirements:
 - `msg.sender` must have REGISTER_MANAGER_ROLE
 - `supplier` must not be address 0
-- `supplier` must have NRGS token_
+- `supplier` must have EnergySupplierToken token_
 
 #### Parameters
 
@@ -266,10 +364,28 @@ _Requirements:
 | ---- | ---- | ----------- |
 | oracleProvider | address | The address of the oracle provider |
 
-### unRegisterSupplier
+### unregisterProducer
 
 ```solidity
-function unRegisterSupplier(uint256 supplierId) external
+function unregisterProducer(uint256 producerId) external
+```
+
+Unregisters an Energy producer.
+
+_Requirements:
+- `msg.sender` must have REGISTER_MANAGER_ROLE
+- `producer` must have NRGS token_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| producerId | uint256 | The ID of the producer |
+
+### unregisterSupplier
+
+```solidity
+function unregisterSupplier(uint256 supplierId) external
 ```
 
 Unregisters an Energy supplier.
@@ -284,10 +400,10 @@ _Requirements:
 | ---- | ---- | ----------- |
 | supplierId | uint256 | The ID of the supplier |
 
-### unRegisterElectricityConsumer
+### unregisterElectricityConsumer
 
 ```solidity
-function unRegisterElectricityConsumer(address consumer, uint256 supplierId) external
+function unregisterElectricityConsumer(address consumer, uint256 supplierId) external
 ```
 
 Unregisters an Electricity consumer.
@@ -304,10 +420,10 @@ _Requirements:
 | consumer | address | The address of the consumer |
 | supplierId | uint256 | The ID of the supplier for the consumer |
 
-### unRegisterOracleProvider
+### unregisterOracleProvider
 
 ```solidity
-function unRegisterOracleProvider(uint256 oracleProviderId) external
+function unregisterOracleProvider(uint256 oracleProviderId) external
 ```
 
 Unregisters an Energy oracle provider.
@@ -322,25 +438,17 @@ _Requirements:
 | ---- | ---- | ----------- |
 | oracleProviderId | uint256 | The ID of the oracle provider |
 
-### supportsInterface
+### main
 
 ```solidity
-function supportsInterface(bytes4 interfaceId) public view returns (bool)
+function main() public view returns (contract Main)
 ```
 
-Supports interface for ERC1155Receiver and AccessControl
-
-_See {IERC165-supportsInterface}._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| interfaceId | bytes4 | The interface ID to check |
+Returns the Main contract reference
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | bool | True if the interface is supported, false otherwise |
+| [0] | contract Main | The Main contract instance configured for this register |
 

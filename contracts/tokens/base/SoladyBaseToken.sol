@@ -18,8 +18,9 @@ contract SoladyBaseToken is Ownable, EnumerableRoles {
     string internal SYMBOL;
 
     /// @notice Constructor to initialize token contract
-    /// @dev Grants owner role to `msg.sender`
-    /// @dev Sets `name` and `symbol` of the token
+    /// @dev Grants ownership and MINTER/BURNER roles to `msg.sender` and sets the token's `name` and `symbol`.
+    /// @param _name The token name
+    /// @param _symbol The token symbol
     constructor(string memory _name, string memory _symbol) {
         _setOwner(msg.sender);
         _setRole(msg.sender, MINTER_ROLE, true);

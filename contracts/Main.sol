@@ -66,7 +66,9 @@ contract Main is OwnableEnumerableRoles {
     /// @dev Keccak256 hashed `MANAGER_ROLE` string
     uint256 public constant MANAGER_ROLE = uint256(keccak256(bytes("MANAGER_ROLE")));
 
+    /// @notice MGT amount minted to an oracle provider per recording action (0.05 MGT, 18 decimals)
     uint256 public constant MGT_TO_ORACLE_PROVIDER = 5e16;
+    /// @notice MGT amount minted to a supplier per unit of consumed ECT (0.0005 MGT, 18 decimals)
     uint256 public constant MGT_PER_ECT_CONSUMED = 5e14;
 
     /// @dev Tokens struct storage
@@ -78,9 +80,11 @@ contract Main is OwnableEnumerableRoles {
     /// @dev Fees struct storage
     Fees public _fees;
 
-    /// @notice Immutable addresses of supported stablecoins
+    /// @notice Immutable address of the USDC stablecoin used for payments
     address public immutable USDC;
+    /// @notice Immutable address of the DAI stablecoin used for payments
     address public immutable DAI;
+    /// @notice Immutable address of the USDT stablecoin used for payments
     address public immutable USDT;
 
     /**

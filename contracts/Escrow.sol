@@ -71,6 +71,8 @@ contract Escrow is OwnableEnumerableRoles, ContractsBase {
         emit PaidForEnergy(msg.sender, supplierId, supplier, debtsUSD);
     }
 
+    /// @notice Returns the Main contract reference
+    /// @return The Main contract instance configured for this escrow
     function main() public view returns (Main) {
         return Main(_main);
     }

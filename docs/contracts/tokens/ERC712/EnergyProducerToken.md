@@ -1,6 +1,6 @@
 # Solidity API
 
-## NRGS
+## EnergyProducerToken
 
 ### constructor
 

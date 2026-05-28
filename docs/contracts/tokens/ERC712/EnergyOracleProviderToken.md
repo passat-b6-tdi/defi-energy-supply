@@ -1,6 +1,6 @@
 # Solidity API
 
-## NRGOP
+## EnergyOracleProviderToken
 
 ### constructor
 

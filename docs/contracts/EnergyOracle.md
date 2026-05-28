@@ -1,12 +1,12 @@
 # Solidity API
 
-## ZeroAddressPassed
+## OnlyEnergyOracleProvider
 
 ```solidity
-error ZeroAddressPassed()
+error OnlyEnergyOracleProvider()
 ```
 
-_Error to indicate that a zero address was passed as a parameter_
+_Error thrown when caller is not an energy oracle provider_
 
 ## IncorrectConsumer
 
@@ -23,10 +23,24 @@ _Error to indicate that the consumer address is incorrect_
 | incorrectConsumer | address | The incorrect consumer address |
 | supplierId | uint256 | The ID of the supplier |
 
+## IncorrectProducer
+
+```solidity
+error IncorrectProducer(uint256 producerId)
+```
+
+_Error to indicate that the producer address is incorrect_
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| producerId | uint256 | The ID of the producer |
+
 ## IncorrectSupplier
 
 ```solidity
-error IncorrectSupplier(address incorrectSupplier, uint256 supplierId)
+error IncorrectSupplier(uint256 supplierId)
 ```
 
 _Error to indicate that the supplier address is incorrect_
@@ -35,14 +49,33 @@ _Error to indicate that the supplier address is incorrect_
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| incorrectSupplier | address | The incorrect supplier address |
 | supplierId | uint256 | The ID of the supplier |
 
 ## EnergyOracle
 
 _This contract allows recording and retrieving energy consumption data for consumers and tokens.
-The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
-who can retrieve the consumption data._
+The contract is managed by an Energy Oracle Provider who can record energy data, and an Energy Oracle Manager
+who can pause/unpause the contract. The Escrow contract may update outstanding debts via `updateEnergyConsumptions`.
+Oracle providers (holders of `EnergyOracleProviderToken`) can call `recordSupplierPrice`,
+`recordEnergyProductions`, and `recordConsumerConsumptions`.
+`ENERGY_ORACLE_MANAGER_ROLE` can pause/unpause; `ESCROW` role can update debts._
+
+### EnergyPriceRecorded
+
+```solidity
+event EnergyPriceRecorded(address sender, uint256 supplierId, uint256 price, uint256 timestamp)
+```
+
+_Emmited when an Energy Oracle provider records energy production_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| sender | address | The address of the sender who recorded the energy production |
+| supplierId | uint256 | The ID of the supplier |
+| price | uint256 | The energy price |
+| timestamp | uint256 | The timestamp when the energy production was recorded |
 
 ### EnergyProductionRecorded
 
@@ -80,10 +113,10 @@ _Emmited when an Energy Oracle provider records energy consumption_
 | consumption | uint256 | The amount of energy consumed |
 | timestamp | uint256 | The timestamp when the energy consumption was recorded |
 
-### EnergyConsumptionPaid
+### EnergyConsumptionUpdated
 
 ```solidity
-event EnergyConsumptionPaid(address sender, address whoseConsumption, uint256 supplierId, uint256 timestamp)
+event EnergyConsumptionUpdated(address sender, address whoseConsumption, uint256 supplierId, uint256 consumptionToAdd, uint256 consumptionToRemove, uint256 timestamp)
 ```
 
 _Emmited when called updateEnergyConsumptionsAndGetResult()_
@@ -95,102 +128,100 @@ _Emmited when called updateEnergyConsumptionsAndGetResult()_
 | sender | address | The address of the sender who updated the energy consumption |
 | whoseConsumption | address | The address of the consumer |
 | supplierId | uint256 | The ID of the supplier |
+| consumptionToAdd | uint256 |  |
+| consumptionToRemove | uint256 |  |
 | timestamp | uint256 | The timestamp when the energy consumption was updated |
 
 ### ENERGY_ORACLE_MANAGER_ROLE
 
 ```solidity
-bytes32 ENERGY_ORACLE_MANAGER_ROLE
+uint256 ENERGY_ORACLE_MANAGER_ROLE
 ```
 
 _Keccak256 hashed `ENERGY_ORACLE_MANAGER_ROLE` string_
 
-### ENERGY_ORACLE_PROVIDER_ROLE
-
-```solidity
-bytes32 ENERGY_ORACLE_PROVIDER_ROLE
-```
-
-_Keccak256 hashed `ENERGY_ORACLE_PROVIDER_ROLE` string_
-
 ### ESCROW
 
 ```solidity
-bytes32 ESCROW
+uint256 ESCROW
 ```
 
 _Keccak256 hashed `ESCROW` string_
 
-### manager
+### onlyOracleProvider
 
 ```solidity
-contract Manager manager
+modifier onlyOracleProvider()
 ```
 
-_Manager contract_
-
-### zeroAddressCheck
-
-```solidity
-modifier zeroAddressCheck(address account)
-```
-
-_Throws if passed address 0 as parameter_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| account | address | The address to check |
+_Modifier to check if the caller is an energy oracle provider_
 
 ### constructor
 
 ```solidity
-constructor(contract Manager _manager) public
+constructor(address main_) public
 ```
 
 Constructor to initialize StakingManagement contract
 
-_Grants `DEFAULT_ADMIN_ROLE`, `ENERGY_ORACLE_MANAGER_ROLE` and `ENERGY_ORACLE_PROVIDER_ROLE` roles to `msg.sender`_
+_Grants `ENERGY_ORACLE_MANAGER_ROLE`, `ENERGY_ORACLE_PROVIDER_ROLE` and `ESCROW` roles to `msg.sender`_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _manager | contract Manager | The address of the manager contract |
+| main_ | address | The address of the main contract |
 
-### changeManager
+### changeMain
 
 ```solidity
-function changeManager(contract Manager _newManager) external
+function changeMain(address main_) public
 ```
 
-_Changes `manager` address to the `_newManager` address._
+Update Main contract address
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _newManager | contract Manager | The address of the new manger contract |
+| main_ | address | New Main contract address |
+
+### recordSupplierPrice
+
+```solidity
+function recordSupplierPrice(uint256 supplierId, uint256 supplierPrice) external
+```
+
+Records the supplier energy price at a specific timestamp.
+
+_Requirements:
+- `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
+- `supplierId` should exist_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| supplierId | uint256 | The supplier address |
+| supplierPrice | uint256 | The supplier price |
 
 ### recordEnergyProductions
 
 ```solidity
-function recordEnergyProductions(address supplier, uint256 supplierId, uint256 production) external
+function recordEnergyProductions(uint256 producerId, uint256 production) external
 ```
 
-Records the energy production by the supplier at a specific timestamp.
+Records the energy production by the producer at a specific timestamp.
 
 _Requirements:
 - `msg.sender` must have ENERGY_ORACLE_PROVIDER_ROLE
-- `supplier` must have `supplierId`_
+- `producer` must have `producerId`_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The supplier address |
-| supplierId | uint256 | The supplier ID |
+| producerId | uint256 | The producer ID |
 | production | uint256 | The energy production value |
 
 ### recordConsumerConsumptions
@@ -216,20 +247,25 @@ _Requirements:
 ### updateEnergyConsumptions
 
 ```solidity
-function updateEnergyConsumptions(address consumer, uint256 supplierId) public
+function updateEnergyConsumptions(address consumer, uint256 supplierId, uint256 consumptionToAdd, uint256 consumptionToRemove) public
 ```
 
-Updates the energy consumption for a consumer, supplier
+Updates the energy consumption debt for a consumer/supplier pair.
 
-_Retrieves the production value for a specific energy production record.
-Requirements: `msg.sender` must have ESCROW role_
+_Adds `consumptionToAdd` to and subtracts `consumptionToRemove` from the stored USD debt.
+Requirements:
+- `msg.sender` must have `ESCROW` role
+- contract must not be paused
+- `consumer` must hold the `ElectricityConsumerToken` for `supplierId`_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | consumer | address | The consumer address |
-| supplierId | uint256 | The ID of the supplier. |
+| supplierId | uint256 | The ID of the supplier |
+| consumptionToAdd | uint256 | The USD amount to add to the consumer's debt |
+| consumptionToRemove | uint256 | The USD amount to subtract from the consumer's debt |
 
 ### pause
 
@@ -253,13 +289,33 @@ Unpauses the contract
 _Requirements:
 - `msg.sender` must have ENERGY_ORACLE_MANAGER_ROLE_
 
-### energyConsumptions
+### supplierEnergyPrice
 
 ```solidity
-function energyConsumptions(address consumer, uint256 supplierId) public view returns (uint256 consumption)
+function supplierEnergyPrice(uint256 supplierId) public view returns (uint256 price)
 ```
 
-_Retrieves the consumption value for a specific energy consumption record._
+_Retrieves the price per energy consumption._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| supplierId | uint256 | The id of the supplier. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| price | uint256 | The price of the energy consumption. |
+
+### debtsUSD
+
+```solidity
+function debtsUSD(address consumer, uint256 supplierId) public view returns (uint256)
+```
+
+Retrieves the outstanding USD debt for a consumer under a given supplier.
 
 #### Parameters
 
@@ -272,12 +328,12 @@ _Retrieves the consumption value for a specific energy consumption record._
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| consumption | uint256 | The consumption value of the energy consumption record. |
+| [0] | uint256 | The outstanding USD debt amount for this consumer/supplier pair. |
 
 ### energyProductions
 
 ```solidity
-function energyProductions(address supplier, uint256 supplierId) public view returns (uint256 production)
+function energyProductions(uint256 producerId) public view returns (uint256 production)
 ```
 
 _Retrieves the production value for a specific energy production record._
@@ -286,12 +342,25 @@ _Retrieves the production value for a specific energy production record._
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| supplier | address | The address of the supplier. |
-| supplierId | uint256 | The ID of the supplier. |
+| producerId | uint256 | The ID of the producer. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | production | uint256 | The production value of the energy production record. |
+
+### main
+
+```solidity
+function main() public view returns (contract Main)
+```
+
+Returns the Main contract reference
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | contract Main | The Main contract instance configured for this oracle |
 

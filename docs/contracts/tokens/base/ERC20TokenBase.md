@@ -1,25 +1,39 @@
 # Solidity API
 
-## MGT
-
-### MINTER_BURNER_ROLE
-
-```solidity
-bytes32 MINTER_BURNER_ROLE
-```
-
-_Keccak256 hashed `MINTER_BURNER_ROLE` string_
+## ERC20TokenBase
 
 ### constructor
 
 ```solidity
-constructor() public
+constructor(string _name, string _symbol) public
 ```
 
 Constructor to initialize ERC20 token contract
 
-_Grants each roles to `msg.sender`
-Sets `name` and `symbol` of ERC20 token_
+_Grants owner and MINTER/BURNER roles to `msg.sender` and sets the token's `name` and `symbol`._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _name | string | The token name |
+| _symbol | string | The token symbol |
+
+### name
+
+```solidity
+function name() public view returns (string)
+```
+
+_Returns the name of the token._
+
+### symbol
+
+```solidity
+function symbol() public view returns (string)
+```
+
+_Returns the symbol of the token._
 
 ### mint
 

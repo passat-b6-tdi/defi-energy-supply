@@ -26,10 +26,11 @@ error IncorrectSupplier(uint256 supplierId);
 /**
  * @title Energy Oracle contract to record indicators of consumed energy from the source
  * @dev This contract allows recording and retrieving energy consumption data for consumers and tokens.
- * The contract is managed by an Energy Oracle Provider who can record energy consumption and an Energy Oracle Manager
- * who can retrieve the consumption data.
- * PROVIDER_ROLE can call recordSupplierPrice, recordProduction, recordConsumption.
- * MANAGER_ROLE can pause/unpause and retrieve stored data.
+ * The contract is managed by an Energy Oracle Provider who can record energy data, and an Energy Oracle Manager
+ * who can pause/unpause the contract. The Escrow contract may update outstanding debts via `updateEnergyConsumptions`.
+ * Oracle providers (holders of `EnergyOracleProviderToken`) can call `recordSupplierPrice`,
+ * `recordEnergyProductions`, and `recordConsumerConsumptions`.
+ * `ENERGY_ORACLE_MANAGER_ROLE` can pause/unpause; `ESCROW` role can update debts.
  * @author Bohdan
  */
 contract EnergyOracle is OwnableEnumerableRoles, ContractsBase, Pausable {
@@ -190,11 +191,16 @@ contract EnergyOracle is OwnableEnumerableRoles, ContractsBase, Pausable {
     }
 
     /**
-     * @notice Updates the energy consumption for a consumer, supplier
-     * @dev Retrieves the production value for a specific energy production record.
-     * Requirements: `msg.sender` must have ESCROW role
+     * @notice Updates the energy consumption debt for a consumer/supplier pair.
+     * @dev Adds `consumptionToAdd` to and subtracts `consumptionToRemove` from the stored USD debt.
+     * Requirements:
+     * - `msg.sender` must have `ESCROW` role
+     * - contract must not be paused
+     * - `consumer` must hold the `ElectricityConsumerToken` for `supplierId`
      * @param consumer The consumer address
-     * @param supplierId The ID of the supplier.
+     * @param supplierId The ID of the supplier
+     * @param consumptionToAdd The USD amount to add to the consumer's debt
+     * @param consumptionToRemove The USD amount to subtract from the consumer's debt
      */
     function updateEnergyConsumptions(
         address consumer,
@@ -249,10 +255,10 @@ contract EnergyOracle is OwnableEnumerableRoles, ContractsBase, Pausable {
     }
 
     /**
-     * @dev Retrieves the consumption value for a specific energy consumption record.
+     * @notice Retrieves the outstanding USD debt for a consumer under a given supplier.
      * @param consumer The address of the consumer.
      * @param supplierId The ID of the supplier.
-     * @return consumption The consumption value of the energy consumption record.
+     * @return The outstanding USD debt amount for this consumer/supplier pair.
      */
     function debtsUSD(address consumer, uint256 supplierId) public view returns (uint256) {
         return _debtsUSD[consumer][supplierId];
@@ -267,6 +273,8 @@ contract EnergyOracle is OwnableEnumerableRoles, ContractsBase, Pausable {
         production = _energyProductions[producerId];
     }
 
+    /// @notice Returns the Main contract reference
+    /// @return The Main contract instance configured for this oracle
     function main() public view returns (Main) {
         return Main(_main);
     }
