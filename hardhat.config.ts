@@ -3,14 +3,10 @@ import '@nomicfoundation/hardhat-toolbox';
 import 'solidity-docgen';
 import 'hardhat-contract-sizer';
 import dotenv from 'dotenv';
-import { getNetworkConfig, AccountTypes } from './utils/get-network-account';
+import { getNetworkConfig, AccountTypes } from './utils';
 dotenv.config();
 
 const etherscanKey = process.env.ETHSCAN_KEY ?? '';
-const polyscanKey = process.env.POLYSCAN_KEY ?? '';
-const basescanKey = process.env.BASESCAN_KEY ?? '';
-const opscanKey = process.env.OPSCAN_KEY ?? '';
-const arbitrumscanKey = process.env.ARBSCAN_KEY ?? '';
 
 export const ethApiKey = process.env.ALCHEMY_KEY_ETH;
 
@@ -59,8 +55,9 @@ const config: HardhatUserConfig = {
     arbitrum: getNetworkConfig('arbitrum', AccountTypes.PK),
     arbitrum_sepolia: getNetworkConfig('arbitrum_sepolia', AccountTypes.TestnetPk),
     sepolia: getNetworkConfig('sepolia', AccountTypes.TestnetPk),
-    mumbai: getNetworkConfig('mumbai', AccountTypes.TestnetPk),
+    amoy: getNetworkConfig('amoy', AccountTypes.TestnetPk),
     base_sepolia: getNetworkConfig('base_sepolia', AccountTypes.TestnetPk),
+    optimism_sepolia: getNetworkConfig('optimism_sepolia', AccountTypes.TestnetPk),
   },
   gasReporter: {
     coinmarketcap: process.env.COIN_MARKET_CAP_KEY,
@@ -74,16 +71,7 @@ const config: HardhatUserConfig = {
     disambiguatePaths: false,
   },
   etherscan: {
-    apiKey: {
-      mainnet: etherscanKey,
-      polygon: polyscanKey,
-      optimisticEthereum: opscanKey,
-      base: basescanKey,
-      arbitrumOne: arbitrumscanKey,
-      base_sepolia: basescanKey,
-      sepolia: etherscanKey,
-      arbitrum_sepolia: arbitrumscanKey,
-    },
+    apiKey: etherscanKey,
     customChains: [
       {
         network: 'base',
