@@ -33,9 +33,3 @@
   - [SoladyBaseToken](docs/contracts/tokens/base/SoladyBaseToken.md)
   - [ERC20TokenBase](docs/contracts/tokens/base/ERC20TokenBase.md)
   - [ERC721TokenBase](docs/contracts/tokens/base/ERC721TokenBase.md)
-
-### Mocks (test fixtures)
-
-- [ERC20Mock](docs/contracts/mocks/ERC20Mock.md)
-- [EscrowMock](docs/contracts/mocks/EscrowMock.md)
-- [OracleMock](docs/contracts/mocks/OracleMock.md)
