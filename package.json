@@ -44,6 +44,7 @@
     "solady": "^0.1.16"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-hardhat-etherscan.js",
     "clean": "hardhat clean",
     "compile": "hardhat compile",
     "recompile": "hardhat clean && hardhat compile",
@@ -55,6 +56,9 @@
     "verify:network": "hardhat run scripts/typescript/verify.ts --network",
     "verify:arb-sepolia": " yarn verify:network arbitrum_sepolia",
     "verify:base-sepolia": " yarn verify:network base_sepolia",
+    "demo:create": "hardhat run scripts/typescript/demo/create-accounts.ts --network",
+    "demo:fund": "hardhat run scripts/typescript/demo/fund-accounts.ts --network",
+    "demo:run": "hardhat run scripts/typescript/demo/run-flow.ts --network",
     "coverage": "hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"./test/**/*.ts\"",
     "docgen": "hardhat docgen",
     "size": "hardhat size-contracts",
