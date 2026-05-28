@@ -1,155 +1,198 @@
 import hre, { ethers } from 'hardhat';
 import fs from 'fs';
 import path from 'path';
-import { ECU, EnergyOracle, Escrow, MGT, Main, Manager, NRGS, NRGOP, Register, StakingReward } from '../../typechain';
+import dotenv from 'dotenv';
 import { ContractFactory } from 'ethers';
+import {
+  ElectricityConsumerToken,
+  EnergyCreditToken,
+  EnergyOracle,
+  EnergyOracleProviderToken,
+  EnergyProducerToken,
+  EnergySupplierToken,
+  ERC20Mock,
+  Escrow,
+  Main,
+  MicrogridGovernanceToken,
+  Register,
+  StakingReward,
+} from '../../typechain';
 
-let
-  minter_role: string,
-  escrow_manager: string,
-  register_role: string,
-  energy_oracle_provider_role: string,
-  _escrow_: string,
-  register_manger_role: string,
-  staking_manager_role: string;
+dotenv.config();
 
-async function main() {
+const FEE_AMOUNT = 10;
+
+// Reads an externally-deployed stablecoin address from the environment, e.g.
+// `BASE_SEPOLIA_USDC`. Returns undefined when unset so the deployer falls back
+// to an ERC20Mock stand-in.
+function readStablecoin(network: string, label: 'USDC' | 'DAI' | 'USDT'): string | undefined {
+  const key = `${network.toUpperCase()}_${label}`;
+  const value = process.env[key]?.trim();
+  return value && value.length > 0 ? value : undefined;
+}
+
+async function maybeDeployMock(label: string, real?: string): Promise<string> {
+  if (real) {
+    console.log(`Using real ${label} at ${real}`);
+    return real;
+  }
+  console.log(`Deploying ERC20Mock as ${label} stand-in`);
+  const Factory: ContractFactory = await ethers.getContractFactory('ERC20Mock');
+  const mock = (await Factory.deploy()) as ERC20Mock;
+  await mock.deployed();
+  console.log(`${label} (mock) deployed to ${mock.address}`);
+  return mock.address;
+}
+
+async function main(): Promise<void> {
+  const networkName = hre.network.name;
   const [deployer] = await ethers.getSigners();
 
+  console.log(`Deployer: ${deployer.address}`);
+  console.log(`Network:  ${networkName}`);
   console.log('Deployment process - start');
 
-  console.log(`ECU deployment`);
-  const ECU: ContractFactory = await ethers.getContractFactory('ECU');
-  const ecu = (await ECU.deploy()) as ECU;
-  await ecu.deployed();
-  console.log(`ECU deployed to ${ecu.address}`);
+  console.log('EnergyCreditToken (NRGCT) deployment');
+  const NRGCT: ContractFactory = await ethers.getContractFactory('EnergyCreditToken');
+  const nrgct = (await NRGCT.deploy()) as EnergyCreditToken;
+  await nrgct.deployed();
+  console.log(`NRGCT deployed to ${nrgct.address}`);
 
-  console.log(`MGT deployment`);
-  const MGT: ContractFactory = await ethers.getContractFactory('MGT');
-  const mgt = (await MGT.deploy()) as MGT;
+  console.log('MicrogridGovernanceToken (MGT) deployment');
+  const MGT: ContractFactory = await ethers.getContractFactory('MicrogridGovernanceToken');
+  const mgt = (await MGT.deploy()) as MicrogridGovernanceToken;
   await mgt.deployed();
   console.log(`MGT deployed to ${mgt.address}`);
 
-  console.log(`NRGS deployment`);
-  const NRGS: ContractFactory = await ethers.getContractFactory('NRGS');
-  const nrgs = (await NRGS.deploy()) as NRGS;
-  await nrgs.deployed();
-  console.log(`NRGS deployed to ${nrgs.address}`);
+  console.log('EnergyProducerToken (NRGPT) deployment');
+  const NRGPT: ContractFactory = await ethers.getContractFactory('EnergyProducerToken');
+  const nrgpt = (await NRGPT.deploy()) as EnergyProducerToken;
+  await nrgpt.deployed();
+  console.log(`NRGPT deployed to ${nrgpt.address}`);
 
-  console.log(`NRGOP deployment`);
-  const NRGOP: ContractFactory = await ethers.getContractFactory('NRGOP');
-  const nrgop = (await NRGOP.deploy()) as NRGOP;
-  await nrgop.deployed();
-  console.log(`NRGOP deployed to ${nrgop.address}`);
+  console.log('EnergySupplierToken (NRGST) deployment');
+  const NRGST: ContractFactory = await ethers.getContractFactory('EnergySupplierToken');
+  const nrgst = (await NRGST.deploy()) as EnergySupplierToken;
+  await nrgst.deployed();
+  console.log(`NRGST deployed to ${nrgst.address}`);
 
-  console.log(`Manager deployment`);
-  const Tokens: Manager.TokensStruct = {
-    mgt: mgt.address,
-    ecu: ecu.address,
-    nrgs: nrgs.address,
-    nrgop: nrgop.address,
-  }
+  console.log('EnergyOracleProviderToken (NRGOPT) deployment');
+  const NRGOPT: ContractFactory = await ethers.getContractFactory('EnergyOracleProviderToken');
+  const nrgopt = (await NRGOPT.deploy()) as EnergyOracleProviderToken;
+  await nrgopt.deployed();
+  console.log(`NRGOPT deployed to ${nrgopt.address}`);
 
-  const feeReceiver = deployer.address;
+  console.log('ElectricityConsumerToken (ELCT) deployment');
+  const ELCT: ContractFactory = await ethers.getContractFactory('ElectricityConsumerToken');
+  const elct = (await ELCT.deploy()) as ElectricityConsumerToken;
+  await elct.deployed();
+  console.log(`ELCT deployed to ${elct.address}`);
 
-  const Values: Manager.ValuesStruct = {
-    rewardAmount: 10,
-    fees: 10,
-  }
+  const usdcAddress = await maybeDeployMock('USDC', readStablecoin(networkName, 'USDC'));
+  const daiAddress = await maybeDeployMock('DAI', readStablecoin(networkName, 'DAI'));
+  const usdtAddress = await maybeDeployMock('USDT', readStablecoin(networkName, 'USDT'));
 
-  const Manager: ContractFactory = await ethers.getContractFactory('Manager');
-  const manager = (await Manager.deploy(
-    Tokens,
-    feeReceiver,
-    Values,
-  )) as Manager;
-  await manager.deployed();
-  console.log(`Manager deployed to ${manager.address}`);
+  console.log('Main deployment');
+  const Tokens: Main.TokensStruct = {
+    energyCreditToken: nrgct.address,
+    microgridGovernanceToken: mgt.address,
+    energyProducerToken: nrgpt.address,
+    energySupplierToken: nrgst.address,
+    energyOracleProviderToken: nrgopt.address,
+    electricityConsumerToken: elct.address,
+  };
 
-  console.log(`Escrow deployment`);
-  const Escrow: ContractFactory = await ethers.getContractFactory('Escrow');
-  const escrow = (await Escrow.deploy(manager.address)) as Escrow;
-  await escrow.deployed();
-  console.log(`Escrow deployed to ${escrow.address}`);
+  const Fees: Main.FeesStruct = {
+    receiver: deployer.address,
+    amount: FEE_AMOUNT,
+  };
 
-  console.log(`EnergyOracle deployment`);
-  const EnergyOracle: ContractFactory = await ethers.getContractFactory('EnergyOracle');
-  const energyOracle = (await EnergyOracle.deploy(manager.address)) as EnergyOracle;
-  await energyOracle.deployed();
-  console.log(`EnergyOracle deployed to ${energyOracle.address}`);
-
-  console.log(`Register deployment`);
-  const Register: ContractFactory = await ethers.getContractFactory('Register');
-  const register = (await Register.deploy(manager.address)) as Register;
-  await register.deployed();
-  console.log(`Register deployed to ${register.address}`);
-
-  console.log(`StakingReward deployment`);
-  const StakingReward: ContractFactory = await ethers.getContractFactory('StakingReward');
-  const stakingReward = (await StakingReward.deploy(manager.address)) as StakingReward;
-  await stakingReward.deployed();
-  console.log(`StakingReward deployed to ${stakingReward.address}`);
-
-  console.log(`Main deployment`);
-  const Main: ContractFactory = await ethers.getContractFactory('Main');
-  const main = (await Main.deploy(manager.address)) as Main;
+  const MainFactory: ContractFactory = await ethers.getContractFactory('Main');
+  const main = (await MainFactory.deploy(Tokens, Fees, usdcAddress, daiAddress, usdtAddress)) as Main;
   await main.deployed();
   console.log(`Main deployed to ${main.address}`);
 
-  console.log('Deployment process - end');
+  console.log('Register deployment');
+  const RegisterFactory: ContractFactory = await ethers.getContractFactory('Register');
+  const register = (await RegisterFactory.deploy(main.address)) as Register;
+  await register.deployed();
+  console.log(`Register deployed to ${register.address}`);
 
-  console.log('Manager set up - start');
-  const Contracts: Manager.ContractsStruct = {
+  console.log('Escrow deployment');
+  const EscrowFactory: ContractFactory = await ethers.getContractFactory('Escrow');
+  const escrow = (await EscrowFactory.deploy(main.address)) as Escrow;
+  await escrow.deployed();
+  console.log(`Escrow deployed to ${escrow.address}`);
+
+  console.log('EnergyOracle deployment');
+  const EnergyOracleFactory: ContractFactory = await ethers.getContractFactory('EnergyOracle');
+  const energyOracle = (await EnergyOracleFactory.deploy(main.address)) as EnergyOracle;
+  await energyOracle.deployed();
+  console.log(`EnergyOracle deployed to ${energyOracle.address}`);
+
+  console.log('StakingReward deployment');
+  const StakingRewardFactory: ContractFactory = await ethers.getContractFactory('StakingReward');
+  const staking = (await StakingRewardFactory.deploy(main.address)) as StakingReward;
+  await staking.deployed();
+  console.log(`StakingReward deployed to ${staking.address}`);
+
+  console.log('Wiring contracts on Main');
+  const Contracts: Main.ContractsStruct = {
+    staking: staking.address,
     oracle: energyOracle.address,
-    staking: stakingReward.address,
     register: register.address,
     escrow: escrow.address,
-  }
+  };
+  await (await main.changeContracts(Contracts)).wait();
 
-  await manager.changeContracts(Contracts);
-  console.log('Manager set up - end');
+  console.log('Granting roles');
+  const minter = await mgt.MINTER_ROLE();
+  const burner = await mgt.BURNER_ROLE();
+  const escrowRole = await energyOracle.ESCROW();
 
-  // Roles definition
-  minter_role = await mgt.MINTER_BURNER_ROLE();
-  register_role = await nrgs.REGISTER_ROLE();
-  escrow_manager = await escrow.ESCROW_MANAGER_ROLE();
-  energy_oracle_provider_role = await energyOracle.ENERGY_ORACLE_PROVIDER_ROLE();
-  _escrow_ = await energyOracle.ESCROW();
-  register_manger_role = await register.REGISTER_MANAGER_ROLE();
-  staking_manager_role = await stakingReward.STAKING_MANAGER_ROLE();
+  await (await nrgpt.setRole(register.address, minter, true)).wait();
+  await (await nrgpt.setRole(register.address, burner, true)).wait();
+  await (await nrgst.setRole(register.address, minter, true)).wait();
+  await (await nrgst.setRole(register.address, burner, true)).wait();
+  await (await nrgopt.setRole(register.address, minter, true)).wait();
+  await (await nrgopt.setRole(register.address, burner, true)).wait();
+  await (await elct.setRole(register.address, minter, true)).wait();
+  await (await elct.setRole(register.address, burner, true)).wait();
 
-  console.log('Granting roles - start');
-  await register.grantRole(register_manger_role, main.address);
-  await escrow.grantRole(escrow_manager, main.address);
-  await stakingReward.grantRole(staking_manager_role, main.address);
-  await stakingReward.grantRole(staking_manager_role, register.address);
-  await energyOracle.grantRole(energy_oracle_provider_role, main.address);
-  await energyOracle.grantRole(_escrow_, escrow.address);
-  await ecu.grantRole(register_role, register.address);
-  await nrgs.grantRole(register_role, register.address);
-  await nrgop.grantRole(register_role, register.address);
-  await mgt.grantRole(minter_role, stakingReward.address);
-  await mgt.grantRole(minter_role, energyOracle.address);
-  console.log('Granting roles - end');
+  await (await nrgct.setRole(energyOracle.address, minter, true)).wait();
+  await (await nrgct.setRole(energyOracle.address, burner, true)).wait();
+  await (await mgt.setRole(energyOracle.address, minter, true)).wait();
 
-  console.log(`Write deployed addresses to JSON file`);
+  await (await mgt.setRole(staking.address, minter, true)).wait();
+
+  await (await energyOracle.setRole(escrow.address, escrowRole, true)).wait();
+
+  console.log('Roles granted');
+
   const addresses = {
-    ECU: ecu.address,
+    NRGCT: nrgct.address,
     MGT: mgt.address,
-    NRGS: nrgs.address,
-    NRGOP: nrgop.address,
-    Manager: manager.address,
+    NRGPT: nrgpt.address,
+    NRGST: nrgst.address,
+    NRGOPT: nrgopt.address,
+    ELCT: elct.address,
+    USDC: usdcAddress,
+    DAI: daiAddress,
+    USDT: usdtAddress,
+    Main: main.address,
+    Register: register.address,
     Escrow: escrow.address,
     EnergyOracle: energyOracle.address,
-    Register: register.address,
-    StakingReward: stakingReward.address,
-    Main: main.address,
+    StakingReward: staking.address,
   };
 
-  const filePath = path.join(`${process.cwd()}/deployed`, `deployed_addresses_${hre.network.name}.json`);
+  const outDir = path.join(process.cwd(), 'deployed');
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+  const filePath = path.join(outDir, `deployed_addresses_${networkName}.json`);
   fs.writeFileSync(filePath, JSON.stringify(addresses, null, 2));
-
   console.log(`Deployed addresses written to ${filePath}`);
+
+  console.log('Deployment process - end');
 }
 
 main()

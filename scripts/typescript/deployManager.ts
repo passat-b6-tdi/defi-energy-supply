@@ -34,12 +34,12 @@ export async function deployManager(ecu: BytesLike, MGT: BytesLike, nrgs: BytesL
     ecu: ECU_ADDRESS,
     nrgs: NRGS_ADDRESS,
     nrgop: NRGOP_ADDRESS,
-  }
+  };
 
   const Values: Manager.ValuesStruct = {
     rewardAmount: reward,
     fees: fees,
-  }
+  };
 
   const Manager: ContractFactory = await ethers.getContractFactory('Manager');
   const manager = (await Manager.deploy(Tokens, feeReceiver, Values)) as Manager;

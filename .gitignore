@@ -10,5 +10,8 @@ typechain-types
 cache
 artifacts
 
+# Demo accounts contain private keys — never commit
+deployed/demo_accounts_*.json
+
 .DS_Store
 
