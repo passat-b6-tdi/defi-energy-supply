@@ -166,7 +166,6 @@ def main():
     soc_dict, import_dict, export_dict = simulate_battery(weather)
     check_balance(weather, soc_dict, import_dict, export_dict)
 
-    # Графіки
     plt.figure(figsize=(10,5))
     plt.plot(weather.index, weather["solar_gen"], label="Solar Generation (kW)")
     plt.plot(weather.index, weather["wind_gen"], label="Wind Generation (kW)")
@@ -182,25 +181,31 @@ def main():
     plt.grid()
     plt.show()
 
+    # Окремі графіки для кожної батареї
     for cap in BATTERY_CAPACITIES:
         plt.figure(figsize=(10,5))
         plt.plot(weather.index, soc_dict[cap], label=f"SoC ({cap} kWh)")
         plt.legend(); plt.title(f"Battery State of Charge ({cap} kWh)"); plt.grid(); plt.show()
 
-    plt.figure(figsize=(10,5))
-    for cap, imp in import_dict.items():
-        plt.plot(weather.index, imp, label=f"Import {cap} kWh battery")
-    plt.title("Grid Import Power")
-    plt.ylabel("kW")
+    # Зведений графік SoC для всіх ємностей
+    plt.figure(figsize=(14,6))
+    for cap in BATTERY_CAPACITIES:
+        plt.plot(weather.index, soc_dict[cap], label=f"SoC {cap} kWh")
+    plt.title("State of Charge for Different Battery Capacities")
+    plt.ylabel("kWh")
+    plt.xlabel("Time")
     plt.legend()
     plt.grid()
     plt.show()
 
-    plt.figure(figsize=(10,5))
+    plt.figure(figsize=(16, 7))
+    for cap, imp in import_dict.items():
+        plt.plot(weather.index, imp, label=f"Import {cap} kWh", linestyle='-')
     for cap, exp in export_dict.items():
-        plt.plot(weather.index, exp, label=f"Export {cap} kWh battery")
-    plt.title("Grid Export Power")
+        plt.plot(weather.index, exp, label=f"Export {cap} kWh", linestyle='--')
+    plt.title("Grid Imports and Exports")
     plt.ylabel("kW")
+    plt.xlabel("Time")
     plt.legend()
     plt.grid()
     plt.show()
