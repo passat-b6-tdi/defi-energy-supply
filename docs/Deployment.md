@@ -7,10 +7,12 @@ The **Energy Billing Automation System** is fully deployed and operational on th
 
 | Resource                  | Link                                                                              |
 | ------------------------- | --------------------------------------------------------------------------------- |
+| Documentation (GitBook)   | https://defi-energy-supply.gitbook.io/docs/                                       |
 | Source code (contracts)   | https://github.com/passat-b6-tdi/defi-energy-supply                               |
 | Source code (subgraph)    | https://github.com/passat-b6-tdi/defi-energy-supply-subgraph                      |
 | GraphQL playground        | https://api.studio.thegraph.com/query/59239/defi-energy-supply-base-sepolia/version/latest/ |
-| Monitoring dashboard      | https://13.62.49.115.sslip.io                                                     |
+| Monitoring dashboard (Grafana, IP) | https://13.62.49.115.sslip.io                                            |
+| Monitoring dashboard (Grafana, tunnel) | https://respected-pieces-barrel-transform.trycloudflare.com          |
 
 ## Smart Contracts (Base Sepolia)
 
