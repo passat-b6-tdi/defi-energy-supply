@@ -30,12 +30,12 @@ The **Energy Billing Automation System** is fully deployed and operational on th
 
 | Token                      | Symbol | Address                                                                                                                |
 | -------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| Microgrid Reward Token     | MGT    | [0x669F43B25f42Cd2CB3E490d9DE3684F5CE768C73](https://sepolia.basescan.org/address/0x669F43B25f42Cd2CB3E490d9DE3684F5CE768C73) |
-| Energy Production Token    | NRGPT  | [0xd18BCf2C6169165D374c782790a2831237ADbde6](https://sepolia.basescan.org/address/0xd18BCf2C6169165D374c782790a2831237ADbde6) |
-| Energy Consumption Token   | NRGCT  | [0xb2Ebf583b75723bAe5B6F6Dc6613eC252f66Fd94](https://sepolia.basescan.org/address/0xb2Ebf583b75723bAe5B6F6Dc6613eC252f66Fd94) |
-| Energy Staking Token       | NRGST  | [0xffF664489fa997f6Ec6147fe8D6d459d4C5607dC](https://sepolia.basescan.org/address/0xffF664489fa997f6Ec6147fe8D6d459d4C5607dC) |
-| Energy Oracle Permission   | NRGOPT | [0x36B60AA01B880253EA97f44e5b75070F9caD1DBe](https://sepolia.basescan.org/address/0x36B60AA01B880253EA97f44e5b75070F9caD1DBe) |
-| Electricity User Token     | ELCT   | [0x2EDF0D97D70fe186C9A283681cbA8C8F6707AFBB](https://sepolia.basescan.org/address/0x2EDF0D97D70fe186C9A283681cbA8C8F6707AFBB) |
+| Microgrid Governance Token   | MGT    | [0x669F43B25f42Cd2CB3E490d9DE3684F5CE768C73](https://sepolia.basescan.org/address/0x669F43B25f42Cd2CB3E490d9DE3684F5CE768C73) |
+| Energy Producer Token        | NRGPT  | [0xd18BCf2C6169165D374c782790a2831237ADbde6](https://sepolia.basescan.org/address/0xd18BCf2C6169165D374c782790a2831237ADbde6) |
+| Energy Credit Token          | NRGCT  | [0xb2Ebf583b75723bAe5B6F6Dc6613eC252f66Fd94](https://sepolia.basescan.org/address/0xb2Ebf583b75723bAe5B6F6Dc6613eC252f66Fd94) |
+| Energy Supplier Token        | NRGST  | [0xffF664489fa997f6Ec6147fe8D6d459d4C5607dC](https://sepolia.basescan.org/address/0xffF664489fa997f6Ec6147fe8D6d459d4C5607dC) |
+| Energy Oracle Provider Token | NRGOPT | [0x36B60AA01B880253EA97f44e5b75070F9caD1DBe](https://sepolia.basescan.org/address/0x36B60AA01B880253EA97f44e5b75070F9caD1DBe) |
+| Electricity Consumer Token   | ELCT   | [0x2EDF0D97D70fe186C9A283681cbA8C8F6707AFBB](https://sepolia.basescan.org/address/0x2EDF0D97D70fe186C9A283681cbA8C8F6707AFBB) |
 
 ### Mock Stablecoins (for testing)
 
