@@ -40,11 +40,11 @@ generated from the in-source NatSpec. Hand-written pages
 the GitBook table of contents (`SUMMARY.md`) live at the `docs/` root and
 are untouched by `yarn docgen`.
 
-## Deploy to Arbitrum Sepolia
+## Deploy to Base Sepolia
 
 ```bash
-yarn deploy:arb-sepolia   # runs scripts/typescript/deploy.ts on arbitrum_sepolia
-yarn verify:arb-sepolia   # verifies the deployed contracts on Arbiscan
+yarn deploy:base-sepolia   # runs scripts/typescript/deploy.ts on base_sepolia
+yarn verify:base-sepolia   # verifies the deployed contracts on Basescan
 ```
 
 The deployment script handles token deployment, contract deployment, and

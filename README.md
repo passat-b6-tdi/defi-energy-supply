@@ -126,10 +126,8 @@ yarn install
 - `yarn run:script <path>` — Runs an arbitrary Hardhat script.
 - `yarn deploy:network <network>` — Deploys to the given Hardhat network.
 - `yarn deploy:base-sepolia` — Deploys all contracts to Base Sepolia (the live deployment network).
-- `yarn deploy:arb-sepolia` — Deploys all contracts to Arbitrum Sepolia.
 - `yarn verify:network <network>` — Verifies deployed contracts on the given network.
 - `yarn verify:base-sepolia` — Verifies contracts on Base Sepolia.
-- `yarn verify:arb-sepolia` — Verifies contracts on Arbitrum Sepolia.
 
 ### Formatting
 
