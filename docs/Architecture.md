@@ -1,6 +1,6 @@
 # Architecture
 
-![Architecture](../images/architecture.png)
+![Architecture](../images/Architecture.png)
 
 ## Contract topology
 
