@@ -1,5 +1,7 @@
 # Architecture
 
+![Architecture](../images/architecture.png)
+
 ## Contract topology
 
 ```
