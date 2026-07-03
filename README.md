@@ -15,14 +15,14 @@ DefiEnergySupply is fully deployed and operational on **Base Sepolia** testnet.
 
 ### Quick Links
 
-| Resource                               | Link                                                                                                                                                                                                                           |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Documentation (GitBook)                | https://defi-energy-supply.gitbook.io/docs/                                                                                                                                                                                    |
-| Source code (contracts)                | https://github.com/passat-b6-tdi/defi-energy-supply                                                                                                                                                                            |
-| Source code (subgraph)                 | https://github.com/passat-b6-tdi/defi-energy-supply-subgraph                                                                                                                                                                   |
-| GraphQL playground                     | https://api.studio.thegraph.com/query/59239/defi-energy-supply-base-sepolia/version/latest/                                                                                                                                    |
-| Monitoring dashboard (Grafana, IP)     | [https://13.62.49.115.sslip.io](https://13.62.49.115.sslip.io/d/energy-dashboard/energy-metrics-dashboard?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s)                                                             |
-| Monitoring dashboard (Grafana, tunnel) | [https://respected-pieces-barrel-transform.trycloudflare.com](https://respected-pieces-barrel-transform.trycloudflare.com/d/energy-dashboard/energy-metrics-dashboard?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s) |
+| Resource                               | Link                                                                                                                                                                                                                                |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Documentation (GitBook)                | https://defi-energy-supply.gitbook.io/docs/                                                                                                                                                                                         |
+| Source code (contracts)                | https://github.com/passat-b6-tdi/defi-energy-supply                                                                                                                                                                                 |
+| Source code (subgraph)                 | https://github.com/passat-b6-tdi/defi-energy-supply-subgraph                                                                                                                                                                        |
+| GraphQL playground                     | https://api.studio.thegraph.com/query/59239/defi-energy-supply-base-sepolia/version/latest/                                                                                                                                         |
+| Monitoring dashboard (Grafana, IP)     | [https://13.62.49.115.sslip.io](https://13.62.49.115.sslip.io/d/energy-dashboard/energy-metrics-dashboard?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s)                                                                  |
+| Monitoring dashboard (Grafana, tunnel) | [ https://laboratories-cult-large-outstanding.trycloudflare.com](https://laboratories-cult-large-outstanding.trycloudflare.com/d/energy-dashboard/energy-metrics-dashboard?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s) |
 
 ### Smart Contracts (Base Sepolia)
 
