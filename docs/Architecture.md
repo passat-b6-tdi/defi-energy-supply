@@ -105,3 +105,11 @@ and decrements `totalProducers`.
   enforced by `onlyRegister`.
 - All write paths on `EnergyOracle` are gated by `whenNotPaused`; the
   manager can pause to halt data reporting in an incident.
+
+## Physical validation
+
+For how this maps onto a real physical rig — solar panel, smart meters, the
+oracle bridge, and the Grafana/Prometheus monitoring pipeline — see
+[Laboratory Stand & Telemetry](LabStand.md), including a note on the current
+gap between producer and supplier identities (§6) and known deltas between the
+demo setup and this codebase (§8).
