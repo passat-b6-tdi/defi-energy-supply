@@ -68,6 +68,17 @@ Consumers settle debts in any of the three whitelisted stablecoins configured
 immutably on `Main`: **USDC**, **DAI**, **USDT**. A constant per-transaction
 fee is routed to the configured fee receiver.
 
+## Prior work & funding
+
+The contracts, subgraph, and Prometheus/Grafana monitoring pipeline
+DefiEnergySupply runs on today were originally built under **FORWARDER**, an
+international research project funded by **CRDF Global** via the Kyiv
+Polytechnic Science Park, and validated on a physical laboratory stand
+before moving to Base Sepolia. This grant funds the next layer on top of
+that foundation: quality-aware tariffs, a hardened oracle/Smart Bridge, and
+a path to a real pilot (see [Roadmap](Roadmap.md)). See [Team](Team.md) for
+the full academic background.
+
 ## Why blockchain, not just a database?
 
 A database works fine when one party is trusted to run it honestly. In an

@@ -31,6 +31,14 @@ supplier payment. That mechanism is the basis for a sustainable model —
 funding infrastructure operation independent of grant funding. See
 [Overview](Overview.md#monetization--business-model).
 
+**Has this project received funding before?**
+Yes. The current contracts, subgraph, and Prometheus/Grafana pipeline were
+built under FORWARDER, an international research project funded by CRDF
+Global via the Kyiv Polytechnic Science Park, and validated on a physical
+lab stand. This grant funds what that foundation doesn't yet have:
+quality-aware tariffs, a hardened oracle, and a real pilot. See
+[Overview](Overview.md#prior-work--funding) and [Team](Team.md).
+
 **Is peer-to-peer electricity trading legal?**
 It's a regulated activity in most jurisdictions, Ukraine included.
 DefiEnergySupply is infrastructure software, not a licensed energy supplier,

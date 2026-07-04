@@ -1,5 +1,10 @@
 # Roadmap
 
+The contracts, subgraph, and monitoring pipeline already deployed on Base
+Sepolia were built under a prior CRDF Global-funded project (see
+[Prior work & funding](Overview.md#prior-work--funding)). This roadmap
+covers what that foundation doesn't yet have.
+
 ## Phase 1 — core protocol hardening
 
 - Contract refactoring across the existing `Main` / `Register` / `Escrow` /
