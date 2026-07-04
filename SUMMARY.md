@@ -2,6 +2,9 @@
 
 * [README](README.md)
 * [Overview](docs/Overview.md)
+* [Team](docs/Team.md)
+* [FAQ](docs/FAQ.md)
+* [Roadmap](docs/Roadmap.md)
 * [Getting started](docs/GettingStarted.md)
 * [Live deployment](docs/Deployment.md)
 * [Architecture](docs/Architecture.md)

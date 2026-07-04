@@ -2,6 +2,14 @@
 
 The Energy Billing Automation System is a comprehensive solution designed to automate the processes of data collection, analysis, and billing for electricity consumption among different participants in the energy market.
 
+## Who this is for & the problem it solves
+
+**Target audience:** local communities in Ukraine that organized ad-hoc microgrids during blackouts — neighbors with shared solar panels, batteries, or a generator who produce and split electricity among themselves. The same applies to any small community running peer-to-peer energy exchange.
+
+**The pain:** once neighbors share power from a common source, there's no transparent way to calculate who contributed how much, who consumed how much, and who owes whom. Today it's manual and trust-based (spreadsheets) — which causes disputes and discourages people from investing in shared generation capacity, since there's no guarantee they'll get their fair share back.
+
+**The fix:** metering data reaches the chain through an oracle layer, and smart contracts — not a neighbor's word — calculate and settle debts automatically, transparently, and verifiably on-chain. See the full [Overview](docs/Overview.md) for the complete picture.
+
 ## Features
 
 - Automated calculation of electricity costs based on contract terms and tariff rates
